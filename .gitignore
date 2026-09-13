@@ -141,3 +141,25 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Environment & Secrets
+.env
+.env.*
+*.pem
+*.key
+*.cert
+secrets.*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Temporary generator scripts & binary office docs
+generate_sdlc_doc.py
+*.docx
+
