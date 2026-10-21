@@ -1,0 +1,193 @@
+\subsection{1.3. Xác định thông tin cơ bản cho nghiệp vụ của bài toán}
+
+\subsubsection{1.3.1. Phân tích hiện trạng quy trình nghiệp vụ}
+Nhằm làm rõ tính ưu việt của giải pháp số hóa, quy trình tiếp nhận và phân phối tài liệu được phân tích so sánh giữa hiện trạng nhiều bất cập ở hiện tại và quy trình chuẩn hóa trong tương lai trên hệ thống 5Share:
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|X|}
+\hline
+\rowcolor[HTML]{EAEAEA}
+\textbf{Bước nghiệp vụ} & \textbf{As-Is (Hiện tại)} & \textbf{To-Be (Hệ thống 5Share)} \\
+\hline
+\textbf{Bước 1: Tìm kiếm tài liệu} & Tìm thủ công qua tin nhắn Zalo, diễn đàn hoặc hỏi xin cá nhân. Dễ bị trôi bài, mất nhiều thời gian và tỷ lệ tìm thấy tài liệu phù hợp không cao. & Tra cứu tức thì bằng thanh tìm kiếm thông minh kết hợp bộ lọc đa tiêu chí (Học kỳ, Môn học, Loại tài liệu,...). \\
+\hline
+\textbf{Bước 2: Xem trước tài liệu} & Không hỗ trợ xem trước; người dùng buộc phải tải toàn bộ tệp tin về thiết bị mới kiểm tra được nội dung, gây tốn thời gian và bộ nhớ. & Tích hợp trình đọc trực tiếp PDF trên trình duyệt. Khách vãng lai xem thử 3 trang đầu; sinh viên đăng nhập đọc toàn văn nhanh chóng. \\
+\hline
+\textbf{Bước 3: Tải về và lưu trữ} & Phụ thuộc vào các liên kết lưu trữ cá nhân, thường xuyên xảy ra tình trạng liên kết bị khóa quyền truy cập hoặc hết hạn. & Tải tệp tin gốc với tốc độ cao từ máy chủ đám mây; hỗ trợ tính năng Bookmark để lưu trữ tài liệu vào kho tài liệu cá nhân. \\
+\hline
+\textbf{Bước 4: Đóng góp tài liệu} & Gửi tệp tin trực tiếp qua nhóm chat hoặc bài đăng cá nhân; tệp tin dễ bị thất lạc sau một thời gian ngắn. & Tải tệp tin lên hệ thống kèm biểu mẫu metadata chuẩn hóa (Môn học, Loại tài liệu, Mô tả); tài liệu được quản lý và lưu trữ lâu dài. \\
+\hline
+\textbf{Bước 5: Kiểm duyệt học liệu} & Không có kiểm duyệt; tài liệu kém chất lượng, sai chuẩn kiến thức hoặc không phù hợp dễ dàng lan truyền. & Hệ thống tự động kiểm tra kỹ thuật (định dạng, mã băm chống trùng) và quản trị viên thẩm định học thuật trước khi xuất bản. \\
+\hline
+\textbf{Bước 6: Tương tác và phản hồi} & Khó trao đổi học thuật; không có cơ chế đánh giá chất lượng và không có kênh báo cáo tài liệu vi phạm. & Đánh giá sao, thảo luận học thuật công khai, gửi báo cáo vi phạm để quản trị viên xử lý kịp thời. \\
+\hline
+\end{tabularx}
+\caption{Bảng so sánh quy trình nghiệp vụ As-Is (Hiện tại) và To-Be (Hệ thống 5Share)}
+\label{tab:as_is_to_be}
+\end{table}
+
+\subsubsection{1.3.2. Tiêu chuẩn và ma trận tiêu chí kiểm duyệt tài liệu}
+Hệ thống thiết lập ma trận 8 tiêu chí kiểm duyệt phân định rõ ràng giữa kiểm tra tự động bằng phần mềm và thẩm định chuyên môn của quản trị viên nhằm bảo đảm cả tính kỹ thuật và chất lượng học thuật:
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|c|p{3.8cm}|p{2.8cm}|X|}
+\hline
+\rowcolor[HTML]{EAEAEA}
+\textbf{STT} & \textbf{Tiêu chí kiểm duyệt} & \textbf{Đơn vị thực hiện} & \textbf{Quy tắc kiểm duyệt và xử lý} \\
+\hline
+1 & Định dạng tệp tin (.pdf) & Hệ thống tự động & Bắt buộc phần mở rộng là .pdf và MIME type application/pdf. Chặn tiếp nhận tệp tin sai định dạng. \\
+\hline
+2 & Giới hạn dung lượng tệp tin & Hệ thống tự động & Dung lượng tệp tin tối đa không vượt quá 25MB. Cảnh báo lỗi nếu tệp tin vượt quá dung lượng cho phép. \\
+\hline
+3 & Kiểm tra tính toàn vẹn nhị phân & Hệ thống tự động & Đọc các byte đầu tiên (Magic Bytes) phải khớp chuỗi `\%PDF-'. Ngăn chặn tệp thực thi độc hại giả mạo đuôi. \\
+\hline
+4 & Kiểm tra trùng lặp tệp tin & Hệ thống tự động & Tính toán mã băm SHA-256 của tệp tin. Nếu mã băm đã tồn tại trong cơ sở dữ liệu thì từ chối tiếp nhận. \\
+\hline
+5 & Tính đầy đủ của Metadata & Hệ thống tự động & Bắt buộc nhập đầy đủ: Tiêu đề (tối thiểu 10 ký tự), Chọn môn học hợp lệ, Phân loại tài liệu và Mô tả. \\
+\hline
+6 & Đúng môn học \& Chuẩn học thuật & Quản trị viên & Thẩm định nội dung bám sát khung chương trình đào tạo Sư phạm Tin học và chuẩn mực Công văn 5512. \\
+\hline
+7 & Tính pháp lý và bản quyền & Quản trị viên & Không chấp nhận các đề thi đang trong thời gian bảo mật, không phát tán các ấn phẩm thương mại có bản quyền. \\
+\hline
+8 & Độ rõ nét \& Bố cục trình bày & Quản trị viên & Văn bản phải rõ nét, ngay ngắn, không bị mờ nhòe, không bị lỗi font chữ Tiếng Việt. \\
+\hline
+\end{tabularx}
+\caption{Ma trận 8 tiêu chí kiểm duyệt tài liệu trong hệ thống 5Share}
+\label{tab:ma_tran_kiem_duyet}
+\end{table}
+
+\subsubsection{1.3.3. Bảng phân tích Input - Process - Output cho 13 yêu cầu chức năng}
+Căn cứ vào yêu cầu nghiệp vụ của đề tài, 13 chức năng thành phần của hệ thống được chuẩn hóa qua mô hình phân tích IPO chi tiết như sau:
+
+\begin{table}[H]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{|p{3.6cm}|p{3.2cm}|X|p{3.2cm}|}
+\hline
+\rowcolor[HTML]{EAEAEA}
+\textbf{Mã và Tên chức năng\newline(Độ ưu tiên)} & \textbf{Đầu vào} & \textbf{Xử lý nghiệp vụ} & \textbf{Đầu ra} \\
+\hline
+\textbf{G5-FR01: Xem danh mục \& Tìm kiếm/Lọc tài liệu}\newline(MUST) & 
+- Từ khóa tìm kiếm.\newline
+- Khối kiến thức/Kỳ học.\newline
+- Bộ lọc môn học, loại học liệu, thứ tự sắp xếp. & 
+- Truy vấn CSDL bảng courses và documents.\newline
+- Áp dụng Full-Text Search trên title và description.\newline
+- Lọc chỉ các bản ghi có status = ``APPROVED''.\newline
+- Phân trang 12 tài liệu/trang. & 
+- Lưới tài liệu công khai.\newline
+- Bộ lọc động.\newline
+- Tổng số kết quả tìm thấy. \\
+\hline
+\textbf{G5-FR02: Preview giới hạn \& Chặn tải}\newline(MUST) & 
+- Thao tác xem tài liệu của Guest.\newline
+- Thao tác bấm Tải về / Bookmark / Upload. & 
+- Kiểm tra trạng thái phiên xác thực.\newline
+- Cấu hình PDF.js chỉ hiển thị tối đa 3 trang đầu.\newline
+- Chặn API tải file gốc đối với Guest.\newline
+- Chuyển hướng sang màn hình Đăng nhập khi bấm Tải/Upload. & 
+- Màn hình PDF Preview 3 trang đầu kèm banner thông báo đăng nhập.\newline
+- Modal yêu cầu đăng nhập. \\
+\hline
+\textbf{G5-FR03: Quản lý tài khoản \& Full PDF Preview}\newline(MUST) & 
+- Thông tin tài khoản (Họ tên, email, mật khẩu).\newline
+- Mã tài liệu yêu cầu xem toàn văn. & 
+- Xác thực JWT token của User.\newline
+- Cập nhật thông tin hồ sơ và mã hóa mật khẩu bằng bcrypt.\newline
+- Cho phép PDF.js tải và render toàn bộ các trang của tài liệu đã được duyệt. & 
+- Hồ sơ cá nhân cập nhật.\newline
+- Trình đọc Full PDF Preview toàn văn mượt mà. \\
+\hline
+\textbf{G5-FR04: Tải tài liệu gốc \& Bookmark cá nhân}\newline(MUST) & 
+- Thao tác bấm Tải xuống.\newline
+- Thao tác bấm Lưu (bookmark/unbookmark). & 
+- Kiểm tra quyền truy cập User.\newline
+- Lấy URL tệp tin gốc từ Cloudinary, tạo thẻ tải và tăng download\_count lên 1.\newline
+- Thêm/xóa bản ghi tương ứng trong bảng bookmarks. & 
+- Tệp tin PDF gốc lưu về máy cá nhân.\newline
+- Biểu tượng Bookmark đổi màu; cập nhật ``Tủ tài liệu cá nhân''. \\
+\hline
+\textbf{G5-FR05: Đăng tải PDF kèm Metadata bắt buộc}\newline(MUST) & 
+- Tệp tin .pdf tải lên.\newline
+- Metadata: Tên tài liệu, Môn học, Loại tài liệu, Mô tả. & 
+- Validate định dạng .pdf và dung lượng $\le$ 25MB.\newline
+- Đọc Magic Bytes `\%PDF-'.\newline
+- Băm SHA-256 kiểm tra trùng lặp.\newline
+- Tải tệp lên Cloudinary và lưu bản ghi vào CSDL. & 
+- Bản ghi tài liệu mới được tạo với status = ``PENDING''.\newline
+- Thông báo tải lên thành công, tài liệu vào hàng đợi. \\
+\hline
+\textbf{G5-FR06: Quản lý trạng thái Chờ duyệt}\newline(MUST) & 
+- Bản ghi tài liệu mới tạo từ G5-FR05.\newline
+- Yêu cầu truy vấn kho công khai của Guest/User. & 
+- Thiết lập mặc định status = ``PENDING'' cho tài liệu mới.\newline
+- Ràng buộc tầng CSDL và API: tài liệu PENDING tuyệt đối không được xuất hiện ở danh sách công khai. & 
+- Tài liệu ẩn hoàn toàn với công chúng; chỉ hiển thị trong tab ``Tài liệu của tôi'' và trang duyệt của Admin. \\
+\hline
+\textbf{G5-FR07: Admin duyệt/từ chối kèm lý do phản hồi}\newline(MUST) & 
+- Quyết định của Admin hoặc là chấp nhận hoặc là từ chối.\newline
+- Lý do từ chối (bắt buộc nếu Reject). & 
+- Cập nhật status của tài liệu thành ``APPROVED'' hoặc ``REJECTED''.\newline
+- Lưu bản ghi lịch sử vào moderation\_history.\newline
+- Tạo thông báo gửi đến tác giả tài liệu. & 
+- Tài liệu hiển thị công khai (nếu duyệt).\newline
+- Trạng thái và lý do từ chối hiển thị rõ cho tác giả xem. \\
+\hline
+\textbf{G5-FR08: Quản lý danh mục môn học \& Khối kiến thức}\newline(MUST) & 
+- Thao tác CRUD môn học (Mã môn, Tên môn, Số tín chỉ, Khối kiến thức, Kỳ học). & 
+- Kiểm tra quyền Admin.\newline
+- Thêm, sửa, xóa hoặc kích hoạt/vô hiệu hóa môn học trong bảng courses.\newline
+- Đồng bộ với bộ lọc tìm kiếm. & 
+- Bảng danh mục môn học cập nhật; danh sách dropdown môn học đồng bộ toàn hệ thống. \\
+\hline
+\textbf{G5-FR09: Đánh giá chất lượng \& Bình luận học thuật}\newline(MUST) & 
+- Số sao đánh giá (1--5 sao).\newline
+- Nội dung bình luận nhận xét. & 
+- Kiểm tra User đã đăng nhập.\newline
+- Áp dụng rule: mỗi người chỉ đánh giá sao 1 lần/tài liệu (cho phép sửa số sao).\newline
+- Tính lại điểm trung bình AVG(rating).\newline
+- Lưu bình luận vào comments. & 
+- Điểm sao trung bình cập nhật tức thì.\newline
+- Khung bình luận học thuật hiển thị dưới tài liệu. \\
+\hline
+\textbf{G5-FR10: Báo cáo vi phạm \& Xử lý ẩn/xóa nội dung}\newline(MUST) & 
+- Lý do báo cáo vi phạm từ User.\newline
+- Quyết định xử lý của Admin (Bỏ qua / Ẩn tài liệu / Xóa vĩnh viễn). & 
+- Lưu báo cáo vào bảng reports với status = ``PENDING''.\newline
+- Admin xem danh sách báo cáo, thực hiện đổi status tài liệu thành ``HIDDEN'' hoặc ``DELETED''.\newline
+- Xử lý các liên kết bookmark liên quan. & 
+- Thông báo gửi báo cáo thành công.\newline
+- Tài liệu vi phạm bị gỡ bỏ khỏi kho công khai. \\
+\hline
+\textbf{G5-FR11: Hệ thống chuông thông báo người dùng}\newline(SHOULD) & 
+- Sự kiện hệ thống: Tài liệu được duyệt, Tài liệu bị từ chối, Có bình luận mới. & 
+- Trigger tạo bản ghi trong bảng notifications kèm message, link điều hướng và user\_id người nhận.\newline
+- Đếm số thông báo unread. & 
+- Biểu tượng Chuông hiển thị badge đỏ chứa số thông báo mới.\newline
+- Dropdown thông báo chi tiết. \\
+\hline
+\textbf{G5-FR12: Thống kê báo cáo Dashboard bên quản trị}\newline(SHOULD) & 
+- Khoảng thời gian thống kê (Tuần, Tháng, Toàn thời gian).\newline
+- Dữ liệu lượt xem, tải, tài liệu. & 
+- Tổng hợp số liệu từ view\_logs, download\_logs, documents, users.\newline
+- Thống kê tỷ lệ tài liệu theo môn học và top học liệu được tải nhiều nhất. & 
+- Biểu đồ thống kê trực quan trên trang quản trị Admin Dashboard. \\
+\hline
+\textbf{G5-FR13: Phát hiện trùng file bằng SHA-256}\newline(COULD) & 
+- Chuỗi nhị phân của tệp tin PDF tải lên. & 
+- Tính toán mã băm SHA-256 của file.\newline
+- Truy vấn đối chiếu mã băm trong cột file\_hash của bảng documents.\newline
+- Nếu trùng khớp, cảnh báo trùng lặp và từ chối tiếp nhận. & 
+- Ngăn chặn tài liệu trùng lặp tải lên kho; bảo vệ dung lượng máy chủ lưu trữ. \\
+\hline
+\end{tabularx}
+\caption{Bảng phân tích IPO cho 13 yêu cầu chức năng}
+\label{tab:bang_ipo_13_chuc_nang}
+\end{table}

@@ -1,0 +1,754 @@
+/* ==========================================================================
+   5SHARE ABSOLUTE CINEMA 3D SCROLLYTELLING ENGINE
+   Dark Smoke Dream -> Clean Eyelid Blink -> Architectural Atrium Chaos -> 5share Finale
+   ========================================================================== */
+
+.landing-page-shell {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   1. SCROLL RUNWAY & STICKY WEBGL VIEWPORT
+   -------------------------------------------------------------------------- */
+.scrolly-runway {
+  position: relative;
+  width: 100%;
+  height: 1850vh;
+  background-color: #eef3f9;
+}
+
+.scrolly-viewport {
+  position: sticky;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 60px);
+  overflow: hidden;
+  background-color: #eef3f9;
+  contain: paint layout size;
+}
+
+.threejs-stage-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  transition: filter 0.65s ease, transform 0.65s ease;
+}
+
+.threejs-stage-canvas.is-dream-hidden {
+  filter: blur(26px) brightness(0.15);
+  transform: scale(1.08);
+}
+
+/* Khi vừa mở mắt khỏi bóng tối: Hơi chói sáng và nhòe -> Chớp mắt lần 2 -> Lấy nét căng vào Scene 1 */
+.threejs-stage-canvas.is-waking-focus {
+  animation: wakingEyeFocus 1.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes wakingEyeFocus {
+  0% {
+    filter: blur(28px) brightness(1.5);
+    transform: scale(1.08);
+  }
+  22% {
+    filter: blur(24px) brightness(1.42);
+    transform: scale(1.07);
+  }
+  46% {
+    filter: blur(10px) brightness(1.15);
+    transform: scale(1.03);
+  }
+  66% {
+    filter: blur(6px) brightness(0.96);
+    transform: scale(1.015);
+  }
+  100% {
+    filter: blur(0px) brightness(1);
+    transform: scale(1);
+  }
+}
+
+.threejs-stage-canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. CƠN MƠ ĐÊM TỐI TRƯỚC SCENE 1 (NỀN ĐEN, KHÓI SƯƠNG MỜ ẢO, CHỮ TRẮNG BỒNG BỀNH)
+   -------------------------------------------------------------------------- */
+.dark-dream-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse 75% 65% at 50% 50%, rgb(11, 18, 32) 0%, rgb(4, 7, 14) 70%, rgb(2, 4, 8) 100%);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Khi bắt đầu nhắm mắt chuyển sang tỉnh giấc: Chữ tâm tư tan biến hoàn toàn trong bóng tối (0% -> 18%)
+   TRƯỚC KHI mí mắt hé mở ở mốc 22%, đảm bảo tuyệt đối không còn vương bóng chữ tâm tư cuối! */
+.dark-dream-stage.is-awakening {
+  animation: dreamDarkDissolve 1.95s ease forwards;
+  pointer-events: none;
+}
+
+.dark-dream-stage.is-awakening .dream-thoughts-stream {
+  animation: dreamTextQuickVanish 0.28s ease-out forwards;
+}
+
+@keyframes dreamTextQuickVanish {
+  0% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(18px);
+    transform: scale(0.94);
+  }
+}
+
+@keyframes dreamDarkDissolve {
+  0% {
+    opacity: 1;
+    visibility: visible;
+  }
+  18% {
+    opacity: 0;
+    visibility: hidden;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* 3 Tầng Khói Sương Mờ Ảo Trôi Bồng Bềnh Trong Đêm */
+.dream-smoke-layer {
+  position: absolute;
+  inset: -25%;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(54px);
+  mix-blend-mode: screen;
+}
+
+.dream-smoke-layer.smoke-1 {
+  background:
+    radial-gradient(circle at 32% 42%, rgba(148, 163, 184, 0.16) 0%, rgba(56, 189, 248, 0.06) 38%, transparent 68%),
+    radial-gradient(circle at 70% 58%, rgba(203, 213, 225, 0.13) 0%, transparent 62%);
+  animation: smokeDriftOne 18s ease-in-out infinite alternate;
+}
+
+.dream-smoke-layer.smoke-2 {
+  background:
+    radial-gradient(circle at 64% 34%, rgba(186, 230, 253, 0.14) 0%, rgba(148, 163, 184, 0.07) 42%, transparent 70%),
+    radial-gradient(circle at 26% 66%, rgba(148, 163, 184, 0.12) 0%, transparent 60%);
+  animation: smokeDriftTwo 23s ease-in-out infinite alternate;
+}
+
+.dream-smoke-layer.smoke-3 {
+  background:
+    radial-gradient(ellipse 60% 35% at 50% 50%, rgba(226, 232, 240, 0.10) 0%, rgba(56, 189, 248, 0.05) 45%, transparent 75%);
+  animation: smokeDriftThree 15s ease-in-out infinite alternate;
+}
+
+@keyframes smokeDriftOne {
+  0% {
+    transform: translate(-6%, -4%) scale(1) rotate(-3deg);
+  }
+  100% {
+    transform: translate(7%, 5%) scale(1.14) rotate(4deg);
+  }
+}
+
+@keyframes smokeDriftTwo {
+  0% {
+    transform: translate(6%, -5%) scale(1.08) rotate(3deg);
+  }
+  100% {
+    transform: translate(-7%, 6%) scale(0.95) rotate(-4deg);
+  }
+}
+
+@keyframes smokeDriftThree {
+  0% {
+    transform: translate(0%, 4%) scale(0.96);
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate(0%, -5%) scale(1.12);
+    opacity: 1;
+  }
+}
+
+/* Dòng Chảy 5 Câu Tâm Tư Chữ Trắng Bồng Bềnh Như Mơ */
+.dream-thoughts-stream {
+  position: relative;
+  width: 90%;
+  max-width: 880px;
+  height: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.dream-thought-line {
+  position: absolute;
+  max-width: 780px;
+  text-align: center;
+  transition:
+    transform 1.15s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 1.15s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 1.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dream-thought-line.is-current {
+  opacity: 1;
+  filter: blur(0px);
+  transform: translate(0, 0) scale(1);
+  animation: dreamWhiteFloatIn 1.05s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes dreamWhiteFloatIn {
+  0% {
+    opacity: 0;
+    filter: blur(14px);
+    transform: translateY(28px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Các câu tâm tư trước đó trôi nhẹ vào làn khói phía sau như dư âm giấc mơ */
+.dream-thought-line.is-past-echo.thought-pos-1 {
+  opacity: 0.14;
+  filter: blur(3.5px);
+  transform: translate(-145px, -130px) scale(0.76);
+}
+
+.dream-thought-line.is-past-echo.thought-pos-2 {
+  opacity: 0.16;
+  filter: blur(3px);
+  transform: translate(140px, -90px) scale(0.78);
+}
+
+.dream-thought-line.is-past-echo.thought-pos-3 {
+  opacity: 0.18;
+  filter: blur(2.5px);
+  transform: translate(-115px, 100px) scale(0.80);
+}
+
+.dream-thought-line.is-past-echo.thought-pos-4 {
+  opacity: 0.20;
+  filter: blur(2px);
+  transform: translate(120px, 125px) scale(0.82);
+}
+
+.dream-thought-white-text {
+  display: inline-block;
+  font-family: var(--font-academic, 'STIX Two Text', Georgia, serif);
+  font-size: clamp(26px, 3.6vw, 46px);
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: -0.01em;
+  line-height: 1.38;
+  color: rgba(248, 250, 252, 0.96);
+  text-shadow:
+    0 0 28px rgba(255, 255, 255, 0.28),
+    0 0 64px rgba(56, 189, 248, 0.18);
+  animation: dreamGentleBob 4.5s ease-in-out infinite alternate;
+}
+
+@keyframes dreamGentleBob {
+  0% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(4px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. HIỆU ỨNG CHỚP MẮT MỞ RA ÁNH SÁNG TỪ BÓNG TỐI (POV EYELID BLINK AWAKENING)
+   -------------------------------------------------------------------------- */
+.eyelid-blink-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.eyelid-upper,
+.eyelid-lower {
+  position: absolute;
+  left: -10%;
+  width: 120%;
+  height: 56%;
+  background: rgb(4, 7, 14);
+  will-change: transform;
+}
+
+.eyelid-upper {
+  top: 0;
+  border-bottom-left-radius: 50% 22%;
+  border-bottom-right-radius: 50% 22%;
+  box-shadow: 0 22px 44px rgba(2, 4, 8, 0.85);
+  animation: eyelidUpperWakeFromDark 1.95s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.eyelid-lower {
+  bottom: 0;
+  border-top-left-radius: 50% 22%;
+  border-top-right-radius: 50% 22%;
+  box-shadow: 0 -22px 44px rgba(2, 4, 8, 0.85);
+  animation: eyelidLowerWakeFromDark 1.95s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Mí mắt giữ khép kín từ 0% -> 22% (trong lúc chữ tâm tư cuối đã tắt hẳn ở 18%),
+   sau đó mới hé mở lần 1 (46%) -> nhắm nhẹ lấy nét (64%) -> mở bừng vào Scene 1 (100%) */
+@keyframes eyelidUpperWakeFromDark {
+  0% {
+    transform: translateY(0%);
+  }
+  22% {
+    transform: translateY(0%);
+  }
+  46% {
+    transform: translateY(-58%);
+  }
+  64% {
+    transform: translateY(-4%);
+  }
+  100% {
+    transform: translateY(-108%);
+  }
+}
+
+@keyframes eyelidLowerWakeFromDark {
+  0% {
+    transform: translateY(0%);
+  }
+  22% {
+    transform: translateY(0%);
+  }
+  46% {
+    transform: translateY(58%);
+  }
+  64% {
+    transform: translateY(4%);
+  }
+  100% {
+    transform: translateY(108%);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. CINEMA OPTICS: VIGNETTE & LETTERBOX
+   -------------------------------------------------------------------------- */
+.studio-vignette-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    radial-gradient(
+      ellipse 80% 74% at 50% 50%,
+      rgba(252, 252, 253, 0) 50%,
+      rgba(203, 213, 225, 0.45) 100%
+    );
+}
+
+.cinema-letterbox-top,
+.cinema-letterbox-bottom {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  background: rgba(17, 24, 28, 0.92);
+  z-index: 12;
+  pointer-events: none;
+  transition: height 0.12s linear;
+}
+
+.cinema-letterbox-top {
+  top: 0;
+}
+
+.cinema-letterbox-bottom {
+  bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+   5. SÂN KHẤU FINALE: SỐ "5" ĐỒNG BỘ MÀU LOGO, GIẬM 2 NHỊP ĐÈ "S" THÀNH "s" -> BẬT NHẢY -> CHỚI VỚI ĐỨNG DẬY
+   -------------------------------------------------------------------------- */
+.kinetic-brand-stage {
+  position: absolute;
+  top: 50%;
+  left: 52%;
+  transform: translate(0, -54%);
+  z-index: 18;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.kinetic-brand-stage.is-visible {
+  opacity: 1;
+}
+
+.kinetic-wordmark-lockup {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-ui, 'Be Vietnam Pro', system-ui, sans-serif);
+  font-size: clamp(58px, 7.6vw, 108px);
+  font-weight: 800;
+  letter-spacing: -0.038em;
+  line-height: 1;
+  color: var(--slate-12, #11181c);
+  user-select: none;
+  transition: filter 0.35s ease;
+}
+
+.kinetic-wordmark-lockup.is-locked-in {
+  filter: drop-shadow(0 8px 28px rgba(0, 106, 220, 0.18));
+}
+
+/* Số 5 đồng bộ 100% dải màu Sapphire -> Electric Azure của biểu tượng 3D & BrandLogo */
+.kinetic-digit-five {
+  display: inline-block;
+  color: var(--blue-9, #0090ff);
+  background: linear-gradient(155deg, #003d99 0%, #006adc 52%, #00b4ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transform-origin: 50% 90%;
+  will-change: transform, opacity;
+  margin-right: 2px;
+  filter: drop-shadow(0 10px 22px rgba(0, 106, 220, 0.25));
+}
+
+.kinetic-share-wipe {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  will-change: clip-path;
+}
+
+/* Tia quét quang học (Laser Scan Bar) lướt mở ra chữ Share ở Beat 1 */
+.kinetic-scan-beam {
+  position: absolute;
+  top: -12%;
+  bottom: -12%;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(0, 180, 255, 0) 0%, #0090ff 50%, rgba(0, 180, 255, 0) 100%);
+  box-shadow:
+    0 0 16px #0090ff,
+    0 0 32px rgba(0, 180, 255, 0.65);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.kinetic-letter-s {
+  display: inline-block;
+  transform-origin: 50% 92%;
+  will-change: transform, color;
+  color: var(--slate-12, #11181c);
+  transition: color 0.25s ease;
+}
+
+.kinetic-letter-s.is-under-pressure {
+  color: #004da6;
+}
+
+.kinetic-letter-s.is-crushed {
+  color: var(--slate-12, #11181c);
+}
+
+.kinetic-letters-hare {
+  display: inline-block;
+  color: var(--slate-12, #11181c);
+}
+
+.kinetic-impact-ring {
+  position: absolute;
+  bottom: 6px;
+  left: 38px;
+  width: 72px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2.5px solid #0090ff;
+  box-shadow: 0 0 20px rgba(0, 144, 255, 0.55);
+  pointer-events: none;
+}
+
+/* Các tia lửa ánh sáng Sapphire bắn ra khi số 5 giậm nhịp quyết định biến S -> s */
+.kinetic-spark-burst {
+  position: absolute;
+  bottom: 42%;
+  left: 72px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.kinetic-spark-mote {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #006adc, #00d2ff);
+  box-shadow: 0 0 10px rgba(0, 180, 255, 0.8);
+}
+
+/* Thông tin Nhóm 5 & Học phần hiện ra sau khi số 5 đứng dậy */
+.kinetic-group-credits {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.credit-team-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-ui, 'Be Vietnam Pro', sans-serif);
+  font-size: clamp(18px, 1.8vw, 24px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--slate-12, #11181c);
+}
+
+.credit-course-line {
+  font-family: var(--font-ui, 'Be Vietnam Pro', sans-serif);
+  font-size: clamp(13.5px, 1.25vw, 16px);
+  font-weight: 500;
+  color: var(--slate-11, #687076);
+  letter-spacing: 0.01em;
+}
+
+.kinetic-replay-btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--slate-6, #e6e8eb);
+  font-family: var(--font-ui, 'Be Vietnam Pro', sans-serif);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--blue-10, #0588f0);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.kinetic-replay-btn:hover {
+  background: var(--blue-2, #f0f7ff);
+  border-color: var(--blue-8, #5eb1ef);
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   6. PORTAL DOCK & RIGHT-EDGE SCRUBBER
+   -------------------------------------------------------------------------- */
+.hud-portal-dock {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translate(-50%, 24px);
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--slate-6, #e6e8eb);
+  box-shadow:
+    0 16px 36px -6px rgba(17, 24, 28, 0.08),
+    0 4px 12px rgba(0, 144, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hud-portal-dock.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.hud-cta-primary,
+.hud-cta-secondary {
+  border-radius: 999px !important;
+  padding: 10px 20px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.chapter-scrubber {
+  position: absolute;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+
+.scrubber-percent {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue-11, #0d74ce);
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--slate-6, #e6e8eb);
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+
+.scrubber-rail {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 230px;
+  padding: 4px 0;
+}
+
+.scrubber-rail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1.5px;
+  background-color: var(--slate-6, #e6e8eb);
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.scrubber-bar {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  background-color: var(--blue-9, #0090ff);
+  transform: translateX(-50%);
+  z-index: 2;
+  transition: height 0.08s linear;
+}
+
+.scrubber-node {
+  position: relative;
+  z-index: 3;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 1.5px solid var(--slate-7, #d7dfe3);
+  color: var(--slate-11, #687076);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scrubber-node:hover {
+  border-color: var(--blue-9, #0090ff);
+  color: var(--blue-10, #0588f0);
+  transform: scale(1.1);
+}
+
+.scrubber-node.active {
+  background-color: var(--blue-9, #0090ff);
+  border-color: var(--blue-9, #0090ff);
+  color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(0, 144, 255, 0.16);
+  transform: scale(1.12);
+}
+
+.node-num {
+  font-family: var(--font-academic, 'STIX Two Text', serif);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .dream-thought-line.is-past-echo {
+    display: none;
+  }
+
+  .kinetic-brand-stage {
+    top: 64%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    align-items: center;
+    text-align: center;
+  }
+
+  .kinetic-group-credits {
+    align-items: center;
+  }
+
+  .hud-portal-dock {
+    bottom: 18px;
+    width: calc(100% - 32px);
+    justify-content: center;
+    flex-wrap: wrap;
+    border-radius: 16px;
+  }
+
+  .chapter-scrubber {
+    right: 12px;
+  }
+
+  .scrubber-rail {
+    height: 180px;
+  }
+}

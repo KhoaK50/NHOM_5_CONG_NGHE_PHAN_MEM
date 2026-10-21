@@ -1,0 +1,156 @@
+<mxfile host="app.diagrams.net" modified="2026-10-16T23:11:00.000Z" agent="Antigravity" version="24.0.0" type="device">
+  <diagram id="ad2_diagram_v5" name="AD2 - Tra cuu, Preview va Tai ve">
+    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="920" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- TIÊU ĐỀ -->
+        <mxCell id="title_ad2" value="ACTIVITY DIAGRAM 2: LUỒNG TRA CỨU, XEM TRƯỚC (PREVIEW) &amp; TẢI TÀI LIỆU" style="text;html=1;align=center;verticalAlign=middle;fontSize=15;fontStyle=1;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="80" y="15" width="920" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="sub_ad2" value="Chuẩn ký hiệu OMG UML 2.5: UC05 (Tìm kiếm) + UC06 (Xem trước) + UC12 (Tải tài liệu) + UC01 (Đăng nhập)" style="text;html=1;align=center;verticalAlign=middle;fontSize=11.5;fontStyle=2;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="80" y="40" width="920" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- SWIMLANE 1: NGƯỜI DÙNG -->
+        <mxCell id="swimlane_user" value="NGƯỜI DÙNG (GUEST / SINH VIÊN)" style="swimlane;whiteSpace=wrap;html=1;startSize=40;fillColor=#E2E8F0;swimlaneFillColor=#F8FAFC;strokeColor=#475569;strokeWidth=1.5;fontStyle=1;fontSize=13;fontColor=#1E293B;" vertex="1" parent="1">
+          <mxGeometry x="80" y="75" width="430" height="790" as="geometry" />
+        </mxCell>
+
+        <mxCell id="start_node_ad2" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#1E293B;strokeColor=#1E293B;strokeWidth=2;" vertex="1" parent="swimlane_user">
+          <mxGeometry x="200" y="55" width="30" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="u_act1" value="1. Nhập từ khóa tìm kiếm &amp;&#xa;Chọn bộ lọc môn học / học kỳ (UC05)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#0284C7;strokeWidth=1.5;fontSize=12;fontColor=#0F172A;" vertex="1" parent="swimlane_user">
+          <mxGeometry x="85" y="115" width="260" height="58" as="geometry" />
+        </mxCell>
+
+        <mxCell id="u_act2" value="3. Chọn tài liệu từ danh sách&#xa;để mở trang xem chi tiết (UC06)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#0284C7;strokeWidth=1.5;fontSize=12;fontColor=#0F172A;" vertex="1" parent="swimlane_user">
+          <mxGeometry x="85" y="235" width="260" height="56" as="geometry" />
+        </mxCell>
+
+        <mxCell id="u_act3" value="4. Nhấn nút &quot;Tải tài liệu về máy&quot;&#xa;hoặc &quot;Lưu Bookmark&quot; (UC12)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#0284C7;strokeWidth=1.5;fontSize=12;fontColor=#0F172A;" vertex="1" parent="swimlane_user">
+          <mxGeometry x="85" y="425" width="260" height="58" as="geometry" />
+        </mxCell>
+
+        <mxCell id="u_act_login" value="Nhập thông tin trên Modal Đăng nhập&#xa;&amp; Xác thực tài khoản Sinh viên (UC01)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1.5;fontSize=12;fontColor=#92400E;" vertex="1" parent="swimlane_user">
+          <mxGeometry x="85" y="610" width="260" height="58" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_u_start" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="swimlane_user" source="start_node_ad2" target="u_act1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- SWIMLANE 2: HỆ THỐNG -->
+        <mxCell id="swimlane_sys2" value="HỆ THỐNG 5SHARE (WEB CLIENT &amp; API)" style="swimlane;whiteSpace=wrap;html=1;startSize=40;fillColor=#BAE6FD;swimlaneFillColor=#F0F9FF;strokeColor=#0284C7;strokeWidth=1.5;fontStyle=1;fontSize=13;fontColor=#0369A1;" vertex="1" parent="1">
+          <mxGeometry x="510" y="75" width="500" height="790" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s_act1" value="2. Truy vấn FTS CSDL (status = APPROVED)&#xa;&amp; Trả về danh sách tài liệu công khai" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#0284C7;strokeWidth=1.5;fontSize=12;fontColor=#0F172A;" vertex="1" parent="swimlane_sys2">
+          <mxGeometry x="110" y="115" width="280" height="58" as="geometry" />
+        </mxCell>
+
+        <!-- Decision Node D1: Hình thoi rỗng chuẩn UML 2.5 -->
+        <mxCell id="s_dec1" value="" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1.5;" vertex="1" parent="swimlane_sys2">
+          <mxGeometry x="220" y="239" width="60" height="48" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s_preview_guest" value="Hiển thị Preview giới hạn&#xa;tối đa 3 trang đầu&#xa;(G5-FR02)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1.5;fontSize=11;fontColor=#92400E;" vertex="1" parent="swimlane_sys2">
+          <mxGeometry x="65" y="330" width="165" height="58" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s_preview_user" value="Hiển thị Full PDF Preview&#xa;đọc toàn văn tài liệu&#xa;(G5-FR03)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#DCFCE7;strokeColor=#16A34A;strokeWidth=1.5;fontSize=11;fontColor=#166534;" vertex="1" parent="swimlane_sys2">
+          <mxGeometry x="270" y="330" width="165" height="58" as="geometry" />
+        </mxCell>
+
+        <!-- Merge Node M1: Gom 2 nhánh Preview -->
+        <mxCell id="s_merge1" value="" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1.5;" vertex="1" parent="swimlane_sys2">
+          <mxGeometry x="225" y="434" width="50" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Decision Node D2: Kiểm tra phiên đăng nhập khi Tải về -->
+        <mxCell id="s_dec2" value="" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1.5;" vertex="1" parent="swimlane_sys2">
+          <mxGeometry x="220" y="530" width="60" height="48" as="geometry" />
+        </mxCell>
+
+        <!-- Merge Node M2: Gom luồng đã đăng nhập và luồng xác thực Modal -->
+        <mxCell id="s_merge2" value="" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1.5;" vertex="1" parent="swimlane_sys2">
+          <mxGeometry x="225" y="619" width="50" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s_act_down" value="5. Tăng lượt tải (download_count + 1)&#xa;&amp; Tải tệp PDF gốc về máy (UC12)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#DCFCE7;strokeColor=#16A34A;strokeWidth=1.5;fontSize=12;fontColor=#166534;" vertex="1" parent="swimlane_sys2">
+          <mxGeometry x="110" y="700" width="280" height="56" as="geometry" />
+        </mxCell>
+
+        <mxCell id="end_node_ad2" value="" style="ellipse;html=1;shape=endState;fillColor=#1E293B;strokeColor=#1E293B;strokeWidth=2;" vertex="1" parent="swimlane_sys2">
+          <mxGeometry x="430" y="710" width="36" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- Orthogonal Edges (Zero Crossings!) -->
+        <mxCell id="edge_u1_s1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="1" source="u_act1" target="s_act1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_s1_u2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="1" source="s_act1" target="u_act2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="275" />
+              <mxPoint x="295" y="275" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_u2_dec1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="1" source="u_act2" target="s_dec1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_dec1_guest" value="[Khách vãng lai (Guest)]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#D97706;strokeWidth=1.4;fontColor=#92400E;fontStyle=1;fontSize=10.5;labelBackgroundColor=#F0F9FF;" edge="1" parent="swimlane_sys2" source="s_dec1" target="s_preview_guest">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_dec1_user" value="[Đã đăng nhập (User)]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0.5;entryY=0;strokeColor=#16A34A;strokeWidth=1.4;fontColor=#15803D;fontStyle=1;fontSize=10.5;labelBackgroundColor=#F0F9FF;" edge="1" parent="swimlane_sys2" source="s_dec1" target="s_preview_user">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_prev_m1_1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="swimlane_sys2" source="s_preview_guest" target="s_merge1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_prev_m1_2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=1;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="swimlane_sys2" source="s_preview_user" target="s_merge1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_m1_u3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=1;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="1" source="s_merge1" target="u_act3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="565" />
+              <mxPoint x="480" y="565" />
+              <mxPoint x="480" y="529" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_u3_dec2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="1" source="u_act3" target="s_dec2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="295" y="585" />
+              <mxPoint x="760" y="585" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_dec2_guest" value="[Chưa đăng nhập]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.5;entryX=0.5;entryY=0;strokeColor=#DC2626;strokeWidth=1.4;fontColor=#DC2626;fontStyle=1;fontSize=10.5;labelBackgroundColor=#F0F9FF;" edge="1" parent="1" source="s_dec2" target="u_act_login">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="295" y="629" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_login_m2" value="[Xác thực hợp lệ]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#16A34A;strokeWidth=1.5;fontStyle=1;fontSize=10.5;fontColor=#15803D;labelBackgroundColor=#F0F9FF;" edge="1" parent="1" source="u_act_login" target="s_merge2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_dec2_m2" value="[Đã đăng nhập]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#16A34A;strokeWidth=1.5;fontStyle=1;fontColor=#15803D;fontSize=10.5;labelBackgroundColor=#F0F9FF;" edge="1" parent="swimlane_sys2" source="s_dec2" target="s_merge2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_m2_down" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="swimlane_sys2" source="s_merge2" target="s_act_down">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_down_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="swimlane_sys2" source="s_act_down" target="end_node_ad2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

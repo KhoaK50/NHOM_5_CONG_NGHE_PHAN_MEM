@@ -1,0 +1,84 @@
+\subsection{1.1. Mô tả yêu cầu bài toán}
+
+\subsubsection{1.1.1. Bối cảnh bài toán và lý do chọn đề tài}
+Ngành Sư phạm Tin học, Khoa Công nghệ Thông tin -- Trường Đại học Sư phạm TP.HCM đào tạo đội ngũ giáo viên Tin học cho các trường phổ thông và giảng viên các cơ sở giáo dục nghề nghiệp. Chương trình đào tạo mang tính chất đặc thù kép: sinh viên vừa phải nắm vững khối kiến thức chuyên ngành như Cơ sở dữ liệu, Kiến trúc máy tính, Mạng máy tính..., vừa phải rèn luyện chuyên sâu các năng lực nghiệp vụ sư phạm như Lý luận dạy học, Phương pháp dạy học môn Tin học, Ứng dụng CNTT trong dạy học và Thực tập sư phạm tại trường phổ thông.
+
+Trong quá trình học tập và rèn nghề, nhu cầu tiếp cận nguồn học liệu tham khảo chuẩn mực là vô cùng cấp thiết, đặc biệt là các bản Kế hoạch bài dạy được biên soạn theo đúng Công văn số 5512/BGDĐT-GDTrH của Bộ Giáo dục và Đào tạo, cũng như các đề thi kết thúc học phần của khóa trước và bài giảng điện tử. Tuy nhiên, qua khảo sát hiện trạng thực tế, công tác lưu trữ và chia sẻ học liệu hiện nay đang đối mặt với nhiều bất cập lớn:
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item \textbf{Lưu trữ phân tán, khó tìm kiếm:} Tài liệu học tập bị chia nhỏ và lưu trữ phân tán trên nhiều kênh không chuyên dụng như nhóm chat Zalo, Messenger, các bài đăng mạng xã hội hoặc thư mục lưu trữ đám mây cá nhân. Việc tìm kiếm lại tài liệu cũ đòi hỏi nhiều thời gian và công sức.
+    \item \textbf{Nguy cơ mất mát dữ liệu cao:} Các liên kết chia sẻ công cộng thường xuyên bị thu hồi quyền truy cập, hết hạn lưu trữ hoặc mất liên kết sau mỗi học kỳ, gây đứt gãy nguồn tài nguyên giữa các khóa sinh viên.
+    \item \textbf{Chất lượng học liệu không được kiểm soát:} Thiếu cơ chế kiểm duyệt trước khi chia sẻ. Sinh viên dễ tải phải các Kế hoạch bài dạy ``nửa vời'', không chính xác về mục tiêu, tài liệu không đúng chương trình giáo dục phổ thông hiện hành, hoặc các tệp tin chứa nội dung rác.
+    \item \textbf{Trùng lặp và bất tiện trong trải nghiệm:} Không có công cụ kiểm tra trùng lặp tệp tin và thiếu tính năng xem trước trực tiếp, khiến người dùng phải tải toàn bộ tệp về thiết bị mới kiểm tra được nội dung, gây lãng phí băng thông và tài nguyên lưu trữ.
+\end{itemize}
+
+Từ thực tế nêu trên, đề tài ``Hệ thống quản lý và chia sẻ tài liệu học tập cho sinh viên ngành Sư phạm Tin học'' được xây dựng nhằm cung cấp giải pháp số hóa mang tính tập trung, tin cậy và có kiểm duyệt, đáp ứng chính xác nhu cầu học tập và giảng dạy của sinh viên chuyên ngành.
+
+\subsubsection{1.1.2. Mục tiêu của hệ thống}
+Hệ thống 5Share được thiết kế nhằm đạt được các mục tiêu cụ thể sau:
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item \textbf{Chuẩn hóa kho lưu trữ học liệu số:} Xây dựng kho học liệu trực tuyến có cấu trúc khoa học, phân loại rõ ràng theo Khung chương trình đào tạo ngành Sư phạm Tin học của Trường ĐH Sư phạm TP.HCM gồm các khối kiến thức đại cương, cơ sở ngành và nghiệp vụ sư phạm.
+    \item \textbf{Kiểm soát chặt chẽ chất lượng học liệu:} Thiết lập quy trình kiểm duyệt nội dung hai tầng (Hệ thống kiểm duyệt theo quy ước nhất định và Quản trị viên thẩm định lại) trước khi xuất bản công khai, bảo đảm tài liệu trên hệ thống đạt chuẩn sư phạm và tính chính xác khoa học.
+    \item \textbf{Tối ưu hóa trải nghiệm tra cứu và khai thác:} Tích hợp trình xem trực tiếp PDF trên nền tảng web. Cung cấp cơ chế phân quyền xem thử 3 trang đầu cho khách vãng lai và cho phép người dùng đăng nhập đọc toàn văn và tải tệp tin gốc.
+    \item \textbf{Khuyến khích văn hóa chia sẻ học thuật:} Xây dựng các chức năng đánh giá chất lượng (1--5 sao), bình luận học thuật, báo cáo nội dung không phù hợp và cơ chế tích lũy điểm thưởng đóng góp nhằm thúc đẩy tinh thần học tập.
+\end{itemize}
+
+\subsubsection{1.1.3. Các tác nhân tham gia hệ thống}
+Hệ thống 5Share được thiết kế nhằm phục vụ 3 nhóm tác nhân chính tham gia vào chu trình quản lý và khai thác học liệu, với trách nhiệm và phạm vi quyền hạn được phân định rõ ràng như sau:
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|p{3.8cm}|X|}
+\hline
+\rowcolor[HTML]{EAEAEA}
+\textbf{Tác nhân} & \textbf{Phạm vi trách nhiệm và quyền hạn chính} \\
+\hline
+\textbf{Khách vãng lai} & 
+\begin{itemize}[leftmargin=*,nosep]
+    \item Khám phá kho tài liệu công khai.
+    \item Tra cứu và tìm kiếm tài liệu theo các từ khóa, các khối kiến thức.
+    \item Xem bản đọc thử giới hạn tối đa 3 trang đầu của tài liệu.
+    \item Khi thực hiện tải về hoặc đánh dấu lưu hoặc tải lên tài liệu mới, hệ thống yêu cầu xác thực đăng nhập.
+\end{itemize} \\
+\hline
+\textbf{Sinh viên\newline (hoặc người học nói chung)} & 
+\begin{itemize}[leftmargin=*,nosep]
+    \item Quản lý thông tin hồ sơ cá nhân và thay đổi mật khẩu tài khoản.
+    \item Đọc toàn văn tài liệu trực tiếp trên trình duyệt.
+    \item Tải tệp tin chuẩn hóa (.pdf) về thiết bị cá nhân.
+    \item Đánh dấu tài liệu yêu thích vào ``Tủ tài liệu cá nhân''.
+    \item Đóng góp học liệu mới kèm theo các thông tin metadata bắt buộc.
+    \item Theo dõi tiến trình kiểm duyệt của tài liệu do bản thân tải lên.
+    \item Đánh giá điểm chất lượng và tham gia bình luận, trao đổi.
+    \item Gửi báo cáo vi phạm khi phát hiện tài liệu có dấu hiệu sai phạm.
+\end{itemize} \\
+\hline
+\textbf{Quản trị viên} & 
+\begin{itemize}[leftmargin=*,nosep]
+    \item Quản lý hàng đợi tài liệu đang chờ duyệt.
+    \item Thẩm định tài liệu và đưa ra quyết định Duyệt hoặc Từ chối kèm lý do phản hồi.
+    \item Quản lý danh mục môn học, khối kiến thức theo chương trình đào tạo.
+    \item Tiếp nhận, thẩm tra và xử lý các báo cáo vi phạm.
+    \item Quản lý danh sách tài khoản người dùng trong hệ thống.
+    \item Theo dõi bảng thống kê về lượt xem, lượt tải và mức độ tương tác.
+\end{itemize} \\
+\hline
+\end{tabularx}
+\caption{Danh sách các tác nhân và quyền hạn trong hệ thống 5Share}
+\label{tab:tac_nhan_5share}
+\end{table}
+
+\subsubsection{1.1.4. Phạm vi dự án}
+Để đảm bảo tính khả thi và hoàn thành dự án đúng tiến độ với chất lượng cao nhất, phạm vi bài toán được xác định cụ thể như sau:
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item \textbf{Phạm vi thực hiện:} Toàn bộ chu trình vòng đời của tài liệu học tập: tiếp nhận tệp tin, kiểm tra tự động, kiểm duyệt chuyên môn, lưu trữ đám mây, phân quyền đọc/tải theo vai trò, tương tác đánh giá, phản hồi vi phạm và thống kê.
+    \item \textbf{Phạm vi không thực hiện:} Nhằm tập trung nguồn lực phát triển các tính năng cốt lõi và phù hợp với quy mô môn học, hệ thống không triển khai:
+    \begin{enumerate}[label=(\arabic*),leftmargin=*,noitemsep]
+        \item Nhận dạng ký tự quang học OCR từ tệp quét hình ảnh;
+        \item Tự động tóm tắt nội dung bằng trí tuệ nhân tạo;
+        \item Kiểm tra đạo văn tự động;
+        \item Tích hợp cổng thanh toán trực tuyến thương mại;
+        \item Xây dựng phòng chat trực tiếp thời gian thực.
+    \end{enumerate}
+\end{itemize}

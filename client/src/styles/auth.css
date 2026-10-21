@@ -1,0 +1,646 @@
+/* ==========================================================================
+   5SHARE DISTINCTIVE SAAS AUTHENTICATION DESIGN
+   ========================================================================== */
+
+/* Page canvas */
+.auth-page-wrapper {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background-color: var(--slate-2, #f9f9fb);
+  background-image:
+    radial-gradient(var(--slate-6, #e6e8eb) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+}
+
+/* ==========================================================================
+   CENTERED MINIMALIST PRECISION SAAS CARD
+   ========================================================================== */
+.auth-card-centered {
+  width: 100%;
+  max-width: 460px;
+  background-color: #ffffff;
+  border: 1px solid var(--slate-6, #e6e8eb);
+  border-radius: 16px;
+  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 34px 30px;
+  margin: 0 auto;
+  animation: fadeInCard 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes fadeInCard {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-header-centered {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.auth-header-centered .form-title {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--slate-12, #11181c);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.02em;
+}
+
+.auth-header-centered .form-subtitle {
+  font-size: 13px;
+  color: var(--slate-11, #687076);
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Tab Switcher dạng Segmented Control có Glider Trượt Cơ học */
+.segmented-tab-nav {
+  position: relative;
+  display: flex;
+  background-color: var(--slate-3, #f0f0f3);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 18px;
+  border: 1px solid var(--slate-6, #e6e8eb);
+  user-select: none;
+}
+
+.segmented-tab-glider {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  background-color: #ffffff;
+  border-radius: 7px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.segmented-tab-glider.to-right {
+  transform: translateX(100%);
+}
+
+.segmented-tab-btn {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--slate-11, #687076);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 7px;
+  transition: color 0.2s ease;
+  text-align: center;
+}
+
+.segmented-tab-btn.active {
+  color: var(--slate-12, #11181c);
+}
+
+/* ==========================================================================
+   SLIDING CAROUSEL VIEWPORT
+   ========================================================================== */
+.auth-carousel-viewport {
+  overflow: hidden;
+  width: 100%;
+}
+
+.auth-carousel-track {
+  display: flex;
+  width: 200%;
+  transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.auth-carousel-track.is-register {
+  transform: translateX(-50%);
+}
+
+.auth-carousel-slide {
+  width: 50%;
+  box-sizing: border-box;
+  padding: 0 2px;
+  opacity: 0.35;
+  transition: opacity 0.32s ease;
+  pointer-events: none;
+}
+
+.auth-carousel-slide.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ==========================================================================
+   MULTI-STAGE PHYSICAL VIEW TRANSITIONS
+   ========================================================================== */
+.view-stage-wrapper {
+  width: 100%;
+  position: relative;
+  will-change: transform, opacity;
+}
+
+.view-stage-wrapper.exit-forward {
+  animation: stageExitForward 0.16s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.view-stage-wrapper.exit-backward {
+  animation: stageExitBackward 0.16s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.view-stage-wrapper.enter-forward {
+  animation: stageEnterForward 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.view-stage-wrapper.enter-backward {
+  animation: stageEnterBackward 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes stageExitForward {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+@keyframes stageExitBackward {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@keyframes stageEnterForward {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes stageEnterBackward {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 2-Column Grid Row for Compact Height */
+.form-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-row-grid .form-field {
+  margin-bottom: 0;
+}
+
+/* Compact Horizontal Micro-Pills for Password Rules */
+.pwd-pills-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  margin-bottom: 8px;
+  animation: slideDown 0.2s ease;
+}
+
+.pwd-pill {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.pwd-pill.pending {
+  background-color: var(--slate-3, #f0f0f3);
+  color: var(--slate-11, #687076);
+  border: 1px solid var(--slate-6, #e6e8eb);
+}
+
+.pwd-pill.pending .pill-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--slate-9, #8b939a);
+  display: inline-block;
+}
+
+.pwd-pill.valid {
+  background-color: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.pwd-pill.invalid {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.form-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--slate-12, #11181c);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.02em;
+}
+
+.form-subtitle {
+  font-size: 13.5px;
+  color: var(--slate-11, #687076);
+  margin: 0 0 20px 0;
+}
+
+/* Inputs & Wrappers */
+.form-field {
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.form-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--slate-12, #11181c);
+  margin-bottom: 6px;
+}
+
+.input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-box .field-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--slate-9, #8b939a);
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
+.input-box input,
+.input-box select {
+  width: 100%;
+  height: 42px;
+  padding: 10px 14px 10px 38px;
+  border: 1.5px solid var(--slate-7, #d7dfe3);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--slate-12, #11181c);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+/* Chống trình duyệt Chrome/Edge tự đổi màu nền Vàng/Xanh khi Autofill (Chuẩn Vectoria) */
+.input-box input:-webkit-autofill,
+.input-box input:-webkit-autofill:hover,
+.input-box input:-webkit-autofill:focus,
+.input-box input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 50px #ffffff inset !important;
+  -webkit-text-fill-color: var(--slate-12, #11181c) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.input-box input:focus,
+.input-box select:focus {
+  border-color: #0077e6;
+  box-shadow: 0 0 0 3px rgba(0, 119, 230, 0.12);
+}
+
+.input-box input:focus + .field-icon,
+.input-box select:focus + .field-icon {
+  color: #0077e6;
+}
+
+.input-box input.has-toggle {
+  padding-right: 42px;
+}
+
+.btn-toggle-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--slate-9, #8b939a);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+}
+
+.btn-toggle-eye:hover {
+  color: #0077e6;
+}
+
+.caps-badge {
+  position: absolute;
+  right: 36px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #f59e0b;
+  display: none;
+  pointer-events: none;
+}
+
+.caps-badge.show {
+  display: flex;
+}
+
+/* Real-time states */
+.input-box.error input {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+.input-box.success input {
+  border-color: #22c55e !important;
+}
+
+.feedback-msg {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 4px;
+  display: none;
+}
+
+.feedback-msg.show {
+  display: block;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pwd-progress-track {
+  height: 4px;
+  background-color: var(--slate-4, #e8e8ec);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.pwd-progress-bar {
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+}
+
+/* Options row */
+.options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2px;
+  margin-bottom: 18px;
+  font-size: 13px;
+}
+
+.checkbox-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--slate-11, #687076);
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-control input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #0077e6;
+  cursor: pointer;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #0077e6;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+/* Submit Action Button */
+.btn-primary-action {
+  width: 100%;
+  height: 42px;
+  background: linear-gradient(135deg, #0077e6, #005ecb);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 119, 230, 0.22);
+}
+
+.btn-primary-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 119, 230, 0.32);
+}
+
+.btn-primary-action:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary-action:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* Divider & Google OAuth Button Ở DƯỚI */
+.action-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 18px 0 14px;
+  color: var(--slate-11, #687076);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.action-divider::before,
+.action-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--slate-6, #e6e8eb);
+}
+
+.action-divider::before { margin-right: 12px; }
+.action-divider::after { margin-left: 12px; }
+
+.btn-google-sso {
+  width: 100%;
+  height: 42px;
+  background: #ffffff;
+  border: 1.5px solid var(--slate-7, #d7dfe3);
+  border-radius: 8px;
+  color: var(--slate-12, #11181c);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.15s ease;
+}
+
+.btn-google-sso:hover {
+  background-color: var(--slate-2, #f9f9fb);
+  border-color: var(--slate-8, #c1c8cd);
+}
+
+/* Toast */
+#static-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 99999;
+  min-width: 320px;
+  background: #ffffff;
+  border: 1px solid var(--slate-6, #e6e8eb);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: translateX(120%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#static-toast.show {
+  transform: translateX(0);
+}
+
+.toast-body h4 {
+  margin: 0 0 2px 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--slate-12, #11181c);
+}
+
+.toast-body p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--slate-11, #687076);
+}
+
+.spin-loader {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive Mobile */
+@media (max-width: 540px) {
+  .auth-card-centered {
+    padding: 24px 18px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  }
+  .form-row-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .pwd-pills-row {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+/* OTP Inputs */
+.otp-container {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.otp-cell {
+  width: 44px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1.5px solid var(--slate-7, #d7dfe3);
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--slate-12, #11181c);
+  outline: none;
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+}
+
+.otp-cell:focus {
+  border-color: #0077e6;
+  box-shadow: 0 0 0 3px rgba(0, 119, 230, 0.12);
+}

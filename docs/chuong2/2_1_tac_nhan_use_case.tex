@@ -1,0 +1,76 @@
+\subsection{2.1. Xác định tác nhân và ca sử dụng hệ thống}
+
+\subsubsection{2.1.1. Xác định danh sách tác nhân và mối quan hệ kế thừa}
+Kế thừa kết quả phân tích phạm vi quyền hạn tại Mục 1.1.3 (Chương 1), hệ thống 5Share có 03 tác nhân con người trực tiếp tương tác với các chức năng phần mềm. Để mô hình hóa chính xác trong biểu đồ UML Use Case, các tác nhân và mối quan hệ kế thừa (\textit{Generalization}) giữa chúng được xác định cụ thể tại Bảng~\ref{tab:actors_c2}:
+
+\begin{table}[H]
+\centering
+\footnotesize\linespread{1.05}\selectfont
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\textwidth}{|c|p{2.8cm}|p{2.8cm}|X|}
+\hline
+\rowcolor[HTML]{EAEAEA}
+\textbf{STT} & \textbf{Tên tác nhân} & \textbf{Ký hiệu / Vai trò} & \textbf{Mô tả phạm vi tương tác và mối quan hệ kế thừa} \\
+\hline
+1 & \textbf{Khách vãng lai\newline(Guest)} & Người dùng chưa xác thực & Tác nhân đại diện cho người dùng truy cập hệ thống khi chưa đăng nhập. Khách vãng lai được phép tra cứu danh mục, tìm kiếm và lọc tài liệu công khai (\texttt{UC05}), xem bản đọc thử giới hạn tối đa 3 trang đầu của tài liệu PDF (\texttt{UC06}), thực hiện đăng ký tài khoản mới (\texttt{UC02}) hoặc đăng nhập hệ thống (\texttt{UC01}). \\
+\hline
+2 & \textbf{Sinh viên\newline(Student)} & Kế thừa từ Khách vãng lai & Tác nhân đại diện cho sinh viên ngành Sư phạm Tin học đã đăng nhập thành công. Trong mô hình UML, tác nhân Sinh viên có mối quan hệ kế thừa (\textit{Generalization}) từ tác nhân Khách vãng lai: Sinh viên thừa hưởng toàn bộ quyền tra cứu, đồng thời được mở khóa quyền đọc toàn văn (Full PDF Preview), tải tệp gốc và lưu vào tủ tài liệu cá nhân (\texttt{UC12}), đóng góp học liệu mới (\texttt{UC07}), theo dõi tiến trình kiểm duyệt và thống kê lượt xem/tải (\texttt{UC11}), đánh giá sao và bình luận học thuật (\texttt{UC13}), gửi báo cáo vi phạm (\texttt{UC04}) và nhận chuông thông báo hệ thống (\texttt{UC03}). \\
+\hline
+3 & \textbf{Quản trị viên\newline(Admin)} & Ban kiểm duyệt học liệu & Tác nhân đại diện cho giảng viên phụ trách hoặc trợ giảng chuyên môn của Khoa Công nghệ Thông tin sử dụng tài khoản quản trị được cấp sẵn để đăng nhập (\texttt{UC01}). Quản trị viên chịu trách nhiệm thẩm định hàng đợi tài liệu chờ duyệt theo 8 tiêu chí chuyên môn, phê duyệt hoặc từ chối kèm lý do, xử lý các báo cáo vi phạm (\texttt{UC09}), quản lý danh mục môn học theo khung chương trình đào tạo (\texttt{UC10}) và theo dõi số liệu thống kê vận hành hệ thống. \\
+\hline
+\end{tabularx}
+\caption{Danh sách các tác nhân và mối quan hệ kế thừa trong hệ thống 5Share}
+\label{tab:actors_c2}
+\end{table}
+
+\subsubsection{2.1.2. Xác định danh sách ca sử dụng và ma trận truy vết yêu cầu}
+Để bảo đảm tính đầy đủ và khả năng truy vết hai chiều (\textit{Requirement Traceability}) giữa đặc tả nghiệp vụ và thiết kế phần mềm, toàn bộ 13 yêu cầu chức năng (từ \texttt{G5-FR01} đến \texttt{G5-FR13} tại Bảng 1.4 -- Chương 1) được ánh xạ thành 13 ca sử dụng (từ \texttt{UC01} đến \texttt{UC13}). Danh mục các ca sử dụng và ma trận truy vết yêu cầu được trình bày chi tiết tại Bảng~\ref{tab:uc_traceability}:
+
+\begin{table}[H]
+\centering
+\footnotesize\linespread{1.05}\selectfont
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\textwidth}{|c|p{3.0cm}|p{2.5cm}|p{2.2cm}|X|}
+\hline
+\rowcolor[HTML]{EAEAEA}
+\textbf{Mã UC} & \textbf{Tên ca sử dụng} & \textbf{Tác nhân chính} & \textbf{Mã yêu cầu truy vết} & \textbf{Tóm tắt mục tiêu nghiệp vụ} \\
+\hline
+\textbf{UC01} & Đăng nhập hệ thống & Khách vãng lai, Sinh viên, Quản trị viên & \texttt{G5-FR03} & Xác thực danh tính người dùng bằng Email và Mật khẩu (hoặc Google OAuth 2.0), cấp phát mã phiên JWT và phân quyền theo vai trò. \\
+\hline
+\textbf{UC02} & Đăng ký tài khoản & Khách vãng lai & \texttt{G5-FR03} & Khởi tạo tài khoản sinh viên mới trên hệ thống, kiểm tra định dạng dữ liệu, mã hóa mật khẩu bằng \texttt{bcrypt} và lưu trữ thông tin hồ sơ. \\
+\hline
+\textbf{UC03} & Xem thông báo hệ thống & Sinh viên & \texttt{G5-FR11}\newline(liên kết \texttt{G5-FR07}) & Hiển thị danh sách thông báo thời gian thực trên biểu tượng chuông khi tài liệu được duyệt, bị từ chối hoặc có tương tác học thuật mới. \\
+\hline
+\textbf{UC04} & Báo cáo tài liệu vi phạm & Sinh viên & \texttt{G5-FR10} & Gửi cảnh báo kèm lý do chi tiết đối với tài liệu sai kiến thức, lỗi hiển thị hoặc vi phạm bản quyền về hàng đợi xử lý của Quản trị viên. \\
+\hline
+\textbf{UC05} & Tìm kiếm và lọc tài liệu & Khách vãng lai, Sinh viên & \texttt{G5-FR01}\newline(liên kết \texttt{G5-FR08}) & Tra cứu học liệu công khai bằng cơ chế tìm kiếm toàn văn (Full-Text Search) kết hợp bộ lọc đa tiêu chí theo môn học, học kỳ và loại tài liệu. \\
+\hline
+\textbf{UC06} & Xem trước tài liệu & Khách vãng lai, Sinh viên & \texttt{G5-FR02},\newline\texttt{G5-FR03} & Hiển thị trực tiếp nội dung tệp PDF trên trình duyệt web: giới hạn tối đa 3 trang đầu đối với Khách vãng lai và hiển thị toàn văn đối với Sinh viên. \\
+\hline
+\textbf{UC07} & Đóng góp tài liệu & Sinh viên & \texttt{G5-FR05},\newline\texttt{G5-FR06},\newline\texttt{G5-FR13} & Tải tệp tin \texttt{.pdf} kèm biểu mẫu metadata bắt buộc lên hệ thống, kích hoạt kiểm tra kỹ thuật tự động và đưa tài liệu vào hàng đợi chờ duyệt (\texttt{PENDING}). \\
+\hline
+\textbf{UC08} & Kiểm tra tài liệu trùng lặp & Hệ thống tự động (từ \texttt{UC07}) & \texttt{G5-FR13}\newline(hỗ trợ \texttt{G5-FR05}) & Tính toán mã băm \texttt{SHA-256} từ chuỗi nhị phân của tệp PDF tải lên và đối chiếu với cơ sở dữ liệu nhằm ngăn chặn lưu trữ tệp tin trùng lặp. \\
+\hline
+\textbf{UC09} & Kiểm duyệt tài liệu & Quản trị viên & \texttt{G5-FR07},\newline\texttt{G5-FR06},\newline\texttt{G5-FR10} & Thẩm định toàn văn tài liệu chờ duyệt theo 8 tiêu chí, chuyển trạng thái sang \texttt{APPROVED} hoặc \texttt{REJECTED} kèm lý do phản hồi, và xử lý ẩn/xóa tài liệu vi phạm. \\
+\hline
+\textbf{UC10} & Quản lý danh mục môn học & Quản trị viên & \texttt{G5-FR08} & Thêm mới, cập nhật, kích hoạt hoặc vô hiệu hóa các học phần và khối kiến thức theo khung chương trình đào tạo ngành Sư phạm Tin học. \\
+\hline
+\textbf{UC11} & Theo dõi trạng thái tài liệu & Sinh viên,\newline Quản trị viên & \texttt{G5-FR06},\newline\texttt{G5-FR12} & Theo dõi tiến trình xét duyệt tài liệu đã đóng góp (\texttt{PENDING}, \texttt{APPROVED}, \texttt{REJECTED}) và xem biểu đồ thống kê lượt xem, lượt tải trên hệ thống. \\
+\hline
+\textbf{UC12} & Tải tài liệu về máy & Sinh viên & \texttt{G5-FR04}\newline(liên kết \texttt{G5-FR02}) & Tải tệp tin PDF gốc đã được phê duyệt từ máy chủ đám mây về thiết bị cá nhân và hỗ trợ đánh dấu lưu vào Tủ tài liệu cá nhân (Bookmark). \\
+\hline
+\textbf{UC13} & Đánh giá và bình luận tài liệu & Sinh viên & \texttt{G5-FR09} & Chấm điểm chất lượng học liệu theo thang 1--5 sao (tự động tính điểm trung bình) và đăng tải bình luận trao đổi chuyên môn dưới trang chi tiết tài liệu. \\
+\hline
+\end{tabularx}
+\caption{Danh sách 13 ca sử dụng và ma trận truy vết yêu cầu chức năng (G5-FR01 -- G5-FR13)}
+\label{tab:uc_traceability}
+\end{table}
+
+\subsubsection{2.1.3. Phân tích mối quan hệ giữa các ca sử dụng}
+Trong mô hình Use Case của hệ thống 5Share, ngoài các đường kết nối tương tác trực tiếp (\textit{Association}) giữa tác nhân và ca sử dụng, các mối quan hệ phụ thuộc chuẩn UML 2.5 bao gồm quan hệ bao hàm (\texttt{<<include>>}) và quan hệ mở rộng (\texttt{<<extend>>}) được xác lập chặt chẽ như sau:
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item \textbf{Quan hệ bao hàm (\texttt{<<include>>}):} Mũi tên nét đứt có nhãn \texttt{<<include>>} hướng từ ca sử dụng cơ sở \texttt{UC07} (Đóng góp tài liệu) sang ca sử dụng bắt buộc \texttt{UC08} (Kiểm tra tài liệu trùng lặp). Mối quan hệ này quy định rằng mỗi khi sinh viên thực hiện đóng góp tệp tin PDF mới, hệ thống bắt buộc phải kích hoạt quy trình tính toán và đối chiếu mã băm \texttt{SHA-256} trước khi quyết định lưu trữ tệp tin.
+    \item \textbf{Quan hệ mở rộng (\texttt{<<extend>>}):} Mũi tên nét đứt có nhãn \texttt{<<extend>>} hướng từ ca sử dụng mở rộng về ca sử dụng cơ sở khi thỏa mãn điều kiện rẽ nhánh cụ thể. Trong hệ thống 5Share có hai cụm quan hệ mở rộng chính: (1) \texttt{UC02} (Đăng ký tài khoản) mở rộng cho \texttt{UC01} (Đăng nhập hệ thống) khi người dùng mở cửa sổ đăng nhập nhưng chưa có tài khoản và chọn chuyển sang biểu mẫu đăng ký; (2) Các ca sử dụng \texttt{UC12} (Tải tài liệu về máy), \texttt{UC13} (Đánh giá và bình luận) và \texttt{UC04} (Báo cáo tài liệu vi phạm) mở rộng cho \texttt{UC06} (Xem trước tài liệu) khi sinh viên đã đăng nhập đang đọc nội dung tài liệu trên trình xem trực tuyến và quyết định thực hiện các thao tác khai thác hoặc tương tác tương ứng.
+\end{itemize}

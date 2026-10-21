@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="Antigravity" version="24.7.17">
+  <diagram name="DFD Cap 0 - Ngu canh" id="dfd_page">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1980" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="g" value="<b>KHÁCH VÃNG LAI</b><br><i>(Guest)</i>" style="shape=ext;double=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#0F172A;strokeWidth=2;fontColor=#0F172A;fontSize=13;" vertex="1" parent="1"><mxGeometry x="90" y="170" width="260" height="100" as="geometry" /></mxCell>
+        <mxCell id="s" value="<b>SINH VIÊN</b><br><i>(Student)</i>" style="shape=ext;double=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#0F172A;strokeWidth=2;fontColor=#0F172A;fontSize=13;" vertex="1" parent="1"><mxGeometry x="90" y="680" width="260" height="100" as="geometry" /></mxCell>
+        <mxCell id="a" value="<b>QUẢN TRỊ VIÊN</b><br><i>(Admin)</i>" style="shape=ext;double=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#0F172A;strokeWidth=2;fontColor=#0F172A;fontSize=13;" vertex="1" parent="1"><mxGeometry x="1580" y="440" width="260" height="100" as="geometry" /></mxCell>
+        <mxCell id="p0" value="<b>Tiến trình 0</b><hr/><b>HỆ THỐNG QUẢN LÝ VÀ<br>CHIA SẺ TÀI LIỆU HỌC TẬP<br>(5SHARE)</b>" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#EFF6FF;strokeColor=#1D4ED8;strokeWidth=2;fontColor=#0F172A;fontSize=13;" vertex="1" parent="1"><mxGeometry x="760" y="380" width="410" height="210" as="geometry" /></mxCell>
+        <mxCell id="e1" value="Từ khóa tìm kiếm, bộ lọc,<br>yêu cầu xem thử &amp; thông tin đăng ký" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1D4ED8;strokeWidth=2;startArrow=none;endArrow=classic;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="g" target="p0"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" value="Danh sách học liệu công khai,<br>bản xem thử 3 trang đầu &amp; kết quả xác thực" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0F766E;strokeWidth=2;startArrow=none;endArrow=classic;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="p0" target="g"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" value="Tệp PDF đóng góp, Metadata, đánh giá sao,<br>bình luận, báo cáo vi phạm &amp; yêu cầu tải tệp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1D4ED8;strokeWidth=2;startArrow=none;endArrow=classic;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="s" target="p0"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" value="Tài liệu PDF toàn văn, tệp tải về, trạng thái duyệt,<br>thông báo hệ thống &amp; tủ tài liệu cá nhân" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0F766E;strokeWidth=2;startArrow=none;endArrow=classic;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="p0" target="s"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e5" value="Quyết định duyệt/từ chối kèm lý do,<br>thông tin môn học &amp; quyết định xử lý vi phạm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7E22CE;strokeWidth=2;startArrow=none;endArrow=classic;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="a" target="p0"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e6" value="Hàng đợi tài liệu chờ duyệt, danh sách báo cáo<br>vi phạm &amp; số liệu thống kê Dashboard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0F766E;strokeWidth=2;startArrow=none;endArrow=classic;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="p0" target="a"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

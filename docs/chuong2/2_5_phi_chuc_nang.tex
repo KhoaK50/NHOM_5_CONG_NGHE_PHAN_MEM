@@ -1,0 +1,59 @@
+\subsection{2.5. Đặc tả các yêu cầu phi chức năng}
+Bên cạnh 13 yêu cầu chức năng cốt lõi, hệ thống 5Share phải đáp ứng các yêu cầu phi chức năng (\textit{Non-Functional Requirements}) nhằm bảo đảm tính dễ sử dụng, hiệu năng phản hồi, an toàn bảo mật và độ tin cậy trong vận hành thực tế.
+
+\subsubsection{2.5.1. Yêu cầu về tính dễ sử dụng và giao diện}
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item \textbf{Tương thích đa thiết bị:} Giao diện người dùng được thiết kế theo hướng thích ứng đa thiết bị (\textit{Responsive Web Design}), hiển thị chuẩn xác trên cả màn hình máy tính để bàn, máy tính xách tay và thiết bị di động của sinh viên.
+    \item \textbf{Trải nghiệm đọc trực tuyến liền mạch:} Tích hợp trình đọc PDF trực tiếp trên nền tảng web có hỗ trợ bộ ký tự Unicode tiếng Việt (CMAP), cho phép sinh viên xem ngay nội dung Kế hoạch bài dạy 5512, đề thi và bài giảng mà không cần cài đặt phần mềm bên thứ ba.
+    \item \textbf{Thông điệp phản hồi trực quan:} Mọi thông báo lỗi xác thực, cảnh báo vượt dung lượng, cảnh báo trùng lặp tệp tin và lý do từ chối kiểm duyệt đều được hiển thị bằng tiếng Việt rõ ràng, lịch sự và hướng dẫn cụ thể cách khắc phục.
+\end{itemize}
+
+\subsubsection{2.5.2. Yêu cầu về hiệu năng và tốc độ phản hồi}
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item \textbf{Tốc độ xác thực phiên làm việc:} Thời gian xử lý yêu cầu đăng nhập, kiểm tra mã phiên JWT và phản hồi điều hướng giao diện đạt dưới 1 giây trong điều kiện mạng tiêu chuẩn.
+    \item \textbf{Hiệu năng tìm kiếm và lọc học liệu:} Các truy vấn tìm kiếm toàn văn (Full-Text Search) kết hợp lọc theo môn học, học kỳ và phân trang (12 tài liệu/trang) trả kết quả trong thời gian dưới 2 giây.
+    \item \textbf{Tốc độ hiển thị bản xem trước và kiểm tra mã băm:} Thời gian tải và hiển thị 3 trang đầu tiên của tài liệu PDF trên trình duyệt đạt dưới 2,5 giây; thuật toán tính mã băm \texttt{SHA-256} và đối chiếu chỉ mục chống trùng lặp cho tệp tin 25MB hoàn tất trong vòng 500ms ở tầng máy chủ.
+\end{itemize}
+
+\subsubsection{2.5.3. Yêu cầu về an toàn và bảo mật dữ liệu}
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item \textbf{Bảo mật thông tin xác thực:} Toàn bộ mật khẩu tài khoản người dùng bắt buộc phải được băm một chiều bằng thuật toán \texttt{bcrypt} trước khi lưu xuống cơ sở dữ liệu; sử dụng chuẩn JSON Web Token (JWT) có thời hạn để xác thực các yêu cầu gọi API.
+    \item \textbf{Kiểm soát phân quyền truy cập (RBAC):} Áp dụng cơ chế phân quyền dựa trên vai trò (\textit{Role-Based Access Control -- RBAC}) gồm 3 mức: Khách vãng lai, Sinh viên và Quản trị viên. Tài khoản Quản trị viên được cố định và bảo vệ ở tầng cơ sở dữ liệu; người dùng thông thường không thể tự nâng quyền.
+    \item \textbf{An toàn tệp tin đầu vào:} Mọi tệp tin tải lên đều phải vượt qua bước kiểm tra chữ ký nhị phân đầu tệp (Magic Bytes phải khớp chuỗi \texttt{\%PDF-}) và giới hạn dung lượng $\le$ 25MB nhằm ngăn chặn tuyệt đối hành vi đổi đuôi tệp thực thi độc hại (\texttt{.exe}, \texttt{.sh}, \texttt{.bat}) thành \texttt{.pdf}.
+    \item \textbf{Bảo vệ tài nguyên học liệu:} Các tài liệu đang ở trạng thái chờ duyệt (\texttt{status = 'PENDING'}) hoặc bị từ chối (\texttt{status = 'REJECTED'}) bị khóa truy cập công khai ở tầng API; Khách vãng lai bị chặn truy xuất đường dẫn tải tệp gốc trên đám mây khi chưa xác thực.
+\end{itemize}
+
+\subsubsection{2.5.4. Yêu cầu về tính ổn định và ràng buộc thiết kế}
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item \textbf{Kiến trúc lưu trữ phân tách:} Hệ thống tách biệt tầng lưu trữ dữ liệu có cấu trúc (cơ sở dữ liệu quan hệ PostgreSQL) và tầng lưu trữ tệp tin vật lý (dịch vụ đám mây Cloudinary), giúp máy chủ ứng dụng không bị quá tải dung lượng đĩa cứng khi số lượng học liệu tăng lên.
+    \item \textbf{Toàn vẹn dữ liệu:} Áp dụng ràng buộc khóa ngoại (\textit{Foreign Key}) và cơ chế giao dịch (\textit{Transaction}) trong cơ sở dữ liệu; đối với các môn học đã có tài liệu liên kết, hệ thống chỉ cho phép chuyển trạng thái ẩn/vô hiệu hóa thay vì xóa vật lý nhằm bảo toàn lịch sử học liệu.
+\end{itemize}
+
+Các chỉ số yêu cầu phi chức năng trọng tâm của hệ thống 5Share được tổng hợp định lượng tại Bảng~\ref{tab:nfr_summary}:
+
+\begin{table}[H]
+\centering
+\footnotesize\linespread{1.05}\selectfont
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\textwidth}{|c|p{3.6cm}|X|p{2.8cm}|}
+\hline
+\rowcolor[HTML]{EAEAEA}
+\textbf{STT} & \textbf{Nhóm yêu cầu phi chức năng} & \textbf{Chỉ số kỹ thuật / Ràng buộc áp dụng} & \textbf{Ca sử dụng liên quan} \\
+\hline
+1 & Hiệu năng xác thực và thông báo & Thời gian phản hồi đăng nhập JWT $<$ 1 giây; thời gian tải danh sách thông báo chuông $<$ 500ms. & \texttt{UC01}, \texttt{UC02}, \texttt{UC03} \\
+\hline
+2 & Hiệu năng tra cứu và xem trước PDF & Tìm kiếm Full-Text Search tiếng Việt và lọc đa tiêu chí $<$ 2 giây (phân trang 12 tài liệu/trang); hiển thị 3 trang xem thử đầu tiên $<$ 2,5 giây. & \texttt{UC05}, \texttt{UC06} \\
+\hline
+3 & Hiệu năng chống trùng lặp tệp tin & Tính toán mã băm \texttt{SHA-256} (64 ký tự hex) từ luồng nhị phân và đối chiếu cột \texttt{file\_hash} $<$ 500ms cho tệp tối đa 25MB. & \texttt{UC07}, \texttt{UC08} \\
+\hline
+4 & An toàn tệp tin và Lưu trữ đám mây & Bắt buộc định dạng \texttt{.pdf}, dung lượng $\le$ 25MB, kiểm tra chữ ký nhị phân Magic Bytes \texttt{\%PDF-}; lưu trữ tệp vật lý tách biệt trên Cloudinary. & \texttt{UC07}, \texttt{UC12} \\
+\hline
+5 & Bảo mật mật khẩu và Phân quyền RBAC & Mã hóa mật khẩu bằng thuật toán \texttt{bcrypt}; kiểm soát truy cập API theo vai trò (Guest / Student / Admin); ẩn tuyệt đối tài liệu \texttt{PENDING} khỏi kho công khai. & \texttt{UC01}, \texttt{UC02}, \texttt{UC06}, \texttt{UC09}, \texttt{UC11}, \texttt{UC12} \\
+\hline
+6 & Toàn vẹn dữ liệu và Chống lặp tương tác & Mỗi tài khoản chỉ chấm sao 1 lần/tài liệu; chặn gửi báo cáo vi phạm trùng lặp; cấm xóa cứng môn học đang chứa tài liệu. & \texttt{UC04}, \texttt{UC10}, \texttt{UC13} \\
+\hline
+\end{tabularx}
+\caption{Tổng hợp các chỉ số yêu cầu phi chức năng của hệ thống 5Share}
+\label{tab:nfr_summary}
+\end{table}

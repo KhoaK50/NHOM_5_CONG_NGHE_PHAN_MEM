@@ -1,0 +1,48 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam ActivityBorderThickness 1.5
+skinparam ActivityFontSize 12
+skinparam ActivityFontColor #0F172A
+skinparam ArrowColor #1E293B
+skinparam ArrowThickness 1.3
+
+skinparam Activity {
+  BackgroundColor #FFFFFF
+  BorderColor #0284C7
+}
+
+title ACTIVITY DIAGRAM 1: ĐÓNG GÓP TÀI LIỆU & KIỂM TRA TRÙNG LẶP\nÁnh xạ: UC07 (G5-FR05, FR06) + UC08 (G5-FR13)
+
+|#F8FAFC|Sinh viên (Tác giả)|
+start
+:1. Nhập thông tin Metadata\n(Tên, Môn học, Học kỳ, Mô tả);
+:2. Chọn tệp PDF từ máy tính\n& Nhấn nút "Tải lên";
+
+|#F0F9FF|Hệ thống 5Share (Backend)|
+:3. Tiếp nhận luồng tệp tin (Multipart);
+
+if (Dung lượng <= 25MB & Header %PDF-?) then (Hợp lệ)
+  :4. Tính mã băm SHA-256 nội dung file;
+  :5. Truy vấn CSDL kiểm tra SHA-256 trùng lặp;
+  
+  if (Mã băm SHA-256 đã tồn tại?) then (Trùng lặp)
+    #FEE2E2-:Báo lỗi: "Tài liệu này đã tồn tại\ntrên hệ thống!";
+    |Sinh viên (Tác giả)|
+    #FEE2E2-:Nhận thông báo lỗi trùng lặp;
+    detach
+  else (Duy nhất)
+    #DCFCE7-:6. Tải tệp lên Cloudinary CDN;
+    #DCFCE7-:7. Lưu bản ghi vào CSDL\nvới trạng thái PENDING;
+    |Sinh viên (Tác giả)|
+    #DCFCE7-:8. Nhận biên nhận: "Tài liệu đã được gửi,\nvui lòng chờ kiểm duyệt!";
+    stop
+  endif
+else (Không hợp lệ)
+  #FEE2E2-:Báo lỗi: "Tệp vượt quá 25MB\nhoặc không phải định dạng PDF!";
+  |Sinh viên (Tác giả)|
+  #FEE2E2-:Nhận thông báo lỗi định dạng;
+  detach
+endif
+@enduml
