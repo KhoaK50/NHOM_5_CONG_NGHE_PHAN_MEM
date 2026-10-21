@@ -63,8 +63,8 @@ export default function AuthSubsystem({
   // Register form state (tối giản chuẩn Vectoria: Họ tên, Email, Mật khẩu)
   const [regName, setRegName] = useState('')
   const [regEmail, setRegEmail] = useState('')
-  const [regPass, setRegPass] = useState('')
-  const [regPassConfirm, setRegPassConfirm] = useState('')
+  const [registerPassword, setRegisterPassword] = useState('')
+  const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState('')
   const [regShowPass, setRegShowPass] = useState(false)
   const [regShowConfirm, setRegShowConfirm] = useState(false)
   const [regCapsLock, setRegCapsLock] = useState(false)
@@ -104,16 +104,16 @@ export default function AuthSubsystem({
   const showRegEmailSuccess = regEmail.length > 0 && isEmailValid(regEmail)
 
   // Password criteria (Login/Register)
-  const ruleLengthOk = regPass.length >= 8
-  const ruleLetterOk = /[a-zA-Z]/.test(regPass)
-  const ruleNumberOk = /[0-9]/.test(regPass)
+  const ruleLengthOk = registerPassword.length >= 8
+  const ruleLetterOk = /[a-zA-Z]/.test(registerPassword)
+  const ruleNumberOk = /[0-9]/.test(registerPassword)
   const passedRuleCount =
     (ruleLengthOk ? 1 : 0) + (ruleLetterOk ? 1 : 0) + (ruleNumberOk ? 1 : 0)
 
   // Password progress metrics
   let progressWidth = '0%'
   let progressColor = '#94a3b8'
-  if (regPass.length > 0) {
+  if (registerPassword.length > 0) {
     if (passedRuleCount === 1) {
       progressWidth = '33%'
       progressColor = '#ef4444'
@@ -126,8 +126,8 @@ export default function AuthSubsystem({
     }
   }
 
-  const confirmMismatch = regPassConfirm.length > 0 && regPassConfirm !== regPass
-  const confirmMatch = regPassConfirm.length > 0 && regPassConfirm === regPass
+  const confirmMismatch = registerPasswordConfirm.length > 0 && registerPasswordConfirm !== registerPassword
+  const confirmMatch = registerPasswordConfirm.length > 0 && registerPasswordConfirm === registerPassword
 
   // Tự động phát hiện ?verify_token=... từ liên kết trong Email (Chuẩn Vectoria)
   useEffect(() => {
@@ -269,7 +269,7 @@ export default function AuthSubsystem({
       )
       return
     }
-    if (regPass !== regPassConfirm) {
+    if (registerPassword !== registerPasswordConfirm) {
       triggerToast('Mật khẩu xác nhận không trùng khớp.', false, 'Lỗi mật khẩu')
       return
     }
@@ -290,7 +290,7 @@ export default function AuthSubsystem({
         body: JSON.stringify({
           fullName: regName.trim(),
           email: regEmail.trim().toLowerCase(),
-          password: regPass
+          password: registerPassword
         })
       })
       const data = await res.json()
@@ -891,11 +891,11 @@ export default function AuthSubsystem({
                               type={regShowPass ? 'text' : 'password'}
                               className="has-toggle"
                               placeholder="Mật khẩu"
-                              value={regPass}
-                              onChange={(e) => setRegPass(e.target.value)}
+                              value={registerPassword}
+                              onChange={(e) => setRegisterPassword(e.target.value)}
                               onFocus={() => setIsPassFocused(true)}
                               onBlur={() => {
-                                if (!regPass) setIsPassFocused(false)
+                                if (!registerPassword) setIsPassFocused(false)
                               }}
                               onKeyUp={(e) => {
                                 if (e.getModifierState && e.getModifierState('CapsLock')) {
@@ -940,8 +940,8 @@ export default function AuthSubsystem({
                               type={regShowConfirm ? 'text' : 'password'}
                               className="has-toggle"
                               placeholder="Nhập lại"
-                              value={regPassConfirm}
-                              onChange={(e) => setRegPassConfirm(e.target.value)}
+                              value={registerPasswordConfirm}
+                              onChange={(e) => setRegisterPasswordConfirm(e.target.value)}
                               required
                               disabled={regLoading}
                               autoComplete="new-password"
@@ -961,7 +961,7 @@ export default function AuthSubsystem({
                       </div>
 
                       {/* Validation Feedback Row */}
-                      {(isPassFocused || regPass.length > 0) && (
+                      {(isPassFocused || registerPassword.length > 0) && (
                         <div>
                           <div
                             className="pwd-progress-track"
@@ -979,14 +979,14 @@ export default function AuthSubsystem({
                           <div className="pwd-pills-row">
                             <span
                               className={`pwd-pill ${
-                                regPass.length === 0
+                                registerPassword.length === 0
                                   ? 'pending'
                                   : ruleLengthOk
                                   ? 'valid'
                                   : 'invalid'
                               }`}
                             >
-                              {regPass.length === 0 ? (
+                              {registerPassword.length === 0 ? (
                                 <span className="pill-dot" />
                               ) : ruleLengthOk ? (
                                 <Check size={11} strokeWidth={3} />
@@ -998,14 +998,14 @@ export default function AuthSubsystem({
 
                             <span
                               className={`pwd-pill ${
-                                regPass.length === 0
+                                registerPassword.length === 0
                                   ? 'pending'
                                   : ruleLetterOk
                                   ? 'valid'
                                   : 'invalid'
                               }`}
                             >
-                              {regPass.length === 0 ? (
+                              {registerPassword.length === 0 ? (
                                 <span className="pill-dot" />
                               ) : ruleLetterOk ? (
                                 <Check size={11} strokeWidth={3} />
@@ -1017,14 +1017,14 @@ export default function AuthSubsystem({
 
                             <span
                               className={`pwd-pill ${
-                                regPass.length === 0
+                                registerPassword.length === 0
                                   ? 'pending'
                                   : ruleNumberOk
                                   ? 'valid'
                                   : 'invalid'
                               }`}
                             >
-                              {regPass.length === 0 ? (
+                              {registerPassword.length === 0 ? (
                                 <span className="pill-dot" />
                               ) : ruleNumberOk ? (
                                 <Check size={11} strokeWidth={3} />
