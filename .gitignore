@@ -163,3 +163,7 @@ Thumbs.db
 generate_sdlc_doc.py
 *.docx
 
+
+# AI Agent work logs & temporary artifacts
+.agents/
+

@@ -1,122 +1,1213 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react'
+import {
+  CheckCircle2,
+  ShieldAlert,
+  BookOpen,
+  BarChart3,
+  ArrowLeft,
+  ShieldCheck,
+  Users,
+  Lock,
+  MessageSquarePlus
+} from 'lucide-react'
+import Navbar from './components/common/Navbar'
+import AuthSubsystem from './components/auth/AuthSubsystem'
+import LandingPage from './components/home/LandingPage'
+import DiscoveryPage from './components/home/DiscoveryPage'
+import DocumentDetail from './components/document/DocumentDetail'
+import UploadModal from './components/upload/UploadModal'
+import ModerationQueue from './components/admin/ModerationQueue'
+import CourseManagement from './components/admin/CourseManagement'
+import AdminDashboard from './components/admin/AdminDashboard'
+import UserManagement from './components/admin/UserManagement'
+import FeedbackModal from './components/document/FeedbackModal'
+import MyDocuments from './components/profile/MyDocuments'
+import SavedBookmarks from './components/profile/SavedBookmarks'
+import UserProfile from './components/profile/UserProfile'
+import BountyBoard from './components/bounty/BountyBoard'
+import { getGuestDownloadStats, recordGuestDownload } from './utils/downloadTracker'
+import { AuthGuard, getApiBaseUrl } from './utils/authGuard'
+import {
+  INITIAL_COURSES,
+  INITIAL_DOCUMENTS,
+  INITIAL_NOTIFICATIONS,
+  INITIAL_REPORTS,
+  INITIAL_BOUNTIES,
+  INITIAL_DOWNLOAD_HISTORY,
+  INITIAL_USERS,
+  INITIAL_FEEDBACKS
+} from './data/mockData'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [actorRole, setActorRole] = useState(() => {
+    const saved = AuthGuard.getSavedUserProfile()
+    if (saved && AuthGuard.getAuthToken()) {
+      return saved.role === 'ADMIN' ? 'ADMIN' : 'USER'
+    }
+    return 'GUEST'
+  }) // 'GUEST' | 'USER' | 'ADMIN'
+
+  const [activeView, setActiveView] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('verify_token') || params.get('reset_token')) {
+        return 'auth'
+      }
+    }
+    return 'landing'
+  })
+  const [authTab, setAuthTab] = useState('login')
+  const [adminSubTab, setAdminSubTab] = useState('dashboard') // 'dashboard' | 'moderation' | 'courses' | 'users'
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
+
+  const [courses, setCourses] = useState(INITIAL_COURSES)
+  const [documents, setDocuments] = useState(INITIAL_DOCUMENTS)
+  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
+  const [reports, setReports] = useState(INITIAL_REPORTS)
+  const [users, setUsers] = useState(INITIAL_USERS)
+  const [feedbacks, setFeedbacks] = useState(INITIAL_FEEDBACKS)
+  const [bounties, setBounties] = useState(INITIAL_BOUNTIES)
+  const [downloadHistory, setDownloadHistory] = useState(INITIAL_DOWNLOAD_HISTORY)
+  const [bookmarkedIds, setBookmarkedIds] = useState(['doc-1', 'doc-2', 'doc-4'])
+  const [selectedDocId, setSelectedDocId] = useState('doc-1')
+  const [bannerNotice, setBannerNotice] = useState(null)
+  const [studentPoints, setStudentPoints] = useState(140)
+  const [userRatingsByDoc, setUserRatingsByDoc] = useState({
+    'doc-1:dat': 5,
+    'doc-1:danh': 5,
+    'doc-2:tram': 5
+  })
+
+  const [userSession, setUserSession] = useState(() => {
+    const saved = AuthGuard.getSavedUserProfile()
+    if (saved && AuthGuard.getAuthToken()) {
+      return saved
+    }
+    return null
+  })
+
+  const showNotice = (text) => {
+    setBannerNotice(text)
+    setTimeout(() => {
+      setBannerNotice(null)
+    }, 4500)
+  }
+
+  // Đối chiếu phiên JWT (token_version) và tải danh sách người dùng trực tiếp từ bảng public.users trên Supabase
+  useEffect(() => {
+    fetch(`${getApiBaseUrl()}/api/auth/users`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === 'success' && Array.isArray(data.users) && data.users.length > 0) {
+          setUsers(data.users)
+        }
+      })
+      .catch(() => {})
+
+    const token = AuthGuard.getAuthToken()
+    if (!token) return
+
+    fetch(`${getApiBaseUrl()}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === 'session_revoked') {
+          AuthGuard.clearAuthSession()
+          setUserSession(null)
+          setActorRole('GUEST')
+          setActiveView('auth')
+          showNotice(
+            'Phiên đăng nhập của bạn đã bị thu hồi do thay đổi mật khẩu hoặc kích hoạt khóa khẩn cấp.'
+          )
+        } else if (data.status === 'success' && data.user) {
+          setUserSession(data.user)
+          setActorRole(data.user.role === 'ADMIN' ? 'ADMIN' : 'USER')
+        }
+      })
+      .catch(() => {
+        // Chạy độc lập nếu máy chủ Backend chưa bật
+      })
+  }, [])
+
+  const isCurrentUserLocked = Boolean(
+    userSession &&
+      (userSession.isActive === false ||
+        users.some(
+          (u) =>
+            (u.id === userSession.id || u.email === userSession.email) &&
+            u.isActive === false
+        ))
+  )
+
+  const handleOpenUpload = () => {
+    if (actorRole === 'GUEST') {
+      handleOpenAuth('login')
+      return
+    }
+    if (isCurrentUserLocked) {
+      showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể thực hiện đóng góp học liệu.')
+      return
+    }
+    setActiveView('upload')
+  }
+
+  const handleSwitchActorRole = (nextRole) => {
+    const canonicalRole = nextRole === 'STUDENT' ? 'USER' : nextRole
+    setActorRole(canonicalRole)
+    if (canonicalRole === 'GUEST') {
+      setUserSession(null)
+      if (['upload', 'my-docs', 'bookmarks', 'profile'].includes(activeView)) {
+        setActiveView('discovery')
+      }
+      showNotice('Đang trải nghiệm với vai trò Khách vãng lai: Xem trước trực tuyến tối đa 3 trang đầu của mỗi học liệu.')
+    } else if (canonicalRole === 'USER') {
+      const activeStudent = users.find((u) => u.id === 'user-vi') || {
+        id: 'user-vi',
+        email: 'vi.phantrieu.k50@hcmue.edu.vn',
+        fullName: 'Phan Triệu Vĩ',
+        role: 'STUDENT',
+        cohort: 'K50 SPTH',
+        studentId: '50.01.103.089',
+        points: studentPoints,
+        avatarInitials: 'TV',
+        isActive: true
+      }
+      setUserSession(activeStudent)
+      showNotice('Đang trải nghiệm với vai trò Sinh viên: Đọc toàn văn PDF, Tải tệp gốc và Đóng góp học liệu.')
+    } else if (canonicalRole === 'ADMIN') {
+      const activeAdmin = users.find((u) => u.id === 'user-khoa') || {
+        id: 'user-khoa',
+        email: 'admin.khoacntt@hcmue.edu.vn',
+        fullName: 'Nguyễn Trần Đăng Khoa',
+        role: 'ADMIN',
+        cohort: 'Khoa CNTT',
+        studentId: '50.01.103.033',
+        points: 500,
+        avatarInitials: 'ĐK',
+        isActive: true
+      }
+      setUserSession(activeAdmin)
+      setActiveView('admin')
+      showNotice('Đang trải nghiệm Không gian Quản trị học thuật: Kiểm duyệt 8 tiêu chí và Quản lý danh mục học phần.')
+    }
+  }
+
+  const handleNavigate = (view) => {
+    if (view === 'feedback') {
+      setIsFeedbackOpen(true)
+      return
+    }
+    if (view === 'admin') {
+      setActiveView('admin')
+      return
+    }
+    if (actorRole === 'GUEST' && ['upload', 'my-docs', 'bookmarks', 'profile'].includes(view)) {
+      handleOpenAuth('login')
+      return
+    }
+    if (view === 'upload' && isCurrentUserLocked) {
+      showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể thực hiện đóng góp học liệu.')
+      return
+    }
+    setActiveView(view)
+    try {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+    } catch {
+      // ignore
+    }
+  }
+
+  const handleOpenAuth = (tab = 'login') => {
+    setAuthTab(tab)
+    setActiveView('auth')
+  }
+
+  const handleAuthSuccess = (profile) => {
+    const isLocked = users.some(
+      (u) => (u.id === profile.id || u.email === profile.email) && u.isActive === false
+    )
+    if (isLocked) {
+      showNotice('Tài khoản đã bị tạm khóa do vi phạm chuẩn mực học thuật. Vui lòng liên hệ Ban Quản trị.')
+      return
+    }
+    const nextRole = profile.role === 'ADMIN' ? 'ADMIN' : 'USER'
+    setUserSession(profile)
+    setActorRole(nextRole)
+    setActiveView(nextRole === 'ADMIN' ? 'admin' : 'detail')
+    showNotice(`Đăng nhập thành công với vai trò ${nextRole === 'ADMIN' ? 'Quản trị viên' : 'Sinh viên'}.`)
+  }
+
+  const handleLogout = () => {
+    AuthGuard.clearAuthSession()
+    handleSwitchActorRole('GUEST')
+  }
+
+  const handleSelectDocument = (doc) => {
+    setSelectedDocId(doc.id)
+    setDocuments((prev) =>
+      prev.map((d) => (d.id === doc.id ? { ...d, viewCount: d.viewCount + 1 } : d))
+    )
+    setActiveView('detail')
+  }
+
+  const handleDownloadDocument = (doc) => {
+    if (actorRole === 'GUEST') {
+      const stats = getGuestDownloadStats()
+      if (stats.isExhausted) {
+        showNotice('Khách vãng lai đã dùng hết 3 lượt tải trong ngày. Vui lòng đăng nhập để tải không giới hạn!')
+        handleOpenAuth('login')
+        return
+      }
+      recordGuestDownload()
+      const nextStats = getGuestDownloadStats()
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === doc.id ? { ...d, downloadCount: d.downloadCount + 1 } : d))
+      )
+      showNotice(
+        `Đang tải tệp "${doc.fileName}". Khách vãng lai: còn lại ${nextStats.remaining}/3 lượt tải hôm nay.`
+      )
+      return
+    }
+
+    setDocuments((prev) =>
+      prev.map((d) => (d.id === doc.id ? { ...d, downloadCount: d.downloadCount + 1 } : d))
+    )
+
+    const newRecord = {
+      id: `dl-${Date.now()}`,
+      docId: doc.id,
+      title: doc.title,
+      fileName: doc.fileName,
+      fileSize: doc.fileSize,
+      format: doc.format || 'pdf',
+      downloadedAt: 'Vừa xong'
+    }
+    setDownloadHistory((prev) => [newRecord, ...prev])
+    showNotice(`Đang tải tệp gốc "${doc.fileName}". Đã cập nhật số lượt tải của học liệu.`)
+  }
+
+  const handleUpdateProfile = (updatedFields) => {
+    setUserSession((prev) => {
+      const updated = { ...prev, ...updatedFields }
+      try {
+        localStorage.setItem('5share_user', JSON.stringify(updated))
+      } catch {
+        // ignore
+      }
+      return updated
+    })
+    showNotice('Đã cập nhật thông tin hồ sơ sinh viên thành công!')
+  }
+
+  const handleChangePassword = ({ oldPassword, newPassword, confirmPassword }) => {
+    if (!oldPassword) {
+      showNotice('Vui lòng nhập mật khẩu hiện tại.')
+      return
+    }
+    if (!newPassword || newPassword !== confirmPassword) {
+      showNotice('Mật khẩu xác nhận không khớp.')
+      return
+    }
+    showNotice('Đổi mật khẩu tài khoản thành công! Vui lòng ghi nhớ mật khẩu mới.')
+  }
+
+  const handleCreateBounty = ({ title, courseCode, courseName, rewardPoints, description }) => {
+    if (isCurrentUserLocked) {
+      showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể tạo yêu cầu treo thưởng.')
+      return
+    }
+    const pts = Number(rewardPoints) || 50
+    const currentPts = userSession?.points ?? studentPoints
+    if (currentPts < pts) {
+      showNotice(`Số dư điểm (${currentPts} điểm) không đủ để ký quỹ ${pts} điểm thưởng!`)
+      return
+    }
+
+    const nextPts = currentPts - pts
+    setStudentPoints(nextPts)
+    setUserSession((prev) => (prev ? { ...prev, points: nextPts } : prev))
+
+    const newBounty = {
+      id: `bty-${Date.now()}`,
+      title,
+      courseCode,
+      courseName,
+      rewardPoints: pts,
+      description,
+      status: 'OPEN',
+      creatorId: userSession?.id || 'vi',
+      creatorName: userSession?.fullName || 'Phan Triệu Vĩ',
+      createdAt: 'Vừa xong',
+      submissionsCount: 0
+    }
+
+    setBounties((prev) => [newBounty, ...prev])
+    showNotice(`Đã đăng yêu cầu treo thưởng thành công! Ký quỹ -${pts} điểm thưởng.`)
+  }
+
+  const handleFulfillBounty = (bountyId, submittedDocId) => {
+    if (isCurrentUserLocked) {
+      showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể nộp tài liệu giải thưởng.')
+      return
+    }
+    const targetBounty = bounties.find((b) => b.id === bountyId)
+    const targetDoc = documents.find((d) => d.id === submittedDocId)
+
+    setBounties((prev) =>
+      prev.map((b) =>
+        b.id === bountyId
+          ? {
+              ...b,
+              status: 'FULFILLED',
+              fulfilledDocId: submittedDocId,
+              fulfilledBy: userSession?.fullName || 'Phan Triệu Vĩ',
+              fulfilledAt: 'Vừa xong',
+              submissionsCount: (b.submissionsCount || 0) + 1
+            }
+          : b
+      )
+    )
+
+    const reward = targetBounty ? targetBounty.rewardPoints : 50
+    setStudentPoints((prevPts) => prevPts + reward)
+    setUserSession((prevUser) =>
+      prevUser ? { ...prevUser, points: (prevUser.points || 0) + reward } : prevUser
+    )
+
+    showNotice(
+      `Đã nộp học liệu "${targetDoc?.title || 'tài liệu'}" đáp ứng treo thưởng thành công! Nhận +${reward} điểm thưởng.`
+    )
+  }
+
+  const handleToggleBookmark = (docId) => {
+    if (actorRole === 'GUEST') {
+      handleOpenAuth('login')
+      return
+    }
+    setBookmarkedIds((prev) => {
+      const exists = prev.includes(docId)
+      showNotice(
+        exists
+          ? 'Đã gỡ học liệu khỏi Tủ tài liệu cá nhân.'
+          : 'Đã lưu học liệu vào Tủ tài liệu cá nhân.'
+      )
+      return exists ? prev.filter((id) => id !== docId) : [...prev, docId]
+    })
+  }
+
+  const handleAddRatingComment = (docId, stars, commentContent) => {
+    if (isCurrentUserLocked) {
+      showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể gửi đánh giá hoặc bình luận.')
+      return
+    }
+    const currentUserId = userSession?.id || 'vi'
+    const currentUserName = userSession?.fullName || 'Phan Triệu Vĩ'
+    const ratingKey = `${docId}:${currentUserId}`
+    const previousStar = userRatingsByDoc[ratingKey]
+    const trimmedComment = (commentContent || '').trim()
+
+    setUserRatingsByDoc((prev) => ({
+      ...prev,
+      [ratingKey]: stars
+    }))
+
+    const targetDoc = documents.find((d) => d.id === docId)
+
+    setDocuments((prev) =>
+      prev.map((doc) => {
+        if (doc.id !== docId) return doc
+
+        let nextCount = doc.ratingCount
+        let nextAvg
+        if (typeof previousStar === 'number' && doc.ratingCount > 0) {
+          const totalScore = doc.ratingAvg * doc.ratingCount - previousStar + stars
+          nextAvg = Number((totalScore / doc.ratingCount).toFixed(1))
+        } else {
+          nextCount = doc.ratingCount + 1
+          nextAvg = Number(
+            ((doc.ratingAvg * doc.ratingCount + stars) / nextCount).toFixed(1)
+          )
+        }
+
+        let updatedComments = (doc.comments || []).map((c) =>
+          c.authorId === currentUserId ? { ...c, rating: stars } : c
+        )
+
+        if (trimmedComment) {
+          const newComment = {
+            id: `cmt-${Date.now()}`,
+            authorName: `${currentUserName} (K50 SPTH)`,
+            authorId: currentUserId,
+            rating: stars,
+            createdAt: 'Vừa xong',
+            content: trimmedComment
+          }
+          updatedComments = [newComment, ...updatedComments]
+        }
+
+        return {
+          ...doc,
+          ratingCount: nextCount,
+          ratingAvg: nextAvg,
+          comments: updatedComments
+        }
+      })
+    )
+
+    if (targetDoc) {
+      setNotifications((prev) => [
+        {
+          id: `notif-${Date.now()}`,
+          type: 'COMMENT',
+          title: 'Đánh giá & Bình luận học thuật mới',
+          message: trimmedComment
+            ? `${currentUserName} vừa chấm ${stars}★ và bình luận tại "${targetDoc.title}".`
+            : `${currentUserName} vừa chấm ${stars}★ cho học liệu "${targetDoc.title}".`,
+          createdAt: 'Vừa xong',
+          isRead: false,
+          targetDocId: targetDoc.id,
+          targetScreen: 'detail'
+        },
+        ...prev
+      ])
+    }
+
+    showNotice(
+      typeof previousStar === 'number'
+        ? `Đã cập nhật mức đánh giá từ ${previousStar}★ thành ${stars}★.`
+        : `Đã ghi nhận đánh giá ${stars}★ và gửi thông báo tới tác giả.`
+    )
+  }
+
+  const handleEditComment = (docId, commentId, newContent) => {
+    setDocuments((prev) =>
+      prev.map((doc) =>
+        doc.id === docId
+          ? {
+              ...doc,
+              comments: (doc.comments || []).map((c) =>
+                c.id === commentId ? { ...c, content: newContent, createdAt: 'Đã chỉnh sửa' } : c
+              )
+            }
+          : doc
+      )
+    )
+    showNotice('Đã cập nhật nội dung bình luận của bạn.')
+  }
+
+  const handleDeleteComment = (docId, commentId) => {
+    setDocuments((prev) =>
+      prev.map((doc) =>
+        doc.id === docId
+          ? { ...doc, comments: (doc.comments || []).filter((c) => c.id !== commentId) }
+          : doc
+      )
+    )
+    showNotice('Đã xóa bình luận của bạn.')
+  }
+
+  const handleSubmitReport = (reportPayload) => {
+    const newReport = {
+      id: `rep-${Date.now()}`,
+      ...reportPayload,
+      reporterName: `${userSession?.fullName || 'Sinh viên SPTH'} (K50 SPTH)`,
+      createdAt: 'Vừa xong',
+      status: 'PENDING'
+    }
+    setReports((prev) => [newReport, ...prev])
+    showNotice('Đã gửi báo cáo chất lượng học liệu về Ban quản trị Khoa CNTT.')
+  }
+
+  const handleSubmitNewDocument = (newDocPayload) => {
+    if (isCurrentUserLocked) {
+      showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể thực hiện đóng góp học liệu.')
+      return
+    }
+    const createdDoc = {
+      id: `doc-${Date.now()}`,
+      ...newDocPayload,
+      uploaderName: userSession?.fullName || 'Phan Triệu Vĩ',
+      uploaderId: userSession?.id || 'vi',
+      createdAt: '2026-03-20',
+      pageCount: 16,
+      status: 'PENDING',
+      rejectReason: null,
+      viewCount: 0,
+      downloadCount: 0,
+      ratingAvg: 0,
+      ratingCount: 0,
+      pages: INITIAL_DOCUMENTS[0].pages,
+      comments: []
+    }
+    setDocuments((prev) => [createdDoc, ...prev])
+    setCourses((prev) =>
+      prev.map((c) =>
+        c.code === createdDoc.courseCode
+          ? { ...c, documentCount: (c.documentCount || 0) + 1 }
+          : c
+      )
+    )
+    setActiveView('my-docs')
+    showNotice('Đóng góp thành công! Học liệu đã vượt qua kiểm tra SHA-256 và đang chờ Quản trị viên thẩm định.')
+  }
+
+  const handleApproveDocument = (docId) => {
+    const target = documents.find((d) => d.id === docId)
+    setDocuments((prev) =>
+      prev.map((d) => (d.id === docId ? { ...d, status: 'APPROVED', rejectReason: null } : d))
+    )
+    setStudentPoints((prevPts) => prevPts + 20)
+    setUserSession((prevUser) =>
+      prevUser && (prevUser.role === 'USER' || prevUser.role === 'STUDENT')
+        ? { ...prevUser, points: (prevUser.points || 140) + 20 }
+        : prevUser
+    )
+    if (target) {
+      setUsers((prevUsers) =>
+        prevUsers.map((u) =>
+          u.id === target.uploaderId || u.fullName === target.uploaderName
+            ? { ...u, points: (u.points || 0) + 20 }
+            : u
+        )
+      )
+      setNotifications((prev) => [
+        {
+          id: `notif-${Date.now()}`,
+          type: 'APPROVED',
+          title: 'Học liệu được phê duyệt (+20 điểm thưởng)',
+          message: `Tài liệu "${target.title}" đã đạt 8/8 tiêu chí kiểm duyệt và được xuất bản công khai.`,
+          createdAt: 'Vừa xong',
+          isRead: false,
+          targetDocId: target.id,
+          targetScreen: 'detail'
+        },
+        ...prev
+      ])
+    }
+    showNotice('Đã phê duyệt xuất bản học liệu, cộng +20 điểm thưởng và gửi thông báo cho tác giả.')
+  }
+
+  const handleRejectDocument = (docId, reasonText) => {
+    const target = documents.find((d) => d.id === docId)
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.id === docId ? { ...d, status: 'REJECTED', rejectReason: reasonText } : d
+      )
+    )
+    if (target) {
+      setNotifications((prev) => [
+        {
+          id: `notif-${Date.now()}`,
+          type: 'REJECTED',
+          title: 'Học liệu cần chỉnh sửa (Bị từ chối phê duyệt)',
+          message: `Tài liệu "${target.title}" bị từ chối. Lý do: ${reasonText}`,
+          createdAt: 'Vừa xong',
+          isRead: false,
+          targetDocId: target.id,
+          targetScreen: 'my-docs'
+        },
+        ...prev
+      ])
+    }
+    showNotice('Đã từ chối học liệu và gửi lý do phản hồi chi tiết tới sinh viên đóng góp.')
+  }
+
+  const handleResolveReport = (reportId, docId, action, targetType = 'DOCUMENT', commentId = null) => {
+    setReports((prev) =>
+      prev.map((r) => (r.id === reportId ? { ...r, status: 'RESOLVED', resolvedAction: action } : r))
+    )
+    if (targetType === 'COMMENT' || action === 'DELETE_COMMENT') {
+      if (commentId) {
+        setDocuments((prev) =>
+          prev.map((d) =>
+            d.id === docId
+              ? { ...d, comments: (d.comments || []).filter((c) => c.id !== commentId) }
+              : d
+          )
+        )
+      }
+      showNotice('Đã xử lý vi phạm chuẩn mực học thuật đối với bình luận.')
+    } else if (action === 'HIDE_DOC') {
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === docId ? { ...d, status: 'HIDDEN' } : d))
+      )
+      setBookmarkedIds((prev) => prev.filter((id) => id !== docId))
+      showNotice('Đã tạm ẩn học liệu khỏi kho công khai để rà soát nội dung.')
+    } else if (action === 'DELETE_DOC') {
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === docId ? { ...d, status: 'DELETED' } : d))
+      )
+      setBookmarkedIds((prev) => prev.filter((id) => id !== docId))
+      showNotice('Đã gỡ vĩnh viễn tài liệu vi phạm khỏi hệ thống lưu trữ.')
+    } else {
+      showNotice('Đã đóng báo cáo và giữ nguyên trạng thái xuất bản của tài liệu.')
+    }
+  }
+
+  const handleToggleUserStatus = (userId, lockReason = null) => {
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const nextStatus = !u.isActive
+          showNotice(
+            nextStatus
+              ? `Đã mở khóa tài khoản thành viên "${u.fullName}".`
+              : `Đã khóa tài khoản thành viên "${u.fullName}". Tài khoản bị chặn đóng góp học liệu.`
+          )
+          return {
+            ...u,
+            isActive: nextStatus,
+            lockReason: nextStatus ? null : lockReason,
+            lockedAt: nextStatus ? null : new Date().toISOString()
+          }
+        }
+        return u
+      })
+    )
+    setUserSession((prev) => {
+      if (prev && prev.id === userId) {
+        const nextStatus = !prev.isActive
+        return {
+          ...prev,
+          isActive: nextStatus,
+          lockReason: nextStatus ? null : lockReason
+        }
+      }
+      return prev
+    })
+
+    const target = users.find((u) => u.id === userId)
+    if (target) {
+      const nextDbStatus = target.isActive ? 'locked' : 'active'
+      fetch(`${getApiBaseUrl()}/api/auth/users/${userId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextDbStatus })
+      }).catch(() => {})
+    }
+  }
+
+  const handleToggleUserRole = (userId, nextRole) => {
+    const canonicalUiRole = nextRole === 'ADMIN' ? 'ADMIN' : 'USER'
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId ? { ...u, role: canonicalUiRole, dbRole: nextRole } : u
+      )
+    )
+    fetch(`${getApiBaseUrl()}/api/auth/users/${userId}/role`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: nextRole })
+    }).catch(() => {})
+  }
+
+  const handleSubmitFeedback = (feedbackPayload) => {
+    setFeedbacks((prev) => [feedbackPayload, ...prev])
+    showNotice('Cảm ơn bạn! Đã gửi ý kiến đóng góp thành công tới Ban Quản trị.')
+  }
+
+  const handleSaveCourse = (courseObj) => {
+    setCourses((prev) => {
+      const exists = prev.some((c) => c.id === courseObj.id)
+      return exists
+        ? prev.map((c) => (c.id === courseObj.id ? courseObj : c))
+        : [courseObj, ...prev]
+    })
+    showNotice(`Đã lưu học phần "${courseObj.code} - ${courseObj.name}" vào danh mục đào tạo.`)
+  }
+
+  const handleToggleCourseActive = (courseId) => {
+    setCourses((prev) =>
+      prev.map((c) => (c.id === courseId ? { ...c, isActive: !c.isActive } : c))
+    )
+    showNotice('Đã cập nhật trạng thái hiển thị của học phần trên bộ lọc tra cứu.')
+  }
+
+  const handleDeleteCourse = (courseId) => {
+    setCourses((prev) => prev.filter((c) => c.id !== courseId))
+    showNotice('Đã xóa học phần chưa có tài liệu liên kết khỏi danh mục.')
+  }
+
+  const handleMarkOneRead = (notifId) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notifId ? { ...n, isRead: true } : n))
+    )
+  }
+
+  const handleMarkAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+    showNotice('Đã đánh dấu toàn bộ thông báo là đã đọc.')
+  }
+
+  const handleSelectNotification = (notif) => {
+    if (notif.targetDocId) {
+      setSelectedDocId(notif.targetDocId)
+    }
+    if (notif.targetScreen) {
+      setActiveView(notif.targetScreen)
+    }
+  }
+
+  const selectedDocument =
+    documents.find((d) => d.id === selectedDocId) || documents[0]
+  const pendingDocsCount = documents.filter((d) => d.status === 'PENDING').length
+  const pendingReportsCount = reports.filter((r) => r.status === 'PENDING').length
+  const totalPendingRequests = pendingDocsCount + pendingReportsCount
+  const pendingCount = pendingDocsCount
+
+  const isAuthorizedAdmin = userSession?.role === 'ADMIN' || actorRole === 'ADMIN'
+  const isAdminView =
+    activeView === 'admin' ||
+    ['admin-dashboard', 'admin-moderation', 'admin-courses', 'admin-users'].includes(activeView)
+
+  const currentAdminTab =
+    activeView === 'admin-dashboard'
+      ? 'dashboard'
+      : activeView === 'admin-moderation'
+      ? 'moderation'
+      : activeView === 'admin-courses'
+      ? 'courses'
+      : activeView === 'admin-users'
+      ? 'users'
+      : adminSubTab
+
+  const handleSelectAdminSubTab = (tabId) => {
+    setAdminSubTab(tabId)
+    if (activeView !== 'admin') {
+      setActiveView('admin')
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-app)' }}>
+      {/* Thanh điều hướng chính */}
+      <Navbar
+        actorRole={actorRole}
+        userSession={userSession}
+        activeView={activeView}
+        onNavigate={handleNavigate}
+        onSwitchActorRole={handleSwitchActorRole}
+        onOpenAuth={handleOpenAuth}
+        onLogout={handleLogout}
+        notifications={notifications}
+        onMarkOneRead={handleMarkOneRead}
+        onMarkAllRead={handleMarkAllRead}
+        onSelectNotification={handleSelectNotification}
+        pendingCount={pendingCount}
+        logoVariant="loops-weave"
+      />
+
+      {/* Thông báo phản hồi thao tác */}
+      {bannerNotice && (
+        <div
+          style={{
+            backgroundColor: 'var(--green-1)',
+            borderBottom: '1px solid var(--green-2)',
+            color: 'var(--green-7)',
+            padding: '10px 28px',
+            fontSize: '13px',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
         >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+          <CheckCircle2 size={16} />
+          <span>{bannerNotice}</span>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {/* Vùng hiển thị màn hình chính */}
+      {isAdminView ? (
+        !isAuthorizedAdmin ? (
+          /* THẺ TỪ CHỐI TRUY CẬP (ACCESS DENIED CARD) CHO GUEST / STUDENT */
+          <div
+            style={{
+              minHeight: 'calc(100vh - 64px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '32px 16px',
+              backgroundColor: 'var(--bg-app)'
+            }}
+          >
+            <div
+              style={{
+                maxWidth: '520px',
+                width: '100%',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-xl)',
+                padding: '36px 32px',
+                textAlign: 'center',
+                boxShadow: 'var(--shadow-modal)'
+              }}
+            >
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--amber-2)',
+                  color: 'var(--amber-9)',
+                  border: '1px solid var(--amber-4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 18px'
+                }}
+              >
+                <Lock size={30} />
+              </div>
+
+              <h2
+                style={{
+                  margin: '0 0 8px 0',
+                  fontSize: '20px',
+                  fontWeight: 800,
+                  color: 'var(--text-primary)'
+                }}
+              >
+                Khu vực Yêu cầu Quyền Quản trị viên
+              </h2>
+
+              <p
+                style={{
+                  margin: '0 0 24px 0',
+                  fontSize: '13.5px',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.5
+                }}
+              >
+                Bạn đang đăng nhập với vai trò{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>
+                  {actorRole === 'GUEST' ? 'Khách vãng lai' : 'Sinh viên'}
+                </strong>{' '}
+                ({userSession?.fullName || 'Chưa đăng nhập'}). Chỉ tài khoản Quản trị viên thuộc Ban Quản trị Khoa CNTT mới có
+                quyền truy cập không gian này.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="btn-solid-primary"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    fontSize: '13.5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                  onClick={() => handleSwitchActorRole('ADMIN')}
+                >
+                  <ShieldCheck size={16} />
+                  <span>Chuyển sang tài khoản Quản trị viên (Admin)</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                  onClick={() => setActiveView('discovery')}
+                >
+                  <ArrowLeft size={16} />
+                  <span>Quay lại Kho học liệu</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="admin-workspace-shell">
+            {/* Radix Light Left Sidebar cho Admin */}
+            <aside className="admin-sidebar" aria-label="Điều hướng Quản trị học thuật">
+              <div className="admin-sidebar-brand">
+                <div className="admin-sidebar-kicker">
+                  <ShieldCheck size={13} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '4px' }} />
+                  5SHARE ADMIN WORKSPACE
+                </div>
+                <p className="admin-sidebar-title">Quản trị Học liệu Khoa CNTT</p>
+              </div>
+
+              <button
+                type="button"
+                className={`admin-nav-btn ${currentAdminTab === 'dashboard' ? 'active' : ''}`}
+                onClick={() => handleSelectAdminSubTab('dashboard')}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                  <BarChart3 size={16} />
+                  <span>Tổng quan hệ thống</span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={`admin-nav-btn ${currentAdminTab === 'moderation' ? 'active' : ''}`}
+                onClick={() => handleSelectAdminSubTab('moderation')}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                  <ShieldAlert size={16} />
+                  <span>Hàng đợi kiểm duyệt</span>
+                </span>
+                {totalPendingRequests > 0 && (
+                  <span className="admin-nav-badge">{totalPendingRequests}</span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className={`admin-nav-btn ${currentAdminTab === 'courses' ? 'active' : ''}`}
+                onClick={() => handleSelectAdminSubTab('courses')}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                  <BookOpen size={16} />
+                  <span>Quản lý danh mục</span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={`admin-nav-btn ${currentAdminTab === 'users' ? 'active' : ''}`}
+                onClick={() => handleSelectAdminSubTab('users')}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                  <Users size={16} />
+                  <span>Quản trị người dùng</span>
+                </span>
+              </button>
+
+              <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
+                <button
+                  type="button"
+                  className="admin-nav-btn"
+                  onClick={() => setActiveView('discovery')}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                    <ArrowLeft size={16} />
+                    <span>Quay lại Kho học liệu</span>
+                  </span>
+                </button>
+              </div>
+            </aside>
+
+            <main className="admin-workspace-content">
+              {currentAdminTab === 'moderation' && (
+                <ModerationQueue
+                  documents={documents}
+                  reports={reports}
+                  onApproveDocument={handleApproveDocument}
+                  onRejectDocument={handleRejectDocument}
+                  onResolveReport={handleResolveReport}
+                />
+              )}
+
+              {currentAdminTab === 'courses' && (
+                <CourseManagement
+                  courses={courses}
+                  documents={documents}
+                  onSaveCourse={handleSaveCourse}
+                  onToggleCourseActive={handleToggleCourseActive}
+                  onDeleteCourse={handleDeleteCourse}
+                />
+              )}
+
+              {currentAdminTab === 'dashboard' && (
+                <AdminDashboard
+                  documents={documents}
+                  courses={courses}
+                  users={users}
+                  reports={reports}
+                  feedbacks={feedbacks}
+                  downloadHistory={downloadHistory}
+                  onSelectDoc={handleSelectDocument}
+                  onNavigateTab={handleSelectAdminSubTab}
+                />
+              )}
+
+              {currentAdminTab === 'users' && (
+                <UserManagement
+                  users={users}
+                  currentUser={userSession}
+                  onToggleUserStatus={handleToggleUserStatus}
+                  onToggleUserRole={handleToggleUserRole}
+                />
+              )}
+            </main>
+          </div>
+        )
+      ) : (
+        <main
+          className={
+            activeView === 'auth'
+              ? 'auth-page-wrapper'
+              : activeView === 'landing'
+              ? 'landing-page-shell'
+              : 'platform-container'
+          }
+          style={{ flex: 1 }}
+        >
+          {activeView === 'auth' && (
+            <AuthSubsystem
+              key={authTab}
+              initialTab={authTab}
+              logoVariant="loops-weave"
+              onLoginSuccess={handleAuthSuccess}
+            />
+          )}
+
+          {activeView === 'landing' && (
+            <LandingPage
+              onNavigate={handleNavigate}
+              onExploreDiscovery={() => setActiveView('discovery')}
+              onOpenUpload={handleOpenUpload}
+              userSession={userSession}
+              actorRole={actorRole}
+            />
+          )}
+
+          {activeView === 'discovery' && (
+            <DiscoveryPage
+              documents={documents}
+              courses={courses}
+              bookmarkedIds={bookmarkedIds}
+              onSelectDoc={handleSelectDocument}
+              onToggleBookmark={handleToggleBookmark}
+              onOpenUpload={handleOpenUpload}
+            />
+          )}
+
+          {activeView === 'detail' && (
+            <DocumentDetail
+              documentItem={selectedDocument}
+              isAuthenticated={actorRole !== 'GUEST'}
+              currentUser={userSession}
+              isBookmarked={bookmarkedIds.includes(selectedDocument?.id)}
+              existingReports={reports}
+              onBackToDiscovery={() => setActiveView('discovery')}
+              onDownload={handleDownloadDocument}
+              onToggleBookmark={handleToggleBookmark}
+              onAddRatingComment={handleAddRatingComment}
+              onEditComment={handleEditComment}
+              onDeleteComment={handleDeleteComment}
+              onSubmitReport={handleSubmitReport}
+              onRequireLogin={() => handleOpenAuth('login')}
+            />
+          )}
+
+          {activeView === 'upload' && (
+            <UploadModal
+              courses={courses}
+              existingDocuments={documents}
+              onSubmitNewDocument={handleSubmitNewDocument}
+              onCancel={() => setActiveView('discovery')}
+            />
+          )}
+
+          {activeView === 'my-docs' && (
+            <MyDocuments
+              documents={documents}
+              currentUser={userSession}
+              onSelectDoc={handleSelectDocument}
+              onOpenUpload={handleOpenUpload}
+            />
+          )}
+
+          {activeView === 'bookmarks' && (
+            <SavedBookmarks
+              documents={documents}
+              bookmarkedIds={bookmarkedIds}
+              onSelectDoc={handleSelectDocument}
+              onToggleBookmark={handleToggleBookmark}
+              onNavigateDiscovery={() => setActiveView('discovery')}
+            />
+          )}
+
+          {activeView === 'profile' && (
+            <UserProfile
+              currentUser={userSession}
+              documents={documents}
+              bookmarkedIds={bookmarkedIds}
+              downloadHistory={downloadHistory}
+              onSelectDoc={handleSelectDocument}
+              onToggleBookmark={handleToggleBookmark}
+              onOpenUpload={handleOpenUpload}
+              onUpdateProfile={handleUpdateProfile}
+              onChangePassword={handleChangePassword}
+              onNavigateDiscovery={() => setActiveView('discovery')}
+            />
+          )}
+
+          {activeView === 'bounty' && (
+            <BountyBoard
+              currentUser={userSession}
+              actorRole={actorRole}
+              courses={courses}
+              documents={documents}
+              bounties={bounties}
+              onCreateBounty={handleCreateBounty}
+              onFulfillBounty={handleFulfillBounty}
+              onSelectDoc={handleSelectDocument}
+              onOpenUpload={handleOpenUpload}
+              onRequireLogin={() => handleOpenAuth('login')}
+            />
+          )}
+        </main>
+      )}
+
+      {/* MODAL HÒM THƯ GÓP Ý HỆ THỐNG TOÀN CỤC */}
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        currentUser={userSession}
+        onSubmitFeedback={handleSubmitFeedback}
+      />
+
+      {/* NÚT NỔI GÓP Ý HỆ THỐNG TẠI GÓC PHẢI MÀN HÌNH (FLOATING PILL) */}
+      <button
+        type="button"
+        onClick={() => setIsFeedbackOpen(true)}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 100,
+          backgroundColor: '#ffffff',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--border-strong)',
+          borderRadius: '999px',
+          padding: '9px 16px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '12.5px',
+          fontWeight: 700,
+          boxShadow: 'var(--shadow-card)',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)'
+          e.currentTarget.style.boxShadow = 'var(--shadow-card-hover)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)'
+          e.currentTarget.style.boxShadow = 'var(--shadow-card)'
+        }}
+        aria-label="Mở hòm thư góp ý hệ thống"
+      >
+        <MessageSquarePlus size={16} style={{ color: 'var(--green-9)' }} />
+        <span>Góp ý & Báo lỗi</span>
+      </button>
+    </div>
   )
 }
-
-export default App

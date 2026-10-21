@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0"
+                  id="Definitions_5Share_BPMN"
+                  targetNamespace="http://bpmn.io/schema/bpmn"
+                  exporter="Visual Paradigm Compatible BPMN Generator"
+                  exporterVersion="2.0">
+
+  <!-- ========================================================================= -->
+  <!-- COLLABORATION: 3 POOLS & MESSAGE FLOWS -->
+  <!-- ========================================================================= -->
+  <bpmn:collaboration id="Collaboration_5Share">
+    <bpmn:participant id="Participant_Student" name="SINH VIÊN (TÁC GIẢ)" processRef="Process_Student" />
+    <bpmn:participant id="Participant_System" name="HỆ THỐNG 5SHARE (BACKEND)" processRef="Process_System" />
+    <bpmn:participant id="Participant_Admin" name="QUẢN TRỊ VIÊN (ADMIN)" processRef="Process_Admin" />
+
+    <!-- Message Flows between Pools -->
+    <bpmn:messageFlow id="MsgFlow_Submit" name="Gửi tệp PDF &amp; Metadata" sourceRef="Task_Student_Submit" targetRef="StartEvent_System_Msg" />
+    <bpmn:messageFlow id="MsgFlow_TechError" name="Báo lỗi trùng SHA / hỏng file" sourceRef="Task_System_Reject" targetRef="Task_Student_HandleError" />
+    <bpmn:messageFlow id="MsgFlow_PendingReceipt" name="Biên nhận PENDING" sourceRef="Task_System_StorePending" targetRef="Task_Student_PendingReceipt" />
+    <bpmn:messageFlow id="MsgFlow_ToAdminQueue" name="Hàng đợi Moderation Queue" sourceRef="Task_System_StorePending" targetRef="StartEvent_Admin_Msg" />
+    <bpmn:messageFlow id="MsgFlow_AdminApprove" name="Kết quả duyệt &amp; Lý do" sourceRef="Task_Admin_Approve" targetRef="CatchEvent_System_AdminDecision" />
+    <bpmn:messageFlow id="MsgFlow_AdminReject" sourceRef="Task_Admin_Reject" targetRef="CatchEvent_System_AdminDecision" />
+    <bpmn:messageFlow id="MsgFlow_NotifyResult" name="Bắn chuông thông báo (UC03)" sourceRef="Task_System_UpdateNotify" targetRef="CatchEvent_Student_Notify" />
+  </bpmn:collaboration>
+
+  <!-- ========================================================================= -->
+  <!-- PROCESS 1: SINH VIÊN -->
+  <!-- ========================================================================= -->
+  <bpmn:process id="Process_Student" name="Quy trình Sinh viên nộp tài liệu" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_Student" name="Bắt đầu nộp">
+      <bpmn:outgoing>Seq_S1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:task id="Task_Student_Submit" name="1. Điền Metadata &amp; Nộp tệp tin PDF (UC07)">
+      <bpmn:incoming>Seq_S1</bpmn:incoming>
+      <bpmn:outgoing>Seq_S2</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:exclusiveGateway id="Gateway_Student_Check" name="Hợp lệ?">
+      <bpmn:incoming>Seq_S2</bpmn:incoming>
+      <bpmn:outgoing>Seq_S_Error</bpmn:outgoing>
+      <bpmn:outgoing>Seq_S_Valid</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:task id="Task_Student_HandleError" name="Nhận thông báo lỗi &amp; Tải tệp sửa đổi">
+      <bpmn:incoming>Seq_S_Error</bpmn:incoming>
+      <bpmn:outgoing>Seq_S_EndError</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:endEvent id="EndEvent_Student_Error" name="Kết thúc: Thất bại">
+      <bpmn:incoming>Seq_S_EndError</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:task id="Task_Student_PendingReceipt" name="Nhận biên nhận nộp Trạng thái PENDING (G5-FR06)">
+      <bpmn:incoming>Seq_S_Valid</bpmn:incoming>
+      <bpmn:outgoing>Seq_S_ToCatch</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:intermediateCatchEvent id="CatchEvent_Student_Notify" name="Sự kiện nhận chuông thông báo kết quả">
+      <bpmn:incoming>Seq_S_ToCatch</bpmn:incoming>
+      <bpmn:outgoing>Seq_S_ToNotify</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_Student_1" />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:task id="Task_Student_ViewNotify" name="Xem thông báo chuông &amp; Chi tiết phê duyệt (UC03)">
+      <bpmn:incoming>Seq_S_ToNotify</bpmn:incoming>
+      <bpmn:outgoing>Seq_S_Success</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:endEvent id="EndEvent_Student_Success" name="Kết thúc: Hoàn tất vòng đời">
+      <bpmn:incoming>Seq_S_Success</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence flows -->
+    <bpmn:sequenceFlow id="Seq_S1" sourceRef="StartEvent_Student" targetRef="Task_Student_Submit" />
+    <bpmn:sequenceFlow id="Seq_S2" sourceRef="Task_Student_Submit" targetRef="Gateway_Student_Check" />
+    <bpmn:sequenceFlow id="Seq_S_Error" name="[Lỗi kỹ thuật]" sourceRef="Gateway_Student_Check" targetRef="Task_Student_HandleError" />
+    <bpmn:sequenceFlow id="Seq_S_EndError" sourceRef="Task_Student_HandleError" targetRef="EndEvent_Student_Error" />
+    <bpmn:sequenceFlow id="Seq_S_Valid" name="[Hợp lệ]" sourceRef="Gateway_Student_Check" targetRef="Task_Student_PendingReceipt" />
+    <bpmn:sequenceFlow id="Seq_S_ToCatch" sourceRef="Task_Student_PendingReceipt" targetRef="CatchEvent_Student_Notify" />
+    <bpmn:sequenceFlow id="Seq_S_ToNotify" sourceRef="CatchEvent_Student_Notify" targetRef="Task_Student_ViewNotify" />
+    <bpmn:sequenceFlow id="Seq_S_Success" sourceRef="Task_Student_ViewNotify" targetRef="EndEvent_Student_Success" />
+  </bpmn:process>
+
+  <!-- ========================================================================= -->
+  <!-- PROCESS 2: HỆ THỐNG 5SHARE -->
+  <!-- ========================================================================= -->
+  <bpmn:process id="Process_System" name="Quy trình Tự động hóa 5Share" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_System_Msg" name="Nhận yêu cầu nộp">
+      <bpmn:outgoing>Seq_Sys_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_Sys_Start" />
+    </bpmn:startEvent>
+
+    <bpmn:task id="Task_System_Check" name="2. Kiểm tra dung lượng, Magic Bytes &amp; SHA-256 (UC08)">
+      <bpmn:incoming>Seq_Sys_1</bpmn:incoming>
+      <bpmn:outgoing>Seq_Sys_2</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:exclusiveGateway id="Gateway_System_Check" name="Hợp lệ &amp; Độc nhất?">
+      <bpmn:incoming>Seq_Sys_2</bpmn:incoming>
+      <bpmn:outgoing>Seq_Sys_Duplicate</bpmn:outgoing>
+      <bpmn:outgoing>Seq_Sys_Valid</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:task id="Task_System_Reject" name="Phản hồi từ chối nộp (Báo trùng / File lỗi)">
+      <bpmn:incoming>Seq_Sys_Duplicate</bpmn:incoming>
+      <bpmn:outgoing>Seq_Sys_EndReject</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:endEvent id="EndEvent_System_Reject" name="Hủy phiên nộp">
+      <bpmn:incoming>Seq_Sys_EndReject</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:task id="Task_System_StorePending" name="3. Lưu Cloudinary &amp; Gán PENDING CSDL (G5-FR06)">
+      <bpmn:incoming>Seq_Sys_Valid</bpmn:incoming>
+      <bpmn:outgoing>Seq_Sys_ToCatchAdmin</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:intermediateCatchEvent id="CatchEvent_System_AdminDecision" name="Nhận quyết định từ Quản trị viên">
+      <bpmn:incoming>Seq_Sys_ToCatchAdmin</bpmn:incoming>
+      <bpmn:outgoing>Seq_Sys_ToUpdate</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_Sys_CatchAdmin" />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:task id="Task_System_UpdateNotify" name="Cập nhật trạng thái CSDL &amp; Bắn thông báo chuông (UC03)">
+      <bpmn:incoming>Seq_Sys_ToUpdate</bpmn:incoming>
+      <bpmn:outgoing>Seq_Sys_Success</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:endEvent id="EndEvent_System_Success" name="Hoàn tất quy trình hệ thống">
+      <bpmn:incoming>Seq_Sys_Success</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence flows -->
+    <bpmn:sequenceFlow id="Seq_Sys_1" sourceRef="StartEvent_System_Msg" targetRef="Task_System_Check" />
+    <bpmn:sequenceFlow id="Seq_Sys_2" sourceRef="Task_System_Check" targetRef="Gateway_System_Check" />
+    <bpmn:sequenceFlow id="Seq_Sys_Duplicate" name="[Trùng / Hỏng]" sourceRef="Gateway_System_Check" targetRef="Task_System_Reject" />
+    <bpmn:sequenceFlow id="Seq_Sys_EndReject" sourceRef="Task_System_Reject" targetRef="EndEvent_System_Reject" />
+    <bpmn:sequenceFlow id="Seq_Sys_Valid" name="[Đạt chuẩn]" sourceRef="Gateway_System_Check" targetRef="Task_System_StorePending" />
+    <bpmn:sequenceFlow id="Seq_Sys_ToCatchAdmin" sourceRef="Task_System_StorePending" targetRef="CatchEvent_System_AdminDecision" />
+    <bpmn:sequenceFlow id="Seq_Sys_ToUpdate" sourceRef="CatchEvent_System_AdminDecision" targetRef="Task_System_UpdateNotify" />
+    <bpmn:sequenceFlow id="Seq_Sys_Success" sourceRef="Task_System_UpdateNotify" targetRef="EndEvent_System_Success" />
+  </bpmn:process>
+
+  <!-- ========================================================================= -->
+  <!-- PROCESS 3: QUẢN TRỊ VIÊN -->
+  <!-- ========================================================================= -->
+  <bpmn:process id="Process_Admin" name="Quy trình Thẩm định của Quản trị viên" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_Admin_Msg" name="Tiếp nhận hồ sơ từ Moderation Queue">
+      <bpmn:outgoing>Seq_Adm_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_Adm_Start" />
+    </bpmn:startEvent>
+
+    <bpmn:task id="Task_Admin_Review" name="4. Xem trước toàn văn &amp; Thẩm định 8 tiêu chí (UC09)">
+      <bpmn:incoming>Seq_Adm_1</bpmn:incoming>
+      <bpmn:outgoing>Seq_Adm_2</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:exclusiveGateway id="Gateway_Admin_Decision" name="Đạt tiêu chí?">
+      <bpmn:incoming>Seq_Adm_2</bpmn:incoming>
+      <bpmn:outgoing>Seq_Adm_Approve</bpmn:outgoing>
+      <bpmn:outgoing>Seq_Adm_Reject</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:task id="Task_Admin_Approve" name="Phê duyệt (APPROVED) &amp; Cho phép công khai">
+      <bpmn:incoming>Seq_Adm_Approve</bpmn:incoming>
+      <bpmn:outgoing>Seq_Adm_EndApprove</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:endEvent id="EndEvent_Admin_Approve" name="Kết thúc: Đã duyệt">
+      <bpmn:incoming>Seq_Adm_EndApprove</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:task id="Task_Admin_Reject" name="Từ chối (REJECTED) &amp; Nhập lý do phản hồi">
+      <bpmn:incoming>Seq_Adm_Reject</bpmn:incoming>
+      <bpmn:outgoing>Seq_Adm_EndReject</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:endEvent id="EndEvent_Admin_Reject" name="Kết thúc: Đã từ chối">
+      <bpmn:incoming>Seq_Adm_EndReject</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence flows -->
+    <bpmn:sequenceFlow id="Seq_Adm_1" sourceRef="StartEvent_Admin_Msg" targetRef="Task_Admin_Review" />
+    <bpmn:sequenceFlow id="Seq_Adm_2" sourceRef="Task_Admin_Review" targetRef="Gateway_Admin_Decision" />
+    <bpmn:sequenceFlow id="Seq_Adm_Approve" name="[Duyệt]" sourceRef="Gateway_Admin_Decision" targetRef="Task_Admin_Approve" />
+    <bpmn:sequenceFlow id="Seq_Adm_EndApprove" sourceRef="Task_Admin_Approve" targetRef="EndEvent_Admin_Approve" />
+    <bpmn:sequenceFlow id="Seq_Adm_Reject" name="[Từ chối]" sourceRef="Gateway_Admin_Decision" targetRef="Task_Admin_Reject" />
+    <bpmn:sequenceFlow id="Seq_Adm_EndReject" sourceRef="Task_Admin_Reject" targetRef="EndEvent_Admin_Reject" />
+  </bpmn:process>
+
+  <!-- ========================================================================= -->
+  <!-- DIAGRAM INTERCHANGE (BPMNDI): TỌA ĐỘ VÀ MÀU SẮC ĐỂ VISUAL PARADIGM RENDER -->
+  <!-- ========================================================================= -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_5Share">
+    <bpmndi:BPMNPlane id="BPMNPlane_5Share" bpmnElement="Collaboration_5Share">
+
+      <!-- Pools -->
+      <bpmndi:BPMNShape id="Shape_Student_Pool" bpmnElement="Participant_Student" isHorizontal="true" bioc:stroke="#334155" bioc:fill="#F8FAFC">
+        <dc:Bounds x="100" y="60" width="1240" height="230" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_System_Pool" bpmnElement="Participant_System" isHorizontal="true" bioc:stroke="#0284C7" bioc:fill="#F0F9FF">
+        <dc:Bounds x="100" y="320" width="1240" height="270" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Admin_Pool" bpmnElement="Participant_Admin" isHorizontal="true" bioc:stroke="#D97706" bioc:fill="#FFFBEB">
+        <dc:Bounds x="100" y="620" width="1240" height="260" />
+      </bpmndi:BPMNShape>
+
+      <!-- Student elements -->
+      <bpmndi:BPMNShape id="Shape_StartEvent_Student" bpmnElement="StartEvent_Student" bioc:stroke="#16A34A" bioc:fill="#DCFCE7">
+        <dc:Bounds x="180" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_Student_Submit" bpmnElement="Task_Student_Submit" bioc:stroke="#0284C7" bioc:fill="#FFFFFF">
+        <dc:Bounds x="260" y="138" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_Student_Check" bpmnElement="Gateway_Student_Check" isMarkerVisible="true" bioc:stroke="#D97706" bioc:fill="#FEF3C7">
+        <dc:Bounds x="460" y="143" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_Student_HandleError" bpmnElement="Task_Student_HandleError" bioc:stroke="#EF4444" bioc:fill="#FEE2E2">
+        <dc:Bounds x="550" y="75" width="150" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndEvent_Student_Error" bpmnElement="EndEvent_Student_Error" bioc:stroke="#DC2626" bioc:fill="#FEE2E2">
+        <dc:Bounds x="730" y="82" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_Student_PendingReceipt" bpmnElement="Task_Student_PendingReceipt" bioc:stroke="#16A34A" bioc:fill="#DCFCE7">
+        <dc:Bounds x="550" y="140" width="160" height="55" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_CatchEvent_Student_Notify" bpmnElement="CatchEvent_Student_Notify" bioc:stroke="#0284C7" bioc:fill="#EFF6FF">
+        <dc:Bounds x="760" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_Student_ViewNotify" bpmnElement="Task_Student_ViewNotify" bioc:stroke="#0284C7" bioc:fill="#FFFFFF">
+        <dc:Bounds x="840" y="138" width="170" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndEvent_Student_Success" bpmnElement="EndEvent_Student_Success" bioc:stroke="#16A34A" bioc:fill="#DCFCE7">
+        <dc:Bounds x="1060" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- System elements -->
+      <bpmndi:BPMNShape id="Shape_StartEvent_System_Msg" bpmnElement="StartEvent_System_Msg" bioc:stroke="#0284C7" bioc:fill="#DCFCE7">
+        <dc:Bounds x="322" y="390" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_System_Check" bpmnElement="Task_System_Check" bioc:stroke="#0284C7" bioc:fill="#FFFFFF">
+        <dc:Bounds x="400" y="378" width="170" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_System_Check" bpmnElement="Gateway_System_Check" isMarkerVisible="true" bioc:stroke="#D97706" bioc:fill="#FEF3C7">
+        <dc:Bounds x="610" y="383" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_System_Reject" bpmnElement="Task_System_Reject" bioc:stroke="#EF4444" bioc:fill="#FEE2E2">
+        <dc:Bounds x="575" y="470" width="140" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndEvent_System_Reject" bpmnElement="EndEvent_System_Reject" bioc:stroke="#DC2626" bioc:fill="#FEE2E2">
+        <dc:Bounds x="627" y="540" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_System_StorePending" bpmnElement="Task_System_StorePending" bioc:stroke="#16A34A" bioc:fill="#DCFCE7">
+        <dc:Bounds x="710" y="378" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_CatchEvent_System_AdminDecision" bpmnElement="CatchEvent_System_AdminDecision" bioc:stroke="#0284C7" bioc:fill="#EFF6FF">
+        <dc:Bounds x="920" y="390" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_System_UpdateNotify" bpmnElement="Task_System_UpdateNotify" bioc:stroke="#0284C7" bioc:fill="#FFFFFF">
+        <dc:Bounds x="1000" y="378" width="170" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndEvent_System_Success" bpmnElement="EndEvent_System_Success" bioc:stroke="#16A34A" bioc:fill="#DCFCE7">
+        <dc:Bounds x="1220" y="390" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- Admin elements -->
+      <bpmndi:BPMNShape id="Shape_StartEvent_Admin_Msg" bpmnElement="StartEvent_Admin_Msg" bioc:stroke="#D97706" bioc:fill="#FEF3C7">
+        <dc:Bounds x="772" y="720" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_Admin_Review" bpmnElement="Task_Admin_Review" bioc:stroke="#D97706" bioc:fill="#FFFFFF">
+        <dc:Bounds x="850" y="708" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_Admin_Decision" bpmnElement="Gateway_Admin_Decision" isMarkerVisible="true" bioc:stroke="#D97706" bioc:fill="#FEF3C7">
+        <dc:Bounds x="1050" y="713" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_Admin_Approve" bpmnElement="Task_Admin_Approve" bioc:stroke="#16A34A" bioc:fill="#DCFCE7">
+        <dc:Bounds x="1140" y="650" width="140" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndEvent_Admin_Approve" bpmnElement="EndEvent_Admin_Approve" bioc:stroke="#16A34A" bioc:fill="#DCFCE7">
+        <dc:Bounds x="1310" y="657" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_Admin_Reject" bpmnElement="Task_Admin_Reject" bioc:stroke="#EF4444" bioc:fill="#FEE2E2">
+        <dc:Bounds x="1140" y="770" width="140" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndEvent_Admin_Reject" bpmnElement="EndEvent_Admin_Reject" bioc:stroke="#DC2626" bioc:fill="#FEE2E2">
+        <dc:Bounds x="1310" y="777" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- Message Flow Edges -->
+      <bpmndi:BPMNEdge id="Edge_MsgFlow_Submit" bpmnElement="MsgFlow_Submit" bioc:stroke="#0284C7">
+        <di:waypoint x="340" y="198" />
+        <di:waypoint x="340" y="390" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MsgFlow_TechError" bpmnElement="MsgFlow_TechError" bioc:stroke="#DC2626">
+        <di:waypoint x="625" y="470" />
+        <di:waypoint x="625" y="125" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MsgFlow_PendingReceipt" bpmnElement="MsgFlow_PendingReceipt" bioc:stroke="#16A34A">
+        <di:waypoint x="750" y="378" />
+        <di:waypoint x="750" y="280" />
+        <di:waypoint x="650" y="280" />
+        <di:waypoint x="650" y="195" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MsgFlow_ToAdminQueue" bpmnElement="MsgFlow_ToAdminQueue" bioc:stroke="#D97706">
+        <di:waypoint x="790" y="438" />
+        <di:waypoint x="790" y="720" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MsgFlow_AdminApprove" bpmnElement="MsgFlow_AdminApprove" bioc:stroke="#D97706">
+        <di:waypoint x="1210" y="650" />
+        <di:waypoint x="1210" y="530" />
+        <di:waypoint x="938" y="530" />
+        <di:waypoint x="938" y="426" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_MsgFlow_NotifyResult" bpmnElement="MsgFlow_NotifyResult" bioc:stroke="#0284C7">
+        <di:waypoint x="1085" y="378" />
+        <di:waypoint x="1085" y="250" />
+        <di:waypoint x="778" y="250" />
+        <di:waypoint x="778" y="186" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,386 @@
+% =========================================================================
+% CHƯƠNG 1: KHẢO SÁT BÀI TOÁN
+% Dự án: Hệ thống Quản lý và Chia sẻ Học liệu Sư phạm Tin học (5Share)
+% Học phần: Nhập môn Công nghệ Phần mềm (2611COMP104406) - HCMUE
+% =========================================================================
+
+\section{CHƯƠNG 1: KHẢO SÁT BÀI TOÁN}
+
+\subsection{1.1. Giới thiệu bài toán}
+
+\subsubsection{1.1.1. Bối cảnh ra đời của hệ thống 5Share}
+Trong kỷ nguyên chuyển đổi số giáo dục và triển khai Chương trình Giáo dục phổ thông (GDPT) 2018, ngành Sư phạm Tin học đóng vai trò then chốt trong việc đào tạo đội ngũ giáo viên nòng cốt phát triển năng lực số cho học sinh. Tại Khoa Công nghệ Thông tin -- Trường Đại học Sư phạm TP.HCM (HCMUE), sinh viên ngành Sư phạm Tin học không chỉ tiếp thu kiến thức khoa học máy tính chuyên sâu mà còn phải rèn luyện năng lực nghiệp vụ sư phạm vững vàng, đặc biệt là kỹ năng thiết kế Kế hoạch bài dạy (giáo án) theo chuẩn Công văn 5512/BGDĐT-GDTrH, xây dựng đề thi và thiết kế bài giảng điện tử.
+
+Tuy nhiên, qua khảo sát thực tế tại khoa, việc lưu trữ và lưu chuyển học liệu chuyên ngành hiện đang gặp nhiều bất cập nghiêm trọng:
+\begin{itemize}
+    \item \textbf{Phân mảnh và thất lạc dữ liệu:} Tài liệu học tập, slide bài giảng, đề thi kết thúc học phần và giáo án mẫu chủ yếu được chia sẻ tự phát qua các hội nhóm Zalo, Messenger hoặc thư mục Google Drive cá nhân. Tình trạng này dẫn đến việc liên kết tải file bị hết hạn, trôi tin nhắn và sinh viên khóa sau gặp rất nhiều khó khăn khi tìm kiếm tư liệu học tập từ các khóa trước.
+    \item \textbf{Chất lượng không được kiểm chứng:} Nguồn tài liệu trôi nổi trên mạng xã hội không qua quy trình thẩm định chuyên môn, thường xuyên chứa lỗi kiến thức, sai lệch thuật ngữ hoặc không tuân thủ chuẩn 4 hoạt động của Công văn 5512, gây ảnh hưởng tiêu cực đến chất lượng rèn nghề sư phạm.
+    \item \textbf{Thiếu cơ chế ghi nhận và động lực chia sẻ:} Người chia sẻ tâm huyết không được bảo vệ bản quyền tác giả hoặc ghi nhận công sức, dẫn đến tâm lý e ngại và thiếu động lực đóng góp tài liệu chất lượng cao cho cộng đồng.
+\end{itemize}
+
+Trước những đòi hỏi bức thiết đó, dự án \textbf{5Share} được xây dựng nhằm mang đến một nền tảng tập trung, tin cậy và chuyên biệt hóa, hỗ trợ sinh viên Sư phạm Tin học tra cứu, lưu trữ và chia sẻ học liệu một cách khoa học, có thẩm định và bảo mật cao.
+
+\subsubsection{1.1.2. Mục tiêu của hệ thống 5Share}
+Hệ thống 5Share được định hướng phát triển nhằm giải quyết triệt để các tồn đọng của phương thức chia sẻ học liệu truyền thống qua 4 mục tiêu trọng tâm:
+\begin{enumerate}
+    \item \textbf{Chuẩn hóa kho học liệu số chuyên ngành Sư phạm Tin học:} Xây dựng hệ thống danh mục phân loại bám sát khung Chương trình đào tạo của Khoa CNTT -- HCMUE (Đại cương, Cơ sở ngành, Chuyên ngành và Nghiệp vụ sư phạm). Mọi tài liệu giáo án đều được chuẩn hóa theo cấu trúc 4 hoạt động của Công văn 5512.
+    \item \textbf{Thiết lập quy trình kiểm duyệt chất lượng 2 tầng chặt chẽ:} Kết hợp kiểm tra kỹ thuật tự động (định dạng tệp PDF, dung lượng $\le$ 25MB, băm SHA-256 chống trùng lặp) và thẩm định chuyên môn bởi Quản trị viên (Admin/Trợ giảng) theo 8 tiêu chí khắt khe trước khi xuất bản công khai.
+    \item \textbf{Tối ưu hóa trải nghiệm tìm kiếm và khai thác:} Cung cấp bộ lọc thông minh đa tiêu chí (theo môn học, khối lớp, loại tài liệu), tích hợp trình đọc toàn văn trực tuyến (Full PDF Preview) trực tiếp trên trình duyệt web và cơ chế phân quyền bảo vệ tài nguyên (khách vãng lai chỉ được đọc thử 3 trang đầu).
+    \item \textbf{Xây dựng cộng đồng học thuật tương tác tích cực:} Ứng dụng cơ chế Gamification (tích lũy điểm cống hiến +20 điểm khi đóng góp tài liệu thành công), đánh giá chất lượng 1--5 sao, bình luận trao đổi học thuật và hệ thống chuông thông báo thời gian thực.
+\end{enumerate}
+
+\subsubsection{1.1.3. Các tác nhân tham gia hệ thống (Actors)}
+Hệ thống 5Share phân định rõ quyền hạn và trách nhiệm của 3 nhóm tác nhân chính như trình bày tại Bảng~\ref{tab:actors}:
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Danh sách các tác nhân và quyền hạn trong hệ thống 5Share}
+\label{tab:actors}
+\begin{tabularx}{\textwidth}{|p{3cm}|p{3.5cm}|X|}
+\hline
+\textbf{Tác nhân (Actor)} & \textbf{Vai trò trong hệ thống} & \textbf{Phạm vi trách nhiệm và quyền hạn chính} \\
+\hline
+\textbf{Khách vãng lai\newline(Guest)} & Người dùng chưa đăng nhập hệ thống & 
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt]
+    \item Khám phá kho tài liệu công khai theo môn học.
+    \item Tìm kiếm và lọc tài liệu theo từ khóa.
+    \item Xem thử (Preview) giới hạn tối đa 3 trang đầu.
+    \item Bắt buộc đăng nhập khi tải về, lưu tủ sách hoặc upload.
+\end{itemize} \\
+\hline
+\textbf{Sinh viên\newline(Student / User)} & Sinh viên Sư phạm Tin học đã xác thực tài khoản & 
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt]
+    \item Quản lý hồ sơ cá nhân và đổi mật khẩu.
+    \item Đọc toàn văn tài liệu trực tuyến (Full PDF Preview).
+    \item Tải tệp tin gốc (.pdf) về thiết bị cá nhân.
+    \item Đánh dấu tài liệu vào Tủ tài liệu cá nhân (Bookmark).
+    \item Đóng góp học liệu (Upload PDF kèm Metadata).
+    \item Đánh giá 1--5 sao, bình luận học thuật và báo cáo vi phạm.
+    \item Tích lũy điểm cống hiến (+20 điểm khi tài liệu được duyệt).
+\end{itemize} \\
+\hline
+\textbf{Quản trị viên\newline(Admin / Moderator)} & Ban quản trị và kiểm duyệt chuyên môn & 
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt]
+    \item Quản lý hàng đợi tài liệu Chờ duyệt (Pending Queue).
+    \item Xem toàn văn và thẩm định 8 tiêu chí chuyên môn.
+    \item Phê duyệt (APPROVED) hoặc Từ chối (REJECTED) kèm lý do.
+    \item Quản lý danh mục môn học thuộc CTĐT.
+    \item Xử lý các báo cáo vi phạm (ẩn hoặc gỡ bỏ tài liệu xấu).
+    \item Theo dõi Dashboard thống kê lượt xem, tải và tương tác.
+\end{itemize} \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{1.1.4. Phạm vi bài toán (In-scope và Out-of-scope)}
+Nhằm đảm bảo tính khả thi và hoàn thành dự án với chất lượng tốt nhất trong khuôn khổ học phần, phạm vi bài toán được xác định:
+\begin{itemize}
+    \item \textbf{Phạm vi thực hiện (In-Scope):} Quản lý chu trình vòng đời tài liệu số (PDF); kiểm tra tự động mã băm SHA-256; hàng đợi kiểm duyệt 2 trạng thái; lưu trữ đám mây Cloudinary; phân quyền đọc thử/tải về; đánh giá, bình luận học thuật; hệ thống thông báo sự kiện; bảng thống kê Dashboard.
+    \item \textbf{Phạm vi không thực hiện (Out-of-Scope):} Nhận dạng ký tự quang học (OCR) từ tệp quét; tóm tắt tự động bằng AI; kiểm tra đạo văn tự động; tích hợp cổng thanh toán trực tuyến thương mại; phòng chat trực tiếp thời gian thực.
+\end{itemize}
+
+\subsection{1.2. Khảo sát bài toán}
+
+\subsubsection{1.2.1. Khảo sát các biểu mẫu và tài liệu nghiệp vụ thực tế}
+Nhóm tiến hành thu thập và khảo sát 3 nhóm biểu mẫu nghiệp vụ thực tế tại Khoa CNTT -- HCMUE:
+\begin{enumerate}
+    \item \textbf{Kế hoạch bài dạy (Giáo án) theo chuẩn Công văn 5512/BGDĐT-GDTrH:} Đây là biểu mẫu nghiệp vụ sư phạm cốt lõi. Cấu trúc chuẩn bắt buộc gồm: Mục tiêu dạy học (kiến thức, năng lực, phẩm chất); Thiết bị dạy học; và Tiến trình 4 hoạt động: (1) Hoạt động Khởi động; (2) Hoạt động Hình thành kiến thức mới; (3) Hoạt động Luyện tập; (4) Hoạt động Vận dụng. Cấu trúc này được 5Share dùng làm tiêu chuẩn đánh giá chất lượng học liệu.
+    \item \textbf{Đề thi kết thúc học phần và đáp án thang điểm:} Khảo sát đề thi các môn Cơ sở dữ liệu, Kiến trúc máy tính, Kỹ thuật lập trình... đòi hỏi thông tin chính xác về học kỳ, năm học, giảng viên phụ trách và bắt buộc kèm đáp án thang điểm chi tiết.
+    \item \textbf{Bài giảng điện tử và đề cương học phần chuyên ngành:} Slide bài giảng lý thuyết, tài liệu hướng dẫn thực hành phòng máy, đề cương chi tiết học phần phục vụ ôn tập.
+\end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.9\textwidth}{\centering \vspace{0.5cm} \textit{[Ảnh chụp trích lục biểu mẫu Kế hoạch bài dạy chuẩn Công văn 5512/BGDĐT-GDTrH]} \vspace{0.5cm}}}
+\caption{Trích lục biểu mẫu Kế hoạch bài dạy theo khung Công văn 5512/BGDĐT-GDTrH}
+\label{fig:cv5512}
+\end{figure}
+
+\subsubsection{1.2.2. Khảo sát nhu cầu người dùng qua bảng hỏi}
+Nhóm đã triển khai phiếu khảo sát trực tuyến qua Google Forms và thu thập phản hồi từ 15 sinh viên khóa K49 ngành Sư phạm Tin học. Số liệu định lượng được tổng hợp tại Bảng~\ref{tab:survey}:
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Tổng hợp kết quả khảo sát nhu cầu từ 15 sinh viên K49 Sư phạm Tin học}
+\label{tab:survey}
+\begin{tabularx}{\textwidth}{|c|X|c|c|}
+\hline
+\textbf{STT} & \textbf{Nội dung câu hỏi khảo sát thực tế} & \textbf{Số lượng đồng thuận} & \textbf{Tỷ lệ (\%)} \\
+\hline
+1 & Nhu cầu thường xuyên tìm kiếm học liệu tham khảo (Giáo án 5512, Đề thi, Slide) & 15 / 15 sinh viên & 100.0\% \\
+\hline
+2 & Gặp khó khăn do tài liệu trên mạng xã hội bị trôi tin nhắn hoặc mất liên kết & 14 / 15 sinh viên & 93.3\% \\
+\hline
+3 & Từng tải phải tài liệu chất lượng kém, sai chuẩn kiến thức hoặc không đúng tiêu đề & 13 / 15 sinh viên & 86.7\% \\
+\hline
+4 & Sự cần thiết của quy trình kiểm duyệt chất lượng trước khi chia sẻ công khai & 15 / 15 sinh viên & 100.0\% \\
+\hline
+5 & Nhu cầu xem trước tài liệu trực tiếp trên trình duyệt (PDF Preview) trước khi tải & 14 / 15 sinh viên & 93.3\% \\
+\hline
+6 & Sẵn sàng đóng góp tài liệu nếu có cơ chế ghi nhận và tích lũy điểm thưởng & 12 / 15 sinh viên & 80.0\% \\
+\hline
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+% Nếu đã upload ảnh biểu đồ Phần IV, mở dòng dưới và chú thích dòng fbox:
+% \includegraphics[width=0.95\textwidth]{hinh_1_2_khao_sat_kiem_duyet.png}
+\fbox{\parbox{0.95\textwidth}{\centering \vspace{0.5cm} \textit{[Ảnh chụp toàn bộ biểu đồ Phần IV: Đánh giá mức độ cần thiết của 8 tính năng trên hệ thống 5Share từ Google Forms]} \vspace{0.5cm}}}
+\caption{Đánh giá của sinh viên về mức độ cần thiết của các tính năng trên hệ thống 5Share}
+\label{fig:survey_features}
+\end{figure}
+
+Kết quả khảo sát tại Hình~\ref{fig:survey_features} phản ánh sự đồng thuận rất cao của sinh viên ngành Sư phạm Tin học đối với 8 nhóm tính năng được đề xuất cho hệ thống 5Share, trong đó phần lớn ý kiến đánh giá đều tập trung ở thang điểm 4 (Khá cần thiết) và thang điểm 5 (Rất cần thiết). Cụ thể:
+\begin{itemize}
+    \item \textbf{Kiểm soát chất lượng học thuật:} 100\% sinh viên tham gia khảo sát đánh giá tính năng ``Kiểm duyệt chất lượng trước khi đăng'' và ``Báo cáo vi phạm nội dung'' là đặc biệt cấp thiết. Thực tế khảo sát cho thấy sinh viên thường xuyên gặp rủi ro trước các nguồn tài liệu sai chuẩn sư phạm hoặc trôi nổi trên mạng xã hội, do đó việc thiết lập hàng rào kiểm duyệt chuyên môn là yếu tố cốt lõi tạo nên giá trị và độ tin cậy của kho học liệu 5Share.
+    \item \textbf{Tra cứu và trải nghiệm học liệu:} Tính năng ``Xem trước nội dung trực tiếp (Preview)'' và ``Bộ lọc tìm kiếm thông minh theo chuẩn môn học'' đạt tỷ lệ đồng thuận trên 93.3\%. Sinh viên có nhu cầu đọc thử nhanh các trang đầu của giáo án, đề thi ngay trên trình duyệt để đánh giá độ phù hợp trước khi quyết định tải về máy, giúp tiết kiệm thời gian tra cứu và tối ưu dung lượng lưu trữ thiết bị.
+    \item \textbf{Tương tác và tạo động lực cộng đồng:} Các tính năng ``Đánh giá 1--5 sao và bình luận học thuật'', ``Tủ tài liệu cá nhân (Bookmark)'' cùng ``Bảng vinh danh cống hiến'' đạt trên 80\% mức độ cần thiết. Đây là căn cứ thực tiễn quan trọng để hệ thống thiết kế cơ chế tích điểm cống hiến (+20 điểm khi đóng góp bài thành công), vừa ghi nhận bản quyền tác giả, vừa thúc đẩy tinh thần chia sẻ học liệu tích cực trong cộng đồng sinh viên sư phạm.
+\end{itemize}
+
+Những dữ liệu định lượng trên là cơ sở khoa học và thực tiễn vững chắc để nhóm 5 xác định phạm vi bài toán, đồng thời thiết lập thứ tự ưu tiên phát triển (MoSCoW) cho 13 yêu cầu chức năng thành phần.
+
+\subsubsection{1.2.3. Khảo sát chuyên sâu thông qua phỏng vấn và đóng vai (Role-play)}
+Nhóm đã tiến hành phỏng vấn sâu qua phương pháp Role-play giữa sinh viên Nguyễn Anh Khoa (Trưởng nhóm 5) và anh Huỳnh Tấn Đạt (Cựu sinh viên K47 Sư phạm Tin học, Trợ giảng môn Phương pháp dạy học Tin học):
+\begin{itemize}
+    \item \textbf{Khó khăn trong thực tế rèn nghề sư phạm:} Sinh viên mới thường lúng túng khi xây dựng giáo án theo Công văn 5512, dễ sao chép các tài liệu cũ không phù hợp Chương trình GDPT 2018. Một hệ thống học liệu thẩm định chuẩn mực sẽ là bệ phóng rèn nghề rất giá trị.
+    \item \textbf{Định hướng quy trình kiểm duyệt 2 tầng:} Phân định rạch ròi: kiểm tra kỹ thuật (định dạng, kích thước, SHA-256) phải tự động hóa 100\% bằng code; người duyệt chuyên môn (Admin) chỉ tập trung thẩm định nội dung sư phạm và bản quyền.
+    \item \textbf{Cơ chế kích thích chia sẻ:} Phân quyền xem trước 3 trang đầu để kích thích đăng ký tài khoản, kết hợp tích điểm thưởng cống hiến để duy trì nguồn học liệu dồi dào.
+\end{itemize}
+
+\subsection{1.3. Xác định thông tin cơ bản cho nghiệp vụ của bài toán}
+
+\subsubsection{1.3.1. Phân tích hiện trạng quy trình nghiệp vụ (Quy trình As-Is so với To-Be)}
+Bảng~\ref{tab:as_is_to_be} phân tích so sánh giữa phương thức quản lý học liệu thủ công hiện tại và giải pháp phần mềm 5Share:
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{So sánh quy trình hiện trạng (As-Is) và quy trình cải tiến số hóa (To-Be)}
+\label{tab:as_is_to_be}
+\begin{tabularx}{\textwidth}{|p{2.5cm}|X|X|}
+\hline
+\textbf{Tiêu chí so sánh} & \textbf{Hiện trạng thủ công (As-Is)} & \textbf{Quy trình số hóa 5Share (To-Be)} \\
+\hline
+\textbf{Phương thức lưu trữ \& chia sẻ} & Phân tán rải rác trên Zalo, Messenger, Drive cá nhân; file dễ bị xóa hoặc trôi link. & Lưu trữ đám mây tập trung (Cloudinary), dữ liệu phân mục khoa học, lưu trữ vĩnh viễn. \\
+\hline
+\textbf{Kiểm soát chất lượng học thuật} & Hoàn toàn không có kiểm duyệt; tài liệu sai sót chuyên môn tràn lan. & Quy trình kiểm duyệt 2 tầng: tự động validate kỹ thuật và Admin thẩm định 8 tiêu chí. \\
+\hline
+\textbf{Chống trùng lặp dữ liệu} & Trùng lặp nhiều bản sao cùng một file; gây lãng phí bộ nhớ và khó tra cứu. & Tự động tính toán mã băm SHA-256 để chặn tệp tin trùng lặp ngay khi upload. \\
+\hline
+\textbf{Tra cứu và xem trước tài liệu} & Phải tải toàn bộ tệp về máy mới xem được; tốn dung lượng và thời gian. & Tìm kiếm Full-Text; bộ lọc đa tầng; xem trước trực tuyến (Preview) 3 trang hoặc toàn văn. \\
+\hline
+\textbf{Động lực đóng góp \& tương tác} & Chia sẻ ẩn danh, không có ghi nhận; dễ bị sao chép mất quyền tác giả. & Ghi nhận quyền tác giả; tích lũy +20 điểm cống hiến; đánh giá 1--5 sao và bình luận học thuật. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{1.3.2. Tiêu chuẩn và ma trận tiêu chí kiểm duyệt học liệu}
+Để đảm bảo tính khách quan và nhất quán trong khâu phê duyệt, 5Share chuẩn hóa \textbf{Ma trận 8 tiêu chí kiểm duyệt} (Bảng~\ref{tab:criteria}):
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Ma trận 8 tiêu chí thẩm định chất lượng học liệu trên hệ thống 5Share}
+\label{tab:criteria}
+\begin{tabularx}{\textwidth}{|c|p{3.5cm}|p{1.8cm}|X|}
+\hline
+\textbf{Mã} & \textbf{Tên tiêu chí kiểm duyệt} & \textbf{Mức độ} & \textbf{Chuẩn mực đánh giá chi tiết} \\
+\hline
+TC01 & Định dạng tệp tin PDF chuẩn & Bắt buộc & File PDF nguyên bản, đọc được bằng PDF reader tiêu chuẩn, không bị mã hóa mật khẩu bảo vệ. \\
+\hline
+TC02 & Dung lượng tệp trong giới hạn & Bắt buộc & Dung lượng không vượt quá 25MB nhằm tối ưu băng thông và tài nguyên máy chủ. \\
+\hline
+TC03 & Tính toàn vẹn \& Không trùng lặp & Bắt buộc & Mã băm SHA-256 của tệp tin chưa từng tồn tại trong cơ sở dữ liệu hệ thống. \\
+\hline
+TC04 & Tính chuẩn xác của Metadata & Bắt buộc & Tên tài liệu rõ ràng; gán đúng môn học CTĐT; mô tả tóm tắt nội dung tối thiểu 20 ký tự. \\
+\hline
+TC05 & Chuẩn sư phạm (Công văn 5512) & Bắt buộc (*) & Đối với Giáo án: Bắt buộc cấu trúc 4 hoạt động (Khởi động, Hình thành kiến thức, Luyện tập, Vận dụng). \\
+\hline
+TC06 & Tính bản quyền và liêm chính & Bắt buộc & Không vi phạm bản quyền thương mại; ghi rõ tác giả hoặc nguồn trích dẫn học liệu. \\
+\hline
+TC07 & Chất lượng trình bày \& Thẩm mỹ & Khuyến khích & Trình bày rõ ràng, không lỗi font tiếng Việt, không chứa hình ảnh mờ nhòe phản cảm. \\
+\hline
+TC08 & Tính cập nhật theo CT GDPT 2018 & Khuyến khích & Nội dung kiến thức phù hợp với chương trình hiện hành, đúng thuật ngữ chuyên môn. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{1.3.3. Bảng phân tích Đầu vào -- Xử lý -- Đầu ra (IPO) cho 13 yêu cầu chức năng}
+Hệ thống 5Share bao gồm 13 yêu cầu chức năng cốt lõi (G5-FR01 đến G5-FR13) được phân tích qua mô hình IPO chuẩn hóa tại Bảng~\ref{tab:ipo}:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Bảng phân tích Đầu vào -- Xử lý -- Đầu ra (IPO) cho 13 yêu cầu chức năng}
+\label{tab:ipo}
+\begin{tabularx}{\textwidth}{|p{2.6cm}|X|X|X|}
+\hline
+\textbf{Mã chức năng} & \textbf{Đầu vào (Input)} & \textbf{Quá trình xử lý (Process)} & \textbf{Đầu ra (Output)} \\
+\hline
+\textbf{G5-FR01}\newline Tra cứu \& Lọc học liệu (MUST) & Từ khóa tìm kiếm, môn học, phân loại, trang cần xem. & Truy vấn bảng documents, lọc status = 'APPROVED', áp dụng Full-Text Search và phân trang. & Danh sách 12 tài liệu/trang hiển thị kèm tiêu đề, môn, tác giả, lượt xem/tải. \\
+\hline
+\textbf{G5-FR02}\newline Preview 3 trang cho Guest (MUST) & document\_id từ phía Khách vãng lai. & Kiểm tra quyền Guest; nạp tệp PDF qua PDF.js; chặn hiển thị từ trang thứ 4 trở đi. & Trình đọc giới hạn 3 trang đầu; nút tải hiển thị modal yêu cầu đăng nhập. \\
+\hline
+\textbf{G5-FR03}\newline Full PDF Preview (MUST) & document\_id, Access Token JWT hợp lệ của Sinh viên. & Xác thực JWT; nạp tài liệu toàn văn không giới hạn trang; hiển thị thanh công cụ đọc. & Trình đọc toàn văn mượt mà trực tiếp trên trình duyệt web. \\
+\hline
+\textbf{G5-FR04}\newline Tải tệp \& Bookmark (MUST) & document\_id, Access Token người dùng. & Kiểm tra quyền tải, tăng download\_count, sinh link tải an toàn hoặc lưu vào bookmarks. & Tệp tin gốc (.pdf) tải về máy; tài liệu được ghi nhận vào Tủ sách cá nhân. \\
+\hline
+\textbf{G5-FR05}\newline Upload PDF \& Metadata (MUST) & Tệp PDF $\le$ 25MB, tên tài liệu, môn học, phân loại, mô tả. & Kiểm tra Magic Bytes, băm SHA-256, đẩy file lên Cloudinary, lưu DB với status = 'PENDING'. & Tài liệu ghi nhận vào hàng đợi kiểm duyệt; thông báo đăng tải thành công. \\
+\hline
+\textbf{G5-FR06}\newline Quản lý hàng đợi Pending (MUST) & Bản ghi tài liệu mới; yêu cầu truy vấn kho công khai. & Lọc riêng tài liệu PENDING vào hàng đợi Admin; cô lập không hiển thị ở kho chung. & Tài liệu mới không xuất hiện ở kho công khai cho đến khi được duyệt. \\
+\hline
+\textbf{G5-FR07}\newline Admin duyệt/từ chối (MUST) & Quyết định Duyệt / Từ chối, lý do phản hồi từ Admin. & Cập nhật status thành 'APPROVED' hoặc 'REJECTED'; ghi lịch sử duyệt; trigger thông báo tác giả. & Tài liệu xuất bản công khai (nếu duyệt) hoặc phản hồi lý do về chuông tác giả. \\
+\hline
+\textbf{G5-FR08}\newline Quản lý môn học CTĐT (MUST) & Thông tin môn: tên môn, khối kiến thức, số tín chỉ, mô tả. & Thẩm định quyền Admin; kiểm tra ràng buộc khóa ngoại trước khi thêm/sửa/xóa môn. & Cây danh mục môn học CTĐT được cập nhật đồng bộ trong bộ lọc hệ thống. \\
+\hline
+\textbf{G5-FR09}\newline Đánh giá \& Bình luận (MUST) & Điểm số 1--5 sao, nội dung bình luận học thuật, JWT. & Kiểm tra sinh viên đã login; tính lại điểm đánh giá trung bình; lọc từ ngữ nhạy cảm. & Điểm sao trung bình cập nhật; bình luận hiển thị trong tab trao đổi học thuật. \\
+\hline
+\textbf{G5-FR10}\newline Báo cáo vi phạm (MUST) & document\_id, loại vi phạm, mô tả vi phạm, JWT. & Lưu báo cáo vào bảng reports; Admin kiểm tra và quyết định ẩn tài liệu hoặc gỡ bỏ. & Báo cáo gửi vào hàng đợi xử lý; tài liệu vi phạm bị ẩn khỏi kho công khai. \\
+\hline
+\textbf{G5-FR11}\newline Chuông thông báo (SHOULD) & Sự kiện: duyệt bài (+20đ), từ chối bài kèm lý do, bình luận mới. & Ghi bản ghi vào bảng notifications; gửi thông báo qua WebSocket/Polling đến tác giả. & Icon chuông hiển thị badge số lượng chưa đọc; popup danh sách thông báo. \\
+\hline
+\textbf{G5-FR12}\newline Dashboard quản trị (SHOULD) & Khoảng thời gian thống kê (tuần, tháng, kỳ). & Tổng hợp truy vấn SQL: đếm tài liệu, lượt tải, lượt xem, top tài liệu tải nhiều nhất. & Biểu đồ thống kê trực quan trên Dashboard dành riêng cho Admin. \\
+\hline
+\textbf{G5-FR13}\newline Chống trùng SHA-256 (COULD) & Dòng dữ liệu nhị phân (Buffer) của tệp tin upload. & Tính toán mã băm SHA-256; truy vấn đối chiếu cột file\_hash trong bảng documents. & Nếu trùng mã băm: cảnh báo từ chối upload; nếu chưa: cho phép tiếp tục. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{1.4. Xây dựng biểu đồ mô tả nghiệp vụ và phân cấp chức năng}
+
+\subsubsection{1.4.1. Biểu đồ hoạt động mô tả luồng nghiệp vụ (Activity Swimlane Diagram)}
+Quy trình phối hợp liên vai trò trong vòng đời tài liệu được thể hiện qua 4 làn tương tác (Swimlane) tại Hình~\ref{fig:swimlane}:
+
+\begin{figure}[htbp]
+\centering
+% \includegraphics[width=0.95\textwidth]{activity_swimlane_5share.png}
+\fbox{\parbox{0.95\textwidth}{\centering \vspace{0.5cm} \textit{[Ảnh chèn Biểu đồ hoạt động nghiệp vụ đa làn Activity Swimlane Diagram: activity\_swimlane\_5share.png]} \vspace{0.5cm}}}
+\caption{Biểu đồ hoạt động nghiệp vụ đa làn (Activity Swimlane Diagram) của hệ thống 5Share}
+\label{fig:swimlane}
+\end{figure}
+
+Biểu đồ hoạt động đa làn trên mô tả quy trình khép kín gồm 3 giai đoạn:
+\begin{itemize}
+    \item \textbf{Giai đoạn 1 (Đăng tải \& Kiểm tra tự động):} Sinh viên chọn tệp PDF và nhập Metadata. Hệ thống tự động kiểm tra định dạng, kiểm tra dung lượng ($\le$ 25MB), tính mã băm SHA-256 đối chiếu chống trùng lặp, tải tệp lên Cloudinary và gắn trạng thái ban đầu là PENDING.
+    \item \textbf{Giai đoạn 2 (Kiểm duyệt chuyên môn):} Tài liệu chuyển vào hàng đợi kiểm duyệt của Admin. Admin xem toàn văn qua Full PDF Preview và thẩm định theo 8 tiêu chí. Nếu đạt yêu cầu, Admin duyệt: hệ thống đổi trạng thái sang APPROVED, cộng +20 điểm cống hiến cho tác giả, đồng thời phân nhánh song song (Fork Bar) vừa gửi chuông thông báo chúc mừng về tài khoản tác giả, vừa đưa tài liệu ra kho công khai. Nếu không đạt yêu cầu, Admin đổi trạng thái sang REJECTED kèm lý do cụ thể và hệ thống kích hoạt chuông thông báo phản hồi về tài khoản tác giả.
+    \item \textbf{Giai đoạn 3 (Khai thác \& Tương tác cộng đồng):} Sinh viên khác tìm kiếm và lọc học liệu theo môn. Khách vãng lai chỉ được đọc thử 3 trang đầu; sinh viên đăng nhập được đọc toàn văn (Full Preview), tải tệp gốc về máy, đánh giá 1--5 sao và tham gia bình luận học thuật.
+\end{itemize}
+
+\subsubsection{1.4.2. Biểu đồ phân cấp chức năng (Business Function Diagram -- BFD)}
+Hệ thống 5Share được phân rã thành cây thứ bậc gồm 3 cấp, tuân thủ đúng chuẩn động từ hành vi và cấu trúc trục nhánh xương cá (Spine Tree) như minh họa tại Hình~\ref{fig:bfd}:
+
+\begin{figure}[htbp]
+\centering
+% \includegraphics[width=0.95\textwidth]{bfd_diagram_5share.png}
+\fbox{\parbox{0.95\textwidth}{\centering \vspace{0.5cm} \textit{[Ảnh chèn Biểu đồ phân cấp chức năng BFD: bfd\_diagram\_5share.png]} \vspace{0.5cm}}}
+\caption{Biểu đồ phân cấp chức năng (Business Function Diagram -- BFD) của hệ thống 5Share}
+\label{fig:bfd}
+\end{figure}
+
+\subsubsection{1.4.3. Mô tả các khối chức năng và đánh giá tính khả thi}
+Tính khả thi của 4 khối chức năng được đánh giá toàn diện trên 4 phương diện tại Bảng~\ref{tab:feasibility}:
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Đánh giá tính khả thi của các khối chức năng theo 4 phương diện}
+\label{tab:feasibility}
+\begin{tabularx}{\textwidth}{|p{3.2cm}|X|X|}
+\hline
+\textbf{Tên khối chức năng} & \textbf{Mô tả chi tiết chức năng} & \textbf{Đánh giá tính khả thi (Nhân lực, Thời gian, Công nghệ, Môi trường)} \\
+\hline
+\textbf{1.0. Quản trị tài khoản \& bảo mật} & Đăng ký, đăng nhập JWT, phân quyền 3 vai trò (Guest, User, Admin). Quản lý hồ sơ cá nhân và Tủ tài liệu Bookmark. & 
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt]
+    \item Nhân lực: 01 thành viên chính (Trâm) + Hỗ trợ backend (Khoa).
+    \item Thời gian: 2 tuần (Sprint 1).
+    \item Công nghệ: Node.js, Express, bcrypt, JWT token, PostgreSQL.
+    \item Môi trường: Trình duyệt web hiện đại, lưu token HttpOnly Cookie an toàn.
+\end{itemize} \\
+\hline
+\textbf{2.0. Quản lý \& kiểm duyệt học liệu} & Upload PDF, kiểm tra Magic Bytes, băm SHA-256 check trùng, hàng đợi Pending, duyệt/từ chối kèm lý do, quản lý danh mục môn học, xử lý báo cáo vi phạm. & 
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt]
+    \item Nhân lực: 02 thành viên (Vĩ phụ trách Upload, Danh phụ trách Duyệt).
+    \item Thời gian: 2.5 tuần (Sprint 1 \& Sprint 2).
+    \item Công nghệ: Multer, Cloudinary SDK, crypto SHA-256, DB Transaction.
+    \item Môi trường: Cloudinary bảo vệ URL, che giấu tệp chưa được phê duyệt.
+\end{itemize} \\
+\hline
+\textbf{3.0. Tra cứu, khai thác \& lưu trữ} & Xem danh mục môn học CTĐT, Full-Text Search, phân trang, trình đọc PDF Preview 3 trang cho Guest và toàn văn cho User, luồng tải tệp tin gốc. & 
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt]
+    \item Nhân lực: 02 thành viên (Khoa phụ trách Search, Đạt phụ trách Preview).
+    \item Thời gian: 2 tuần (Sprint 2).
+    \item Công nghệ: PostgreSQL Full-Text Search, React-PDF / PDF.js.
+    \item Môi trường: Tương thích hoàn hảo trên cả máy tính để bàn và điện thoại.
+\end{itemize} \\
+\hline
+\textbf{4.0. Tương tác cộng đồng \& thống kê} & Đánh giá 1--5 sao, bình luận học thuật, gửi báo cáo vi phạm, chuông thông báo thời gian thực, Dashboard thống kê lượt xem/tải. & 
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt]
+    \item Nhân lực: 02 thành viên (Đạt phụ trách Đánh giá, Trâm phụ trách Thông báo).
+    \item Thời gian: 2 tuần (Sprint 3).
+    \item Công nghệ: Socket.io / SSE, Recharts vẽ biểu đồ Dashboard.
+    \item Môi trường: Cơ sở dữ liệu đồng bộ tức thời, chống spam nội dung.
+\end{itemize} \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{1.5. Xây dựng kế hoạch dự án đơn giản}
+
+\subsubsection{1.5.1. Kế hoạch phân rã công việc (Work Breakdown Structure -- WBS)}
+Kế hoạch dự án được phân rã thành các gói công việc cụ thể với tổng thời lượng 150 giờ phân bổ đều cho 5 thành viên (Bảng~\ref{tab:wbs}):
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Kế hoạch phân rã công việc WBS cho 5 thành viên nhóm 5 (Tổng 150 giờ)}
+\label{tab:wbs}
+\begin{tabularx}{\textwidth}{|c|X|c|c|p{3.2cm}|}
+\hline
+\textbf{Mã} & \textbf{Nội dung gói công việc (Task)} & \textbf{Thời lượng} & \textbf{Phụ trách} & \textbf{Sản phẩm bàn giao} \\
+\hline
+W01 & Khảo sát thực tế: CV 5512, tạo Form khảo sát 15 SV, phỏng vấn Role-play & 20 giờ & Cả nhóm & Báo cáo khảo sát, biên bản phỏng vấn, số liệu Form. \\
+\hline
+W02 & Phân tích yêu cầu, ma trận tiêu chí, lập bảng IPO cho 13 yêu cầu & 15 giờ & Khoa, Danh & Bảng IPO, tài liệu đặc tả SRS Chương 1 \& 2. \\
+\hline
+W03 & Thiết kế biểu đồ luồng Swimlane và phân cấp chức năng BFD & 15 giờ & Vĩ, Đạt & Sơ đồ Swimlane PNG và sơ đồ cây BFD Draw.io. \\
+\hline
+W04 & Thiết kế CSDL (ERD, bảng dữ liệu, phân quyền JWT và bảo mật) & 25 giờ & Khoa, Trâm & Script DDL PostgreSQL, sơ đồ quan hệ CSDL. \\
+\hline
+W05 & Xây dựng backend: Upload PDF, băm SHA-256, Cloudinary, API duyệt bài & 30 giờ & Vĩ, Danh & RESTful APIs Node.js/Express, tài liệu Postman. \\
+\hline
+W06 & Xây dựng frontend: Trình đọc PDF Preview, tìm kiếm, đánh giá, thông báo & 30 giờ & Đạt, Trâm & Giao diện người dùng ReactJS responsive. \\
+\hline
+W07 & Kiểm thử tích hợp hệ thống, rà soát mã nguồn và hoàn thiện báo cáo & 15 giờ & Cả nhóm & Báo cáo tổng kết đồ án, mã nguồn Git hoàn chỉnh. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{1.5.2. Bảng quản lý rủi ro dự án phần mềm}
+Nhóm xây dựng bảng nhận diện và kế hoạch giảm thiểu cho 6 rủi ro trọng yếu (Bảng~\ref{tab:risks}):
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Bảng quản lý rủi ro dự án phần mềm 5Share}
+\label{tab:risks}
+\begin{tabularx}{\textwidth}{|p{2.8cm}|X|p{1.4cm}|X|}
+\hline
+\textbf{Nhóm rủi ro} & \textbf{Mô tả sự cố tiềm ẩn} & \textbf{Mức độ} & \textbf{Chiến lược ứng phó \& Giảm thiểu} \\
+\hline
+\textbf{1. Gian lận định dạng tệp} & Người dùng đổi đuôi file .exe/.docx thành .pdf để qua mặt & Cao & Kiểm tra Magic Bytes nhị phân (\%PDF-) tại server; quét định dạng thực tế trước khi lưu. \\
+\hline
+\textbf{2. Vượt ngưỡng lưu trữ đám mây} & Upload ồ ạt làm tràn dung lượng tài khoản Cloudinary & Trung bình & Giới hạn tệp $\le$ 25MB; băm SHA-256 chặn file trùng; nén tối ưu PDF trước khi lưu. \\
+\hline
+\textbf{3. Tải tài liệu trái phép} & Khách vãng lai cố tình dịch ngược mã JS để tải file gốc & Cao & Server chỉ stream tối đa 3 trang đầu cho Guest; không lộ link Cloudinary gốc. \\
+\hline
+\textbf{4. Thắt cổ chai kiểm duyệt} & Lượng tài liệu gửi lên quá lớn khiến Admin duyệt chậm & Trung bình & Phân quyền Trợ giảng phụ duyệt; tự động reject các file vi phạm tiêu chí kỹ thuật. \\
+\hline
+\textbf{5. Lỗi font khi đọc Preview} & File PDF dùng font TCVN3/VNI cũ bị vỡ chữ khi render & Trung bình & Tích hợp gói CMAP chuẩn của PDF.js; hướng dẫn sinh viên xuất file Unicode chuẩn. \\
+\hline
+\textbf{6. Xung đột tiến độ nhóm} & Thành viên bận lịch thi giữa kỳ làm chậm mốc dự án & Trung bình & Họp ngắn 2 ngày/lần; áp dụng pair-programming hỗ trợ chéo giữa các thành viên. \\
+\hline
+\end{tabularx}
+\end{table}

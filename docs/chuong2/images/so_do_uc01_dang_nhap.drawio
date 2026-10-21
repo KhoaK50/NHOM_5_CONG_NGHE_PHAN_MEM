@@ -1,0 +1,58 @@
+<mxfile host="app.diagrams.net" modified="2026-10-14T12:50:00.000Z" agent="Antigravity" version="24.0.0" type="device">
+  <diagram id="uc01_diagram" name="UC01 - Dang nhap">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sys_boundary" value="Hệ thống 5Share (System Boundary)" style="shape=rect;html=1;whiteSpace=wrap;align=center;verticalAlign=top;fontStyle=1;fontSize=14;fillColor=#F8FAFC;strokeColor=#1E3A8A;strokeWidth=2;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="80" width="540" height="480" as="geometry" />
+        </mxCell>
+        <mxCell id="actor_guest" value="Khách vãng lai&#xa;(Guest)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontStyle=1;fillColor=#FFFFFF;strokeColor=#334155;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="120" y="150" width="40" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="actor_student" value="Sinh viên&#xa;(Student)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontStyle=1;fillColor=#FFFFFF;strokeColor=#334155;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="120" y="280" width="40" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="actor_admin" value="Quản trị viên&#xa;(Admin)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontStyle=1;fillColor=#FFFFFF;strokeColor=#334155;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="120" y="420" width="40" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="uc01" value="UC01: Đăng nhập&#xa;hệ thống" style="ellipse;whiteSpace=wrap;html=1;fontStyle=1;fontSize=13;fillColor=#DBEAFE;strokeColor=#2563EB;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="360" y="290" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uc02" value="UC02: Đăng ký&#xa;tài khoản" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;fillColor=#F1F5F9;strokeColor=#64748B;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="650" y="130" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_forgot" value="Khôi phục mật khẩu" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;fillColor=#F1F5F9;strokeColor=#64748B;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="650" y="220" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_google" value="Đăng nhập Google&#xa;(OAuth 2.0)" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;fillColor=#F1F5F9;strokeColor=#64748B;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="650" y="310" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_auth" value="Xác thực JWT &amp;&#xa;Phân quyền phiên làm việc" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1.5;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="640" y="430" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_guest" style="endArrow=none;html=1;rounded=0;strokeColor=#1E293B;strokeWidth=1.5;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" edge="1" parent="1" source="actor_guest" target="uc01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_student" style="endArrow=none;html=1;rounded=0;strokeColor=#1E293B;strokeWidth=1.5;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="actor_student" target="uc01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_admin" style="endArrow=none;html=1;rounded=0;strokeColor=#1E293B;strokeWidth=1.5;entryX=0;entryY=0.7;entryDx=0;entryDy=0;" edge="1" parent="1" source="actor_admin" target="uc01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_extend_uc02" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;" style="endArrow=open;dashed=1;html=1;rounded=0;strokeColor=#64748B;strokeWidth=1.5;endFill=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.85;entryY=0.1;entryDx=0;entryDy=0;" edge="1" parent="1" source="uc02" target="uc01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_extend_forgot" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;" style="endArrow=open;dashed=1;html=1;rounded=0;strokeColor=#64748B;strokeWidth=1.5;endFill=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.35;entryDx=0;entryDy=0;" edge="1" parent="1" source="uc_forgot" target="uc01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_extend_google" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;" style="endArrow=open;dashed=1;html=1;rounded=0;strokeColor=#64748B;strokeWidth=1.5;endFill=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.65;entryDx=0;entryDy=0;" edge="1" parent="1" source="uc_google" target="uc01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_include_auth" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;" style="endArrow=open;dashed=1;html=1;rounded=0;strokeColor=#D97706;strokeWidth=1.8;endFill=0;exitX=0.7;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="uc01" target="uc_auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

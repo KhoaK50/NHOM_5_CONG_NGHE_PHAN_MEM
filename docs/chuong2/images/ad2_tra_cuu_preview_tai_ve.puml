@@ -1,0 +1,56 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam ActivityBorderThickness 1.5
+skinparam ActivityFontSize 12
+skinparam ActivityFontColor #0F172A
+skinparam ArrowColor #1E293B
+skinparam ArrowThickness 1.3
+
+skinparam Activity {
+  BackgroundColor #FFFFFF
+  BorderColor #0284C7
+}
+
+title ACTIVITY DIAGRAM 2: TRA CỨU, XEM TRƯỚC (PREVIEW) & TẢI TÀI LIỆU\nÁnh xạ: UC05 (G5-FR01) + UC06 (G5-FR02) + UC12 (G5-FR04) + UC01 (G5-FR03)
+
+|#F8FAFC|Người dùng (Guest / User)|
+start
+:1. Nhập từ khóa tìm kiếm &\nChọn bộ lọc môn học/học kỳ (UC05);
+
+|#F0F9FF|Hệ thống 5Share (Web & API)|
+:2. Truy vấn FTS CSDL (status = APPROVED)\nTrả về danh sách tài liệu công khai;
+
+|Người dùng (Guest / User)|
+:3. Chọn tài liệu từ danh sách\nđể xem trang chi tiết;
+
+|Hệ thống 5Share (Web & API)|
+if (Người dùng đã đăng nhập?) then (Khách vãng lai)
+  #FEF3C7-:Chỉ cho phép Preview giới hạn\ntối đa 3 trang đầu (G5-FR02);
+else (Sinh viên đã login)
+  #DCFCE7-:Cho phép Full PDF Preview\nđọc toàn văn (G5-FR03);
+endif
+
+|Người dùng (Guest / User)|
+:4. Nhấn nút "Tải tài liệu về máy"\nhoặc nút "Lưu Bookmark" (UC12);
+
+|Hệ thống 5Share (Web & API)|
+if (Kiểm tra phiên đăng nhập?) then (Đã đăng nhập)
+  #DCFCE7-:5. Tăng lượt tải (download_count + 1)\n& Tải file PDF gốc về máy (UC12);
+  stop
+else (Chưa đăng nhập)
+  |Người dùng (Guest / User)|
+  #FEF3C7-:Hiển thị Modal Đăng nhập (UC01)\nNgười dùng xác thực tài khoản;
+  
+  if (Đăng nhập thành công?) then (Đăng nhập OK)
+    |Hệ thống 5Share (Web & API)|
+    #DCFCE7-:5. Tăng lượt tải (download_count + 1)\n& Tải file PDF gốc về máy (UC12);
+    stop
+  else (Hủy / Thất bại)
+    |Người dùng (Guest / User)|
+    :Giữ nguyên màn hình Preview 3 trang;
+    detach
+  endif
+endif
+@enduml

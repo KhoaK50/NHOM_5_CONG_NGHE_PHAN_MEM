@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>5Share - HCMUE Prototype Generator</title>
+  <style>
+    :root {
+      --slate-1: #fcfcfd;
+      --slate-2: #f9f9fb;
+      --slate-3: #f0f0f3;
+      --slate-4: #e8e8ec;
+      --slate-6: #e6e8eb;
+      --slate-7: #d7dfe3;
+      --slate-8: #c1c8cd;
+      --slate-9: #8b939a;
+      --slate-11: #687076;
+      --slate-12: #11181c;
+      --blue-1: #fbfdff;
+      --blue-2: #f4faff;
+      --blue-3: #e6f4fe;
+      --blue-7: #8ec8f6;
+      --blue-9: #0090ff;
+      --blue-10: #0588f0;
+      --blue-11: #0d74ce;
+      --green-1: #fbfefc;
+      --green-3: #e6f8eb;
+      --green-7: #71cf98;
+      --green-9: #30a46c;
+      --amber-1: #fefdfb;
+      --amber-3: #fff7c2;
+      --amber-7: #e1b933;
+      --amber-9: #ffb224;
+      --amber-11: #ab6400;
+      --red-1: #fffcfc;
+      --red-3: #ffefef;
+      --red-7: #f3aeaf;
+      --red-9: #e5484d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--slate-1);
+      color: var(--slate-12);
+      padding: 18px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .header-box {
+      background: #ffffff;
+      border: 1px solid var(--slate-6);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      color: var(--slate-12);
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: var(--blue-3);
+      border: 1px solid var(--blue-7);
+      color: var(--blue-11);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-bottom: 6px;
+    }
+
+    .header-box h1 {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+      color: var(--slate-12);
+    }
+
+    .header-box p {
+      font-size: 12px;
+      color: var(--slate-11);
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--slate-6);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--slate-12);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .option-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .option-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--slate-11);
+      cursor: pointer;
+    }
+
+    .option-row input {
+      margin-top: 3px;
+      accent-color: var(--blue-9);
+    }
+
+    .member-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+
+    .member-table th,
+    .member-table td {
+      border-bottom: 1px solid var(--slate-3);
+      padding: 5px 6px;
+      text-align: left;
+    }
+
+    .member-table th {
+      color: var(--slate-11);
+      font-weight: 700;
+      background: var(--slate-2);
+    }
+
+    .uc-pill {
+      display: inline-block;
+      background: var(--blue-3);
+      color: var(--blue-11);
+      border: 1px solid var(--blue-7);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-weight: 700;
+      font-size: 10.5px;
+    }
+
+    .btn-generate {
+      width: 100%;
+      background: linear-gradient(135deg, var(--blue-9), var(--blue-11));
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 12px rgba(0, 144, 255, 0.22);
+    }
+
+    .btn-generate:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--blue-10), var(--blue-11));
+    }
+
+    .btn-generate:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+
+    .status-log {
+      margin-top: 12px;
+      background: var(--slate-2);
+      border: 1px solid var(--slate-6);
+      color: var(--slate-12);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      max-height: 150px;
+      overflow-y: auto;
+      line-height: 1.55;
+    }
+
+    .log-ok {
+      color: var(--green-9);
+      font-weight: 600;
+    }
+
+    .log-wire {
+      color: var(--blue-11);
+      font-weight: 600;
+    }
+
+    .footer-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      background: #ffffff;
+      border: 1px solid var(--slate-6);
+      color: var(--slate-12);
+      border-radius: 7px;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-box">
+    <span class="header-badge">2611COMP104406 • NHÓM 5 HCMUE</span>
+    <h1>5Share Native Figma & Prototype Engine</h1>
+    <p>Tự động dựng 100% Native Nodes (Auto Layout, Component, Text) & nối dây Prototype cho 13 Use Cases (FR-01 đến FR-13).</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span>Cấu hình khởi tạo tự động</span>
+      <span class="uc-pill">19 Màn hình • 3 Actor</span>
+    </div>
+    <div class="option-list">
+      <label class="option-row">
+        <input type="checkbox" id="opt-ds" checked />
+        <span><strong>Design System & Components:</strong> Khởi tạo bảng màu Radix Light chuẩn, Typography & Component gốc.</span>
+      </label>
+      <label class="option-row">
+        <input type="checkbox" id="opt-screens" checked />
+        <span><strong>19 Màn hình & Modal (FR-01–FR-13):</strong> 5-Act Landing, Kho học liệu Workspace, Hồ sơ K50, Sàn treo thưởng, Quản lý người dùng, Hòm thư góp ý...</span>
+      </label>
+      <label class="option-row">
+        <input type="checkbox" id="opt-wires" checked />
+        <span><strong>Tự động nối dây Prototype (setReactionsAsync):</strong> Thiết lập 10 cụm tương tác ON_CLICK → NAVIGATE / OVERLAY & 3 Flow Starting Points.</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span>Phân công 5 thành viên (Đồng bộ Figma ↔ Code Web)</span>
+    </div>
+    <table class="member-table">
+      <thead>
+        <tr>
+          <th>Thành viên</th>
+          <th>Use Cases & FR</th>
+          <th>Màn hình Figma</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Khoa (Lead)</strong></td>
+          <td><span class="uc-pill">UC01</span> <span class="uc-pill">FR-01</span></td>
+          <td>SCR_00, SCR_01, SCR_17 & Điều phối</td>
+        </tr>
+        <tr>
+          <td><strong>Trâm</strong></td>
+          <td><span class="uc-pill">UC02</span> <span class="uc-pill">UC03</span> <span class="uc-pill">UC04</span></td>
+          <td>SCR_02, SCR_03, SCR_04, SCR_18</td>
+        </tr>
+        <tr>
+          <td><strong>Vĩ</strong></td>
+          <td><span class="uc-pill">UC05</span> <span class="uc-pill">UC06</span> <span class="uc-pill">UC07</span></td>
+          <td>SCR_05, SCR_06, SCR_07, SCR_08, SCR_15</td>
+        </tr>
+        <tr>
+          <td><strong>Danh</strong></td>
+          <td><span class="uc-pill">UC08</span> <span class="uc-pill">UC09</span> <span class="uc-pill">UC10</span></td>
+          <td>SCR_09, SCR_10, SCR_11</td>
+        </tr>
+        <tr>
+          <td><strong>Đạt</strong></td>
+          <td><span class="uc-pill">UC11</span> <span class="uc-pill">UC12</span> <span class="uc-pill">UC13</span></td>
+          <td>SCR_12, SCR_13, SCR_14, SCR_16</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button type="button" id="btn-run" class="btn-generate">
+    Khởi tạo Toàn bộ 13 Use Cases (19 Màn hình) & Dây nối Prototype
+  </button>
+
+  <div class="footer-actions">
+    <button type="button" id="btn-zoom" class="btn-secondary">Căn chỉnh khung nhìn</button>
+    <button type="button" id="btn-close" class="btn-secondary">Đóng hộp thoại</button>
+  </div>
+
+  <div id="log-box" class="status-log">
+    <div>[Sẵn sàng] Nhấn nút phía trên để bắt đầu dựng hệ thống 5Share 100% Light Mode...</div>
+  </div>
+
+  <script>
+    const btnRun = document.getElementById('btn-run');
+    const btnZoom = document.getElementById('btn-zoom');
+    const btnClose = document.getElementById('btn-close');
+    const logBox = document.getElementById('log-box');
+
+    function appendLog(text, cls) {
+      const line = document.createElement('div');
+      if (cls) line.className = cls;
+      line.textContent = text;
+      logBox.appendChild(line);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    btnRun.onclick = () => {
+      btnRun.disabled = true;
+      btnRun.textContent = 'Đang dựng Native Nodes & nối dây Prototype...';
+      logBox.innerHTML = '';
+      appendLog('▶ Bắt đầu thực thi Figma Plugin API...');
+
+      parent.postMessage({
+        pluginMessage: {
+          type: 'GENERATE_5SHARE_PROTOTYPE',
+          options: {
+            includeDesignSystem: document.getElementById('opt-ds').checked,
+            includeScreens: document.getElementById('opt-screens').checked,
+            includeWires: document.getElementById('opt-wires').checked
+          }
+        }
+      }, '*');
+    };
+
+    btnZoom.onclick = () => {
+      parent.postMessage({ pluginMessage: { type: 'ZOOM_TO_FIT' } }, '*');
+    };
+
+    btnClose.onclick = () => {
+      parent.postMessage({ pluginMessage: { type: 'CLOSE_PLUGIN' } }, '*');
+    };
+
+    window.onmessage = (event) => {
+      const msg = event.data && event.data.pluginMessage;
+      if (!msg) return;
+
+      if (msg.type === 'PROGRESS_LOG') {
+        appendLog(msg.message, msg.style || '');
+      } else if (msg.type === 'GENERATION_COMPLETE') {
+        btnRun.disabled = false;
+        btnRun.textContent = 'Đã hoàn tất! Chạy lại nếu cần làm mới';
+        appendLog('✔ HOÀN TẤT: ' + msg.summary, 'log-ok');
+      } else if (msg.type === 'GENERATION_ERROR') {
+        btnRun.disabled = false;
+        btnRun.textContent = 'Thử lại';
+        appendLog('✖ LỖI: ' + msg.error);
+      }
+    };
+  </script>
+</body>
+</html>

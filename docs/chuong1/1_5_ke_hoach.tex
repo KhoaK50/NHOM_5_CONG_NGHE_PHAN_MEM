@@ -1,0 +1,86 @@
+\subsection{1.5. Xây dựng kế hoạch dự án đơn giản}
+
+\subsubsection{1.5.1. Mô hình quy trình phần mềm}
+Dự án áp dụng mô hình phát triển phần mềm lặp gia tăng kết hợp các nguyên lý Agile. Kế hoạch thực hiện dự án được chi tiết hóa theo phương pháp phân rã cấu trúc công việc với tổng quỹ thời gian ước tính là 150 giờ làm việc, phân bổ cho 5 thành viên trong nhóm:
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{|X|c|p{3.2cm}|}
+\hline
+\rowcolor[HTML]{EAEAEA}
+\textbf{Nội dung công việc} & \textbf{Thời gian (giờ)} & \textbf{Thành viên phụ trách} \\
+\hline
+\textbf{1. Khảo sát \& Xác định bài toán} & \textbf{25 giờ} & \textbf{Cả nhóm} \\
+\hline
+\hspace{0.3cm} 1.1 Xây dựng phiếu khảo sát trực tuyến 17 sinh viên năm 3 & 5 giờ & Trâm \\
+\hline
+\hspace{0.3cm} 1.2 Thu thập mẫu KHBD 5512, Đề thi, Slide \& Phỏng vấn chuyên sâu & 8 giờ & Khoa, Đạt \\
+\hline
+\hspace{0.3cm} 1.3 Phân tích As-Is/To-Be, Ma trận kiểm duyệt \& Bảng IPO 13 chức năng & 7 giờ & Khoa, Vĩ \\
+\hline
+\hspace{0.3cm} 1.4 Xây dựng Activity Diagram, BFD Tree \& Kế hoạch WBS/Rủi ro & 5 giờ & Danh, Đạt \\
+\hline
+\textbf{2. Đặc tả yêu cầu \& Phân tích hệ thống} & \textbf{30 giờ} & \textbf{Cả nhóm} \\
+\hline
+\hspace{0.3cm} 2.1 Xây dựng biểu đồ Use Case tổng quan và Use Case phân rã & 8 giờ & Cả nhóm \\
+\hline
+\hspace{0.3cm} 2.2 Viết đặc tả chi tiết các Use Case chính & 10 giờ & Cả nhóm \\
+\hline
+\hspace{0.3cm} 2.3 Thiết kế mô hình dữ liệu quan niệm và logic (ERD, Data Dictionary) & 12 giờ & Khoa, Danh \\
+\hline
+\textbf{3. Thiết kế kiến trúc \& Giao diện} & \textbf{25 giờ} & \textbf{Cả nhóm} \\
+\hline
+\hspace{0.3cm} 3.1 Thiết kế giao diện chi tiết bằng Figma & 15 giờ & Cả nhóm \\
+\hline
+\hspace{0.3cm} 3.2 Thiết kế sơ đồ trình tự \& Sơ đồ lớp & 10 giờ & Khoa, Vĩ \\
+\hline
+\textbf{4. Hiện thực hóa phần mềm} & \textbf{45 giờ} & \textbf{Cả nhóm} \\
+\hline
+\hspace{0.3cm} 4.1 Xây dựng cơ sở dữ liệu PostgreSQL \& Tích hợp Cloudinary & 8 giờ & Danh \\
+\hline
+\hspace{0.3cm} 4.2 Xây dựng RESTful API Backend (ExpressJS, JWT, SHA-256) & 17 giờ & Khoa, Vĩ \\
+\hline
+\hspace{0.3cm} 4.3 Phát triển giao diện người dùng Frontend (ReactJS, Tailwind, PDF.js) & 20 giờ & Đạt, Trâm \\
+\hline
+\textbf{5. Kiểm thử, Triển khai \& Hoàn thiện báo cáo} & \textbf{25 giờ} & \textbf{Cả nhóm} \\
+\hline
+\hspace{0.3cm} 5.1 Xây dựng và thực thi bộ kiểm thử 20 Test Cases, lập Ma trận RTM & 15 giờ & Vĩ, Danh \\
+\hline
+\hspace{0.3cm} 5.2 Triển khai hệ thống lên máy chủ thử nghiệm \& Hoàn thiện tài liệu & 10 giờ & Cả nhóm \\
+\hline
+\rowcolor[HTML]{F0F0F0}
+\textbf{Tổng cộng} & \textbf{150 giờ} & \textbf{5 thành viên} \\
+\hline
+\end{tabularx}
+\caption{Kế hoạch phân bổ công việc dự án}
+\label{tab:ke_hoach_wbs}
+\end{table}
+
+\subsubsection{1.5.2. Bảng quản lý rủi ro dự án phần mềm}
+Trong quá trình phân tích và phát triển hệ thống, các rủi ro kỹ thuật và vận hành được nhận diện và thiết lập phương án kiểm soát, giảm thiểu theo bảng phân tích rủi ro sau:
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{|p{2.4cm}|p{2.6cm}|p{2.6cm}|c|c|X|}
+\hline
+\rowcolor[HTML]{EAEAEA}
+\textbf{Công việc} & \textbf{Mối nguy} & \textbf{Rủi ro phát sinh} & \textbf{Mức độ} & \textbf{Chiến lược} & \textbf{Biện pháp giảm thiểu} \\
+\hline
+\textbf{Lưu trữ tệp tin PDF} & Dung lượng tệp tải lên lớn làm cạn kiệt tài nguyên lưu trữ máy chủ. & Hết dung lượng đĩa cứng, ứng dụng bị chậm hoặc ngừng phục vụ. & Cao & Giảm thiểu & Giới hạn dung lượng tối đa $\le$ 25MB/tệp; phân tách lưu trữ sang dịch vụ đám mây Cloudinary. \\
+\hline
+\textbf{Kiểm duyệt nội dung} & Tài liệu tải lên chứa mã độc hại hoặc tài liệu sai kiến thức. & Lây lan tệp độc hại hoặc cung cấp kiến thức không chính xác cho sinh viên. & Trung bình & Loại bỏ & Kiểm tra Magic Bytes `\%PDF-' tự động; bắt buộc 100\% tài liệu phải qua phê duyệt Admin trước khi công khai. \\
+\hline
+\textbf{Bảo mật quyền xem} & Khách vãng lai cố tình dùng công cụ tự động để tải trọn vẹn tài liệu. & Vi phạm chính sách phân quyền, thất thoát tài nguyên học liệu. & Cao & Giảm thiểu & Cắt trực tiếp 3 trang ở tầng máy chủ; che giấu URL tệp gốc Cloudinary bằng đường dẫn có chữ ký thời hạn. \\
+\hline
+\textbf{Hiển thị trực tiếp PDF} & Một số tệp PDF sử dụng bảng mã font cũ bị lỗi hiển thị tiếng Việt trên web. & Sinh viên không đọc được nội dung trên trình duyệt. & Trung bình & Giảm thiểu & Tích hợp bộ font chuẩn CMAP của PDF.js; cung cấp hướng dẫn sinh viên xuất file PDF Unicode từ Word. \\
+\hline
+\textbf{Tiến độ phối hợp nhóm} & Thành viên bận lịch thi giữa kỳ hoặc gặp sự cố bất khả kháng ảnh hưởng tiến độ. & Chậm trễ tiến độ hoàn thành các mốc giai đoạn của dự án. & Trung bình & Giảm thiểu & Họp kiểm tra tiến độ định kỳ 2 ngày/lần; phân công làm việc theo cặp để hỗ trợ chéo. \\
+\hline
+\end{tabularx}
+\caption{Bảng quản lý rủi ro dự án phần mềm}
+\label{tab:quan_ly_rui_ro}
+\end{table}

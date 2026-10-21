@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" width="100%" height="100%">
+  <defs>
+    <!-- Left Loop: Sapphire Navy to Electric Blue -->
+    <linearGradient id="logo-loop-left" x1="10" y1="36" x2="26" y2="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0a2a66"/>
+      <stop offset="28%" stop-color="#004da6"/>
+      <stop offset="70%" stop-color="#007fe6"/>
+      <stop offset="100%" stop-color="#0090ff"/>
+    </linearGradient>
+
+    <!-- Right Loop: Deep Indigo to Electric Cyan -->
+    <linearGradient id="logo-loop-right" x1="22" y1="12" x2="38" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#07224f"/>
+      <stop offset="28%" stop-color="#005dbf"/>
+      <stop offset="70%" stop-color="#0099ff"/>
+      <stop offset="100%" stop-color="#00c7fe"/>
+    </linearGradient>
+
+    <!-- Top Fold Crease Shading -->
+    <linearGradient id="logo-crease-top" x1="26" y1="13" x2="22" y2="17" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#020c1e" stop-opacity="0.42"/>
+      <stop offset="60%" stop-color="#020c1e" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#020c1e" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Bottom Fold Crease Shading -->
+    <linearGradient id="logo-crease-bottom" x1="22" y1="35" x2="26" y2="31" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#020c1e" stop-opacity="0.42"/>
+      <stop offset="60%" stop-color="#020c1e" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#020c1e" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 1. Right Loop Base -->
+  <circle cx="30" cy="24" r="11" stroke="url(#logo-loop-right)" stroke-width="5"/>
+
+  <!-- 2. Top Fold Crease on Right Loop (underpass contact shadow) -->
+  <path d="M 26 16.5 A 11 11 0 0 0 21.5 13.5" stroke="url(#logo-crease-top)" stroke-width="5" stroke-linecap="butt"/>
+
+  <!-- 3. Left Loop Base -->
+  <circle cx="18" cy="24" r="11" stroke="url(#logo-loop-left)" stroke-width="5"/>
+
+  <!-- 4. Bottom Fold Crease on Left Loop (underpass contact shadow) -->
+  <path d="M 22 31.5 A 11 11 0 0 0 26.5 34.5" stroke="url(#logo-crease-bottom)" stroke-width="5" stroke-linecap="butt"/>
+
+  <!-- 5. Top Crossing Overpass: Left Loop sweeps over Right Loop -->
+  <path d="M 18 13 A 11 11 0 0 1 27.53 18.5" stroke="url(#logo-loop-left)" stroke-width="5" stroke-linecap="butt"/>
+
+  <!-- 6. Bottom Crossing Overpass: Right Loop sweeps over Left Loop -->
+  <path d="M 30 35 A 11 11 0 0 1 20.47 29.5" stroke="url(#logo-loop-right)" stroke-width="5" stroke-linecap="butt"/>
+</svg>

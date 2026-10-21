@@ -1,0 +1,347 @@
+<mxfile host="app.diagrams.net" modified="2026-10-16T23:17:00.000Z" agent="Antigravity" version="24.0.0" type="device">
+  <diagram id="bpmn_5share_strict_v6" name="BPMN 2.0 - Vong doi va Kiem duyet Hoc lieu">
+    <mxGraphModel dx="1620" dy="1020" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1620" pageHeight="1020" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ========================================================================= -->
+        <!-- TIÊU ĐỀ SƠ ĐỒ -->
+        <!-- ========================================================================= -->
+        <mxCell id="title_main" value="BPMN 2.0: QUY TRÌNH VÒNG ĐỜI &amp; KIỂM DUYỆT HỌC LIỆU 2 TẦNG (COLLABORATION DIAGRAM)" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="60" y="15" width="1500" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="title_sub" value="Chuẩn ký hiệu OMG BPMN 2.0: UC07 (Đóng góp) → UC08 (Băm SHA-256) → PENDING (G5-FR06) → UC09 (Admin thẩm định) → UC03 (Thông báo)" style="text;html=1;align=center;verticalAlign=middle;fontSize=12;fontStyle=2;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="60" y="42" width="1500" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================= -->
+        <!-- POOL 1: SINH VIÊN (TÁC GIẢ) -->
+        <!-- ========================================================================= -->
+        <mxCell id="pool_student" value="SINH VIÊN (TÁC GIẢ)" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;startSize=45;fillColor=#E2E8F0;swimlaneFillColor=#F8FAFC;strokeColor=#334155;strokeWidth=1.5;fontStyle=1;fontSize=12;fontColor=#1E293B;" vertex="1" parent="1">
+          <mxGeometry x="60" y="75" width="1500" height="250" as="geometry" />
+        </mxCell>
+
+        <!-- Start Event (None Start Event: Vòng tròn đơn viền mảnh) -->
+        <mxCell id="s_start" value="Bắt đầu" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#DCFCE7;strokeColor=#16A34A;strokeWidth=1.8;fontSize=10;fontStyle=1;fontColor=#166534;verticalLabelPosition=bottom;verticalAlign=top;align=center;spacingTop=4;" vertex="1" parent="pool_student">
+          <mxGeometry x="70" y="62" width="36" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- User Task 1: Điền Metadata & Nộp tệp PDF -->
+        <mxCell id="s_act_submit" value="1. Điền Metadata &amp;&#xa;Nộp tệp tin PDF (UC07)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#0284C7;strokeWidth=1.5;fontSize=11;fontColor=#0F172A;spacingLeft=10;" vertex="1" parent="pool_student">
+          <mxGeometry x="145" y="50" width="165" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_s_submit" value="" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=none;strokeColor=#0284C7;strokeWidth=1.2;pointerEvents=0;" vertex="1" parent="s_act_submit">
+          <mxGeometry x="8" y="6" width="10" height="15" as="geometry" />
+        </mxCell>
+
+        <!-- Event-Based Gateway: Chờ phản hồi từ Hệ thống (Hình thoi + Vòng tròn kép + Ngũ giác) -->
+        <mxCell id="s_gw_check" value="Chờ phản hồi" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1.5;fontStyle=1;fontSize=10;fontColor=#92400E;verticalLabelPosition=top;verticalAlign=bottom;align=center;spacingBottom=2;" vertex="1" parent="pool_student">
+          <mxGeometry x="355" y="54" width="52" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_s_gw_check" value="&#11040;" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;strokeColor=#92400E;strokeWidth=1.1;fontSize=12;fontStyle=1;fontColor=#92400E;align=center;verticalAlign=middle;pointerEvents=0;" vertex="1" parent="s_gw_check">
+          <mxGeometry x="12" y="12" width="28" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- Nhánh lỗi kỹ thuật (Hàng dưới của Pool 1 - Receive Task có icon Phong bì trắng) -->
+        <mxCell id="s_act_err" value="Nhận thông báo lỗi&#xa;&amp; Tải tệp sửa đổi" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FEE2E2;strokeColor=#EF4444;strokeWidth=1.5;fontSize=11;fontColor=#991B1B;spacingLeft=10;" vertex="1" parent="pool_student">
+          <mxGeometry x="500" y="150" width="165" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_s_err" value="" style="shape=message;html=1;outlineConnect=0;fillColor=#FFFFFF;strokeColor=#EF4444;strokeWidth=1.2;pointerEvents=0;" vertex="1" parent="s_act_err">
+          <mxGeometry x="7" y="6" width="16" height="11" as="geometry" />
+        </mxCell>
+
+        <!-- None End Event (Thất bại): Vòng tròn đơn VIỀN DÀY ĐẬM (strokeWidth=4) chuẩn BPMN 2.0 -->
+        <mxCell id="s_end_err" value="Kết thúc: Thất bại" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#FEE2E2;strokeColor=#DC2626;strokeWidth=4;fontSize=10;fontStyle=1;fontColor=#DC2626;verticalLabelPosition=right;verticalAlign=middle;align=left;spacingLeft=6;" vertex="1" parent="pool_student">
+          <mxGeometry x="705" y="159" width="36" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- Nhánh hợp lệ (Hàng trên của Pool 1 - Receive Task có icon Phong bì trắng) -->
+        <mxCell id="s_act_pending" value="Nhận biên nhận nộp&#xa;Trạng thái PENDING (G5-FR06)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#DCFCE7;strokeColor=#16A34A;strokeWidth=1.5;fontSize=11;fontColor=#166534;spacingLeft=10;" vertex="1" parent="pool_student">
+          <mxGeometry x="780" y="50" width="175" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_s_pending" value="" style="shape=message;html=1;outlineConnect=0;fillColor=#FFFFFF;strokeColor=#16A34A;strokeWidth=1.2;pointerEvents=0;" vertex="1" parent="s_act_pending">
+          <mxGeometry x="7" y="6" width="16" height="11" as="geometry" />
+        </mxCell>
+
+        <!-- Intermediate Catch Message Event: Vòng tròn kép + Phong bì trắng ở giữa -->
+        <mxCell id="s_catch_notify" value="Sự kiện nhận chuông&#xa;thông báo kết quả" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#EFF6FF;strokeColor=#0284C7;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#0369A1;verticalLabelPosition=top;verticalAlign=bottom;align=center;spacingBottom=4;" vertex="1" parent="pool_student">
+          <mxGeometry x="1137" y="62" width="36" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_s_catch_notify" value="" style="shape=message;html=1;outlineConnect=0;fillColor=#FFFFFF;strokeColor=#0284C7;strokeWidth=1.1;pointerEvents=0;" vertex="1" parent="s_catch_notify">
+          <mxGeometry x="9" y="12" width="18" height="12" as="geometry" />
+        </mxCell>
+
+        <!-- User Task 5: Xem thông báo chuông -->
+        <mxCell id="s_act_view" value="5. Xem thông báo chuông&#xa;&amp; Chi tiết phê duyệt (UC03)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#0284C7;strokeWidth=1.5;fontSize=11;fontColor=#0F172A;spacingLeft=10;" vertex="1" parent="pool_student">
+          <mxGeometry x="1220" y="50" width="165" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_s_view" value="" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=none;strokeColor=#0284C7;strokeWidth=1.2;pointerEvents=0;" vertex="1" parent="s_act_view">
+          <mxGeometry x="8" y="6" width="10" height="15" as="geometry" />
+        </mxCell>
+
+        <!-- None End Event (Hoàn tất): Vòng tròn đơn VIỀN DÀY ĐẬM (strokeWidth=4) chuẩn BPMN 2.0 -->
+        <mxCell id="s_end_ok" value="Hoàn tất&#xa;vòng đời" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#DCFCE7;strokeColor=#16A34A;strokeWidth=4;fontSize=10;fontStyle=1;fontColor=#166534;verticalLabelPosition=bottom;verticalAlign=top;align=center;spacingTop=4;" vertex="1" parent="pool_student">
+          <mxGeometry x="1425" y="62" width="36" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- Sequence Flows trong Pool 1 -->
+        <mxCell id="seq_s1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_student" source="s_start" target="s_act_submit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_s2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_student" source="s_act_submit" target="s_gw_check">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_s_err" value="[Nhận báo lỗi]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;strokeColor=#DC2626;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#DC2626;labelBackgroundColor=#F8FAFC;" edge="1" parent="pool_student" source="s_gw_check" target="s_act_err">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_s_err_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_student" source="s_act_err" target="s_end_err">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_s_ok" value="[Nhận biên nhận]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#16A34A;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#166534;labelBackgroundColor=#F8FAFC;" edge="1" parent="pool_student" source="s_gw_check" target="s_act_pending">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_s_pen_catch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_student" source="s_act_pending" target="s_catch_notify">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_s_catch_view" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_student" source="s_catch_notify" target="s_act_view">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_s_view_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_student" source="s_act_view" target="s_end_ok">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================= -->
+        <!-- POOL 2: HỆ THỐNG 5SHARE (BACKEND) -->
+        <!-- ========================================================================= -->
+        <mxCell id="pool_sys" value="HỆ THỐNG 5SHARE (BACKEND)" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;startSize=45;fillColor=#BAE6FD;swimlaneFillColor=#F0F9FF;strokeColor=#0284C7;strokeWidth=1.5;fontStyle=1;fontSize=12;fontColor=#0369A1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="365" width="1500" height="280" as="geometry" />
+        </mxCell>
+
+        <!-- Message Start Event: Vòng tròn đơn viền mảnh + Phong bì trắng ở giữa -->
+        <mxCell id="sys_start_msg" value="Nhận yêu cầu nộp" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#DCFCE7;strokeColor=#0284C7;strokeWidth=1.8;fontSize=10;fontStyle=1;fontColor=#0369A1;verticalLabelPosition=bottom;verticalAlign=top;align=center;spacingTop=4;" vertex="1" parent="pool_sys">
+          <mxGeometry x="209" y="112" width="36" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_sys_start" value="" style="shape=message;html=1;outlineConnect=0;fillColor=#FFFFFF;strokeColor=#0284C7;strokeWidth=1.1;pointerEvents=0;" vertex="1" parent="sys_start_msg">
+          <mxGeometry x="9" y="12" width="18" height="12" as="geometry" />
+        </mxCell>
+
+        <!-- Service Task 2: Kiểm tra dung lượng, Magic Bytes & SHA-256 (Có icon Bánh răng ⚙) -->
+        <mxCell id="sys_act_check" value="2. Kiểm tra dung lượng,&#xa;Magic Bytes &amp; SHA-256 (UC08)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#0284C7;strokeWidth=1.5;fontSize=11;fontColor=#0F172A;spacingLeft=10;" vertex="1" parent="pool_sys">
+          <mxGeometry x="295" y="100" width="175" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_sys_check" value="&#9881;" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#0284C7;pointerEvents=0;" vertex="1" parent="sys_act_check">
+          <mxGeometry x="4" y="3" width="18" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- Exclusive Gateway (X) -->
+        <mxCell id="sys_gw_valid" value="X" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1.5;fontStyle=1;fontSize=14;fontColor=#92400E;" vertex="1" parent="pool_sys">
+          <mxGeometry x="505" y="105" width="50" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Nhánh lỗi kỹ thuật của Hệ thống (Hàng trên của Pool 2 - Send Task có icon Phong bì đậm) -->
+        <mxCell id="sys_act_reject" value="Phản hồi từ chối nộp&#xa;(Báo trùng / File lỗi)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FEE2E2;strokeColor=#EF4444;strokeWidth=1.5;fontSize=11;fontColor=#991B1B;spacingLeft=10;" vertex="1" parent="pool_sys">
+          <mxGeometry x="500" y="18" width="165" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_sys_reject" value="" style="shape=message;html=1;outlineConnect=0;fillColor=#EF4444;strokeColor=#FFFFFF;strokeWidth=1.1;pointerEvents=0;" vertex="1" parent="sys_act_reject">
+          <mxGeometry x="7" y="6" width="16" height="11" as="geometry" />
+        </mxCell>
+
+        <!-- None End Event (Hủy phiên nộp): Vòng tròn đơn VIỀN DÀY ĐẬM (strokeWidth=4) -->
+        <mxCell id="sys_end_reject" value="Hủy phiên nộp" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#FEE2E2;strokeColor=#DC2626;strokeWidth=4;fontSize=10;fontStyle=1;fontColor=#DC2626;verticalLabelPosition=bottom;verticalAlign=top;align=center;spacingTop=3;" vertex="1" parent="pool_sys">
+          <mxGeometry x="705" y="26" width="36" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- Service Task 3: Lưu Cloudinary & Gán PENDING CSDL (Có icon Bánh răng ⚙) -->
+        <mxCell id="sys_act_pending" value="3. Lưu Cloudinary &amp;&#xa;Gán PENDING CSDL (G5-FR06)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#DCFCE7;strokeColor=#16A34A;strokeWidth=1.5;fontSize=11;fontColor=#166534;spacingLeft=10;" vertex="1" parent="pool_sys">
+          <mxGeometry x="780" y="100" width="175" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_sys_pending" value="&#9881;" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#16A34A;pointerEvents=0;" vertex="1" parent="sys_act_pending">
+          <mxGeometry x="4" y="3" width="18" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- Data Store: Hình trụ Cylinder chuẩn BPMN 2.0 -->
+        <mxCell id="sys_datastore" value="CSDL 5Share &amp;&#xa;Cloudinary Storage" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#F1F5F9;strokeColor=#475569;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#334155;" vertex="1" parent="pool_sys">
+          <mxGeometry x="807" y="195" width="120" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- Intermediate Catch Message Event: Vòng tròn kép + Phong bì trắng -->
+        <mxCell id="sys_catch_admin" value="Nhận quyết định&#xa;từ Quản trị viên" style="ellipse;shape=doubleEllipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#EFF6FF;strokeColor=#0284C7;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#0369A1;verticalLabelPosition=top;verticalAlign=bottom;align=center;spacingBottom=4;" vertex="1" parent="pool_sys">
+          <mxGeometry x="1002" y="112" width="36" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_sys_catch_adm" value="" style="shape=message;html=1;outlineConnect=0;fillColor=#FFFFFF;strokeColor=#0284C7;strokeWidth=1.1;pointerEvents=0;" vertex="1" parent="sys_catch_admin">
+          <mxGeometry x="9" y="12" width="18" height="12" as="geometry" />
+        </mxCell>
+
+        <!-- Service Task: Cập nhật trạng thái CSDL & Bắn thông báo chuông (Có icon Bánh răng ⚙) -->
+        <mxCell id="sys_act_update" value="Cập nhật trạng thái CSDL&#xa;&amp; Bắn thông báo chuông (UC03)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#0284C7;strokeWidth=1.5;fontSize=11;fontColor=#0F172A;spacingLeft=10;" vertex="1" parent="pool_sys">
+          <mxGeometry x="1070" y="100" width="175" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_sys_update" value="&#9881;" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#0284C7;pointerEvents=0;" vertex="1" parent="sys_act_update">
+          <mxGeometry x="4" y="3" width="18" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- None End Event (Hoàn tất xử lý): Vòng tròn đơn VIỀN DÀY ĐẬM (strokeWidth=4) -->
+        <mxCell id="sys_end_ok" value="Hoàn tất xử lý" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#DCFCE7;strokeColor=#16A34A;strokeWidth=4;fontSize=10;fontStyle=1;fontColor=#166534;verticalLabelPosition=bottom;verticalAlign=top;align=center;spacingTop=4;" vertex="1" parent="pool_sys">
+          <mxGeometry x="1295" y="112" width="36" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- Sequence Flows trong Pool 2 -->
+        <mxCell id="seq_sys1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_sys" source="sys_start_msg" target="sys_act_check">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_sys2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_sys" source="sys_act_check" target="sys_gw_valid">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_sys_err" value="[Trùng / Hỏng]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=0;entryX=0;entryY=0.5;strokeColor=#DC2626;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#DC2626;labelBackgroundColor=#F0F9FF;" edge="1" parent="pool_sys" source="sys_gw_valid" target="sys_act_reject">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="530" y="88" />
+              <mxPoint x="480" y="88" />
+              <mxPoint x="480" y="44" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq_sys_err_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_sys" source="sys_act_reject" target="sys_end_reject">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_sys_ok" value="[Đạt chuẩn]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#16A34A;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#166534;labelBackgroundColor=#F0F9FF;" edge="1" parent="pool_sys" source="sys_gw_valid" target="sys_act_pending">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_sys_ds" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;dashed=1;dashPattern=1 2;endArrow=open;endFill=0;strokeColor=#475569;strokeWidth=1.4;" edge="1" parent="pool_sys" source="sys_act_pending" target="sys_datastore">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_sys_pen_catch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_sys" source="sys_act_pending" target="sys_catch_admin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_sys_catch_upd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_sys" source="sys_catch_admin" target="sys_act_update">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_sys_upd_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_sys" source="sys_act_update" target="sys_end_ok">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================= -->
+        <!-- POOL 3: QUẢN TRỊ VIÊN (ADMIN MODERATOR) -->
+        <!-- ========================================================================= -->
+        <mxCell id="pool_admin" value="QUẢN TRỊ VIÊN (ADMIN)" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;startSize=45;fillColor=#FDE68A;swimlaneFillColor=#FFFBEB;strokeColor=#D97706;strokeWidth=1.5;fontStyle=1;fontSize=12;fontColor=#92400E;" vertex="1" parent="1">
+          <mxGeometry x="60" y="685" width="1500" height="260" as="geometry" />
+        </mxCell>
+
+        <!-- Message Start Event: Vòng tròn đơn viền mảnh + Phong bì trắng -->
+        <mxCell id="adm_start_msg" value="Tiếp nhận hồ sơ&#xa;Moderation Queue" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1.8;fontSize=10;fontStyle=1;fontColor=#92400E;verticalLabelPosition=bottom;verticalAlign=top;align=center;spacingTop=4;" vertex="1" parent="pool_admin">
+          <mxGeometry x="652" y="102" width="36" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_adm_start" value="" style="shape=message;html=1;outlineConnect=0;fillColor=#FFFFFF;strokeColor=#D97706;strokeWidth=1.1;pointerEvents=0;" vertex="1" parent="adm_start_msg">
+          <mxGeometry x="9" y="12" width="18" height="12" as="geometry" />
+        </mxCell>
+
+        <!-- User Task 4: Xem trước toàn văn & Thẩm định 8 tiêu chí -->
+        <mxCell id="adm_act_review" value="4. Xem trước toàn văn &amp;&#xa;Thẩm định 8 tiêu chí (UC09)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#D97706;strokeWidth=1.5;fontSize=11;fontColor=#0F172A;spacingLeft=10;" vertex="1" parent="pool_admin">
+          <mxGeometry x="740" y="90" width="175" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_adm_review" value="" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=none;strokeColor=#D97706;strokeWidth=1.2;pointerEvents=0;" vertex="1" parent="adm_act_review">
+          <mxGeometry x="8" y="6" width="10" height="15" as="geometry" />
+        </mxCell>
+
+        <!-- Exclusive Gateway (X) -->
+        <mxCell id="adm_gw_decision" value="X" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=1.5;fontStyle=1;fontSize=14;fontColor=#92400E;" vertex="1" parent="pool_admin">
+          <mxGeometry x="945" y="95" width="50" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- User Task: Từ chối (REJECTED) & Nhập lý do phản hồi -->
+        <mxCell id="adm_act_reject" value="Từ chối (REJECTED)&#xa;&amp; Nhập lý do phản hồi" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FEE2E2;strokeColor=#EF4444;strokeWidth=1.5;fontSize=11;fontColor=#991B1B;spacingLeft=10;" vertex="1" parent="pool_admin">
+          <mxGeometry x="1030" y="28" width="165" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_adm_reject" value="" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=none;strokeColor=#EF4444;strokeWidth=1.2;pointerEvents=0;" vertex="1" parent="adm_act_reject">
+          <mxGeometry x="8" y="6" width="10" height="15" as="geometry" />
+        </mxCell>
+
+        <!-- None End Event (Đã từ chối): Vòng tròn đơn VIỀN DÀY ĐẬM (strokeWidth=4) -->
+        <mxCell id="adm_end_reject" value="Đã từ chối" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#FEE2E2;strokeColor=#DC2626;strokeWidth=4;fontSize=10;fontStyle=1;fontColor=#DC2626;verticalLabelPosition=bottom;verticalAlign=top;align=center;spacingTop=3;" vertex="1" parent="pool_admin">
+          <mxGeometry x="1230" y="37" width="36" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- User Task: Phê duyệt (APPROVED) & Cho phép công khai -->
+        <mxCell id="adm_act_approve" value="Phê duyệt (APPROVED)&#xa;&amp; Cho phép công khai" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#DCFCE7;strokeColor=#16A34A;strokeWidth=1.5;fontSize=11;fontColor=#166534;spacingLeft=10;" vertex="1" parent="pool_admin">
+          <mxGeometry x="1220" y="155" width="165" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="icon_adm_approve" value="" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=none;strokeColor=#16A34A;strokeWidth=1.2;pointerEvents=0;" vertex="1" parent="adm_act_approve">
+          <mxGeometry x="8" y="6" width="10" height="15" as="geometry" />
+        </mxCell>
+
+        <!-- None End Event (Đã phê duyệt): Vòng tròn đơn VIỀN DÀY ĐẬM (strokeWidth=4) -->
+        <mxCell id="adm_end_approve" value="Đã phê duyệt" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#DCFCE7;strokeColor=#16A34A;strokeWidth=4;fontSize=10;fontStyle=1;fontColor=#166534;verticalLabelPosition=bottom;verticalAlign=top;align=center;spacingTop=3;" vertex="1" parent="pool_admin">
+          <mxGeometry x="1425" y="164" width="36" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- Sequence Flows trong Pool 3 -->
+        <mxCell id="seq_adm1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_admin" source="adm_start_msg" target="adm_act_review">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_adm2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_admin" source="adm_act_review" target="adm_gw_decision">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_adm_rej" value="[Từ chối]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=0;entryX=0;entryY=0.5;strokeColor=#DC2626;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#DC2626;labelBackgroundColor=#FFFBEB;" edge="1" parent="pool_admin" source="adm_gw_decision" target="adm_act_reject">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_adm_rej_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_admin" source="adm_act_reject" target="adm_end_reject">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_adm_app" value="[Duyệt]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;strokeColor=#16A34A;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#166534;labelBackgroundColor=#FFFBEB;" edge="1" parent="pool_admin" source="adm_gw_decision" target="adm_act_approve">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="seq_adm_app_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1E293B;strokeWidth=1.5;" edge="1" parent="pool_admin" source="adm_act_approve" target="adm_end_approve">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================= -->
+        <!-- MESSAGE FLOWS (ĐƯỜNG NÉT ĐỨT LIÊN POOL - CHUẨN OMG BPMN 2.0 startArrow=oval) -->
+        <!-- ========================================================================= -->
+        <mxCell id="msg_submit" value="Gửi tệp PDF &amp; Metadata" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;dashed=1;startArrow=oval;startFill=0;endArrow=open;endFill=0;strokeColor=#0284C7;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#0284C7;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="s_act_submit" target="sys_start_msg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="msg_err_report" value="Báo lỗi trùng SHA-256 / hỏng file" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=0;entryX=0.5;entryY=1;dashed=1;startArrow=oval;startFill=0;endArrow=open;endFill=0;strokeColor=#DC2626;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#DC2626;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="sys_act_reject" target="s_act_err">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="msg_pending_receipt" value="Biên nhận PENDING" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=0;entryX=0.5;entryY=1;dashed=1;startArrow=oval;startFill=0;endArrow=open;endFill=0;strokeColor=#16A34A;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#166534;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="sys_act_pending" target="s_act_pending">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="msg_to_admin" value="Hàng đợi Moderation Queue" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.12;exitY=1;entryX=0.5;entryY=0;dashed=1;startArrow=oval;startFill=0;endArrow=open;endFill=0;strokeColor=#D97706;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#92400E;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="sys_act_pending" target="adm_start_msg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="860" y="665" />
+              <mxPoint x="730" y="665" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="msg_adm_rej" value="Kết quả thẩm định &amp; Lý do" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.25;exitY=0;entryX=0.35;entryY=1;dashed=1;startArrow=oval;startFill=0;endArrow=open;endFill=0;strokeColor=#D97706;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#92400E;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="adm_act_reject" target="sys_catch_admin">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1130" y="665" />
+              <mxPoint x="1075" y="665" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="msg_adm_app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=0;entryX=0.7;entryY=1;dashed=1;startArrow=oval;startFill=0;endArrow=open;endFill=0;strokeColor=#D97706;strokeWidth=1.5;" edge="1" parent="1" source="adm_act_approve" target="sys_catch_admin">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1360" y="665" />
+              <mxPoint x="1087" y="665" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="msg_push_notify" value="Bắn chuông thông báo kết quả (UC03)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=0;entryX=0.5;entryY=1;dashed=1;startArrow=oval;startFill=0;endArrow=open;endFill=0;strokeColor=#0284C7;strokeWidth=1.5;fontSize=10;fontStyle=1;fontColor=#0284C7;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="sys_act_update" target="s_catch_notify">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
