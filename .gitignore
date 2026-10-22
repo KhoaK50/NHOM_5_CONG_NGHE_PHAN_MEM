@@ -167,3 +167,14 @@ generate_sdlc_doc.py
 # AI Agent work logs & temporary artifacts
 .agents/
 
+
+# Local test suites, AI agent configs & internal Figma generator tool (keep local only)
+AGENTS.md
+PROJECT.md
+TEST_INFRA.md
+TEST_READY.md
+docs/CONTEXT_HANDOFF_CHUONG3_FIGMA_CODE.md
+tests/
+tools/
+server/db/test_*.js
+

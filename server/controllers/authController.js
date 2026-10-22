@@ -9,10 +9,14 @@ const { getClientIp, parseUserAgent } = require('../utils/security');
 const { buildDeviceConfirmationHtmlPage } = require('../services/emailService');
 
 function resolveUrls(req) {
-  const backendUrl =
-    process.env.BACKEND_URL || `${req.protocol}://${req.get('host') || 'localhost:5000'}`;
+  const host = req.get('host') || 'localhost:5000';
+  const isProdHost = host.includes('onrender.com') || host.includes('vectoria.io.vn');
+  const proto = isProdHost ? 'https' : req.protocol || 'http';
+  const backendUrl = process.env.BACKEND_URL || `${proto}://${host}`;
   const frontendUrl =
-    process.env.FRONTEND_URL || req.headers.origin || 'http://localhost:5173';
+    process.env.FRONTEND_URL ||
+    req.headers.origin ||
+    (isProdHost ? 'https://5share.vectoria.io.vn' : 'http://localhost:5173');
   return { backendUrl, frontendUrl };
 }
 

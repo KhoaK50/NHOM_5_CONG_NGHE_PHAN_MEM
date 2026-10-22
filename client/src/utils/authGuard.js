@@ -13,6 +13,14 @@ export function getApiBaseUrl() {
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
+  if (
+    typeof window !== 'undefined' &&
+    window.location?.hostname &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1'
+  ) {
+    return 'https://fiveshare-api.onrender.com';
+  }
   return 'http://localhost:5000';
 }
 
