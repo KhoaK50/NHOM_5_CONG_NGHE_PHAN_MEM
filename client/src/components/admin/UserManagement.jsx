@@ -389,6 +389,10 @@ export default function UserManagement({
               filteredUsers.map((user) => {
                 const isAdmin = user.role === 'ADMIN'
                 const isCurrent = user.id === currentUser?.id
+                const isRoot =
+                  Boolean(user.isRootAdmin) ||
+                  String(user.email || '').toLowerCase() === 'sc3.nguyentrandangkhoa@gmail.com'
+                const isProtected = isCurrent || isRoot
 
                 return (
                   <tr key={user.id}>
@@ -417,7 +421,7 @@ export default function UserManagement({
                             {user.fullName}
                             {isCurrent && (
                               <span style={{ fontSize: '11px', color: 'var(--primary-base)', marginLeft: '6px' }}>
-                                (Bạn)
+                                • Phiên hiện tại
                               </span>
                             )}
                           </div>
@@ -441,7 +445,11 @@ export default function UserManagement({
 
                     {/* Vai trò */}
                     <td>
-                      {isAdmin ? (
+                      {isRoot ? (
+                        <span className="status-badge blue">
+                          <ShieldCheck size={12} /> Quản trị viên gốc
+                        </span>
+                      ) : isAdmin ? (
                         <span className="status-badge blue">
                           <ShieldCheck size={12} /> Quản trị viên
                         </span>
@@ -490,18 +498,20 @@ export default function UserManagement({
                         {onToggleUserRole && (
                           <button
                             type="button"
-                            disabled={isCurrent}
+                            disabled={isProtected}
                             onClick={() => {
                               const nextRole = isAdmin ? 'STUDENT' : 'ADMIN'
                               onToggleUserRole(user.id, nextRole)
                               setBannerNotice(
                                 nextRole === 'ADMIN'
-                                  ? `Đã thăng quyền Quản trị viên (ADMIN) cho "${user.fullName}".`
-                                  : `Đã chuyển vai trò của "${user.fullName}" về Sinh viên (STUDENT).`
+                                  ? `Đã thăng quyền Quản trị viên cho "${user.fullName}".`
+                                  : `Đã chuyển vai trò của "${user.fullName}" về Sinh viên.`
                               )
                             }}
                             title={
-                              isCurrent
+                              isRoot
+                                ? 'Tài khoản Quản trị viên gốc của hệ thống được bảo vệ'
+                                : isCurrent
                                 ? 'Không thể tự hạ quyền tài khoản Quản trị đang đăng nhập'
                                 : isAdmin
                                 ? 'Hạ quyền xuống Sinh viên'
@@ -512,14 +522,14 @@ export default function UserManagement({
                               fontSize: '12px',
                               borderRadius: '6px',
                               border: '1px solid var(--blue-3)',
-                              backgroundColor: isCurrent ? 'var(--bg-muted)' : 'var(--blue-1)',
-                              color: isCurrent ? 'var(--text-tertiary)' : 'var(--blue-11)',
+                              backgroundColor: isProtected ? 'var(--bg-muted)' : 'var(--blue-1)',
+                              color: isProtected ? 'var(--text-tertiary)' : 'var(--blue-11)',
                               fontWeight: 600,
-                              cursor: isCurrent ? 'not-allowed' : 'pointer',
+                              cursor: isProtected ? 'not-allowed' : 'pointer',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
-                              opacity: isCurrent ? 0.6 : 1
+                              opacity: isProtected ? 0.6 : 1
                             }}
                           >
                             <ShieldCheck size={13} />
@@ -530,22 +540,28 @@ export default function UserManagement({
                         {user.isActive ? (
                           <button
                             type="button"
-                            disabled={isCurrent}
+                            disabled={isProtected}
                             onClick={() => handleOpenLockModal(user)}
-                            title={isCurrent ? 'Không thể tự khóa tài khoản của bạn' : 'Khóa tài khoản sinh viên này'}
+                            title={
+                              isRoot
+                                ? 'Tài khoản Quản trị viên gốc không thể bị khóa'
+                                : isCurrent
+                                ? 'Không thể tự khóa tài khoản của bạn'
+                                : 'Khóa tài khoản sinh viên này'
+                            }
                             style={{
                               padding: '5px 10px',
                               fontSize: '12px',
                               borderRadius: '6px',
                               border: '1px solid var(--red-2)',
-                              backgroundColor: isCurrent ? 'var(--bg-muted)' : 'var(--red-1)',
-                              color: isCurrent ? 'var(--text-tertiary)' : 'var(--red-9)',
+                              backgroundColor: isProtected ? 'var(--bg-muted)' : 'var(--red-1)',
+                              color: isProtected ? 'var(--text-tertiary)' : 'var(--red-9)',
                               fontWeight: 600,
-                              cursor: isCurrent ? 'not-allowed' : 'pointer',
+                              cursor: isProtected ? 'not-allowed' : 'pointer',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
-                              opacity: isCurrent ? 0.6 : 1
+                              opacity: isProtected ? 0.6 : 1
                             }}
                           >
                             <Lock size={13} />

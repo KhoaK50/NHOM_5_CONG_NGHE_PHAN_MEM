@@ -8,14 +8,31 @@
 const { query } = require('../db/pool');
 
 const ROOT_ADMIN_EMAILS = new Set([
-  'sc3.nguyentrandangkhoa@gmail.com',
-  'khoantd.spth@hcmue.edu.vn'
+  'sc3.nguyentrandangkhoa@gmail.com'
 ]);
 
+function isRootAdminEmail(email) {
+  return ROOT_ADMIN_EMAILS.has(String(email || '').trim().toLowerCase());
+}
+
 function resolveInitialRole(email) {
-  return ROOT_ADMIN_EMAILS.has(String(email || '').trim().toLowerCase())
-    ? 'ADMIN'
-    : 'STUDENT';
+  return isRootAdminEmail(email) ? 'ADMIN' : 'STUDENT';
+}
+
+/**
+ * Tìm người dùng theo Google ID
+ */
+async function findUserByGoogleId(googleId) {
+  if (!googleId) return null;
+  const res = await query(
+    `SELECT id, student_code, full_name, email, password_hash, auth_provider, google_id,
+            role, cohort, status, avatar_url, token_version, created_at, updated_at
+     FROM public.users
+     WHERE google_id = $1
+     LIMIT 1`,
+    [String(googleId).trim()]
+  );
+  return res.rows[0] || null;
 }
 
 /**
@@ -372,23 +389,28 @@ async function incrementUserTokenVersion(userId) {
  */
 async function linkOrCreateGoogleUser({ email, fullName, googleId, avatarUrl }) {
   const normalizedEmail = String(email).trim().toLowerCase();
-  const existing = await findUserByEmail(normalizedEmail);
-  const shouldBeAdmin = ROOT_ADMIN_EMAILS.has(normalizedEmail);
+  const existingByEmail = await findUserByEmail(normalizedEmail);
+  const existingByGoogle = googleId ? await findUserByGoogleId(googleId) : null;
+  const existing = existingByEmail || existingByGoogle;
+  const shouldBeAdmin = isRootAdminEmail(normalizedEmail);
 
   if (existing) {
+    const resolvedName = fullName ? String(fullName).trim() : existing.full_name;
     const updated = await query(
       `UPDATE public.users
-       SET google_id = COALESCE(google_id, $1),
+       SET email = $1,
+           full_name = COALESCE($2, full_name),
+           google_id = COALESCE($3, google_id),
            avatar_url = CASE
-             WHEN avatar_url IS NULL OR avatar_url = '/avatars/default.png' THEN COALESCE($2, avatar_url)
+             WHEN avatar_url IS NULL OR avatar_url = '/avatars/default.png' THEN COALESCE($4, avatar_url)
              ELSE avatar_url
            END,
-           role = CASE WHEN $4 = TRUE THEN 'ADMIN' ELSE role END,
+           role = CASE WHEN $5 = TRUE THEN 'ADMIN' ELSE role END,
            status = CASE WHEN status = 'pending' THEN 'active' ELSE status END,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3
+       WHERE id = $6
        RETURNING id, student_code, full_name, email, auth_provider, google_id, role, cohort, status, avatar_url, token_version`,
-      [googleId, avatarUrl, existing.id, shouldBeAdmin]
+      [normalizedEmail, resolvedName, googleId, avatarUrl, shouldBeAdmin, existing.id]
     );
     return { user: updated.rows[0], isNewUser: false };
   }
@@ -413,6 +435,31 @@ async function linkOrCreateGoogleUser({ email, fullName, googleId, avatarUrl }) 
 }
 
 /**
+ * Cập nhật thông tin hồ sơ cá nhân của người dùng (UC03 / FR-02)
+ */
+async function updateUserProfileInfo(userId, { fullName, cohort, studentCode, avatarUrl }) {
+  const cleanedCode = studentCode ? String(studentCode).replace(/\./g, '').trim() : null;
+  const res = await query(
+    `UPDATE public.users
+     SET full_name = COALESCE($1, full_name),
+         cohort = COALESCE($2, cohort),
+         student_code = COALESCE($3, student_code),
+         avatar_url = COALESCE($4, avatar_url),
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $5
+     RETURNING id, student_code, full_name, email, auth_provider, role, cohort, status, avatar_url, token_version, created_at`,
+    [
+      fullName ? String(fullName).trim() : null,
+      cohort ? String(cohort).trim() : null,
+      cleanedCode || null,
+      avatarUrl ? String(avatarUrl).trim() : null,
+      Number(userId)
+    ]
+  );
+  return res.rows[0] || null;
+}
+
+/**
  * Lấy danh sách toàn bộ người dùng từ Supabase phục vụ Quản trị viên (UC10)
  */
 async function listAllUsers() {
@@ -425,9 +472,14 @@ async function listAllUsers() {
 }
 
 /**
- * Thăng chức Admin hoặc Hạ xuống Sinh viên (chỉ dành cho Admin)
+ * Thăng chức Admin hoặc Hạ xuống Sinh viên (chỉ dành cho Admin, bảo vệ Root Admin)
  */
 async function updateUserRole(userId, nextRole) {
+  const target = await findUserById(userId);
+  if (!target) return null;
+  if (isRootAdminEmail(target.email) && nextRole !== 'ADMIN') {
+    throw new Error('ROOT_ADMIN_PROTECTED');
+  }
   const canonical = nextRole === 'ADMIN' ? 'ADMIN' : 'STUDENT';
   const res = await query(
     `UPDATE public.users
@@ -440,9 +492,14 @@ async function updateUserRole(userId, nextRole) {
 }
 
 /**
- * Khóa / Mở khóa tài khoản người dùng trên Supabase (UC10)
+ * Khóa / Mở khóa tài khoản người dùng trên Supabase (UC10, bảo vệ Root Admin)
  */
 async function updateUserStatus(userId, nextStatus) {
+  const target = await findUserById(userId);
+  if (!target) return null;
+  if (isRootAdminEmail(target.email) && nextStatus === 'locked') {
+    throw new Error('ROOT_ADMIN_PROTECTED');
+  }
   const canonical = nextStatus === 'locked' ? 'locked' : 'active';
   const res = await query(
     `UPDATE public.users
@@ -457,8 +514,10 @@ async function updateUserStatus(userId, nextStatus) {
 }
 
 module.exports = {
+  isRootAdminEmail,
   findUserByEmail,
   findUserById,
+  findUserByGoogleId,
   findUserByStudentCode,
   createOrUpdatePendingUser,
   upsertAccountActivation,
@@ -472,6 +531,7 @@ module.exports = {
   updatePasswordAndRevokeSessions,
   incrementUserTokenVersion,
   linkOrCreateGoogleUser,
+  updateUserProfileInfo,
   listAllUsers,
   updateUserRole,
   updateUserStatus

@@ -36,8 +36,11 @@ router.post('/reset-password', authController.handleResetPassword);
 router.get('/confirm-device', authController.handleConfirmDevice);
 router.get('/secure-account', authController.handleSecureAccount);
 
-// 8. Kiểm tra phiên đăng nhập hiện tại & đối chiếu token_version
+// 8. Kiểm tra phiên đăng nhập hiện tại & cập nhật hồ sơ cá nhân (UC03)
 router.get('/me', authController.handleGetMe);
+router.put('/profile', authController.handleUpdateProfile);
+router.patch('/profile', authController.handleUpdateProfile);
+router.post('/change-password', authController.handleChangePassword);
 
 // 9. Quản trị người dùng: Danh sách, Thăng/Hạ quyền Admin, Khóa/Mở khóa (UC10)
 router.get('/users', authController.handleListUsers);

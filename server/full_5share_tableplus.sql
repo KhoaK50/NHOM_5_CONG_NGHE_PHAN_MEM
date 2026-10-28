@@ -259,11 +259,7 @@ VALUES
   (4, '5001104004', 'Nguyễn Hoàng Danh', 'danhnh.spth@hcmue.edu.vn', '$2b$10$5ShareHashStudentDanh2026HCMUE6666666666666666666666', 'local', NULL, 'STUDENT', 'K50', 'active', '/avatars/danh.png', 1),
   (5, '5001104005', 'Trần Đức Đạt', 'dattd.spth@hcmue.edu.vn', '$2b$10$5ShareHashStudentDat2026HCMUE55555555555555555555555', 'local', NULL, 'STUDENT', 'K50', 'active', '/avatars/dat.png', 1),
   (6, '4801104099', 'Trần Văn Nam', 'namtv.spth@hcmue.edu.vn', '$2b$10$5ShareHashStudentNam2026HCMUE44444444444444444444444', 'local', NULL, 'STUDENT', 'K48', 'locked', '/avatars/default.png', 2)
-ON CONFLICT (id) DO UPDATE SET
-  full_name = EXCLUDED.full_name,
-  email = EXCLUDED.email,
-  role = EXCLUDED.role,
-  status = EXCLUDED.status;
+ON CONFLICT DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('public.users', 'id'), (SELECT MAX(id) FROM public.users));
 

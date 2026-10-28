@@ -112,7 +112,7 @@ async function handleLogin(req, res) {
 
 async function handleGoogleLogin(req, res) {
   try {
-    const { access_token, accessToken, credential, fallbackProfile } = req.body || {};
+    const { access_token, accessToken, credential } = req.body || {};
     const ipAddress = getClientIp(req);
     const deviceInfo = parseUserAgent(req.headers['user-agent']);
     const { backendUrl, frontendUrl } = resolveUrls(req);
@@ -120,7 +120,6 @@ async function handleGoogleLogin(req, res) {
     const result = await authService.googleLogin({
       accessToken: access_token || accessToken,
       credential,
-      fallbackProfile,
       ipAddress,
       deviceInfo,
       backendUrl,
@@ -221,9 +220,48 @@ async function handleGetMe(req, res) {
   }
 }
 
+async function handleUpdateProfile(req, res) {
+  try {
+    const authHeader = req.headers.authorization;
+    const { fullName, display_name, cohort, studentCode, studentId, avatarUrl } = req.body || {};
+    const result = await authService.updateUserProfile(authHeader, {
+      fullName: fullName !== undefined ? fullName : display_name,
+      cohort,
+      studentCode: studentCode !== undefined ? studentCode : studentId,
+      avatarUrl
+    });
+    return res.status(result.statusCode).json(result.body);
+  } catch (err) {
+    console.error('[AuthController.handleUpdateProfile]', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Không thể cập nhật hồ sơ cá nhân lúc này.'
+    });
+  }
+}
+
+async function handleChangePassword(req, res) {
+  try {
+    const authHeader = req.headers.authorization;
+    const { oldPassword, old_password, newPassword, new_password } = req.body || {};
+    const result = await authService.changeUserPassword(authHeader, {
+      oldPassword: oldPassword || old_password,
+      newPassword: newPassword || new_password
+    });
+    return res.status(result.statusCode).json(result.body);
+  } catch (err) {
+    console.error('[AuthController.handleChangePassword]', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Không thể đổi mật khẩu lúc này.'
+    });
+  }
+}
+
 async function handleListUsers(req, res) {
   try {
-    const result = await authService.listUsersForAdmin();
+    const authHeader = req.headers.authorization;
+    const result = await authService.listUsersForAdmin(authHeader);
     return res.status(result.statusCode).json(result.body);
   } catch (err) {
     console.error('[AuthController.handleListUsers]', err);
@@ -236,9 +274,10 @@ async function handleListUsers(req, res) {
 
 async function handleUpdateUserRole(req, res) {
   try {
+    const authHeader = req.headers.authorization;
     const userId = req.params.id;
     const { role } = req.body || {};
-    const result = await authService.updateUserRoleByAdmin({ userId, role });
+    const result = await authService.updateUserRoleByAdmin(authHeader, { userId, role });
     return res.status(result.statusCode).json(result.body);
   } catch (err) {
     console.error('[AuthController.handleUpdateUserRole]', err);
@@ -251,9 +290,10 @@ async function handleUpdateUserRole(req, res) {
 
 async function handleUpdateUserStatus(req, res) {
   try {
+    const authHeader = req.headers.authorization;
     const userId = req.params.id;
     const { status } = req.body || {};
-    const result = await authService.updateUserStatusByAdmin({ userId, status });
+    const result = await authService.updateUserStatusByAdmin(authHeader, { userId, status });
     return res.status(result.statusCode).json(result.body);
   } catch (err) {
     console.error('[AuthController.handleUpdateUserStatus]', err);
@@ -275,6 +315,8 @@ module.exports = {
   handleConfirmDevice,
   handleSecureAccount,
   handleGetMe,
+  handleUpdateProfile,
+  handleChangePassword,
   handleListUsers,
   handleUpdateUserRole,
   handleUpdateUserStatus

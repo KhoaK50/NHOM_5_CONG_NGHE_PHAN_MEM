@@ -93,9 +93,12 @@ export default function App() {
     }, 4500)
   }
 
-  // Đối chiếu phiên JWT (token_version) và tải danh sách người dùng trực tiếp từ bảng public.users trên Supabase
-  useEffect(() => {
-    fetch(`${getApiBaseUrl()}/api/auth/users`)
+  const fetchAdminUsersList = (authToken) => {
+    const tokenToUse = authToken || AuthGuard.getAuthToken()
+    if (!tokenToUse) return
+    fetch(`${getApiBaseUrl()}/api/auth/users`, {
+      headers: { Authorization: `Bearer ${tokenToUse}` }
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data.status === 'success' && Array.isArray(data.users) && data.users.length > 0) {
@@ -103,30 +106,46 @@ export default function App() {
         }
       })
       .catch(() => {})
+  }
 
+  // Đối chiếu phiên JWT (token_version) trực tiếp với bảng public.users trên Supabase
+  useEffect(() => {
     const token = AuthGuard.getAuthToken()
     if (!token) return
 
     fetch(`${getApiBaseUrl()}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === 'session_revoked') {
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}))
+        return { ok: res.ok, status: res.status, data }
+      })
+      .then(({ ok, status, data }) => {
+        if (data.status === 'session_revoked' || status === 401 || status === 403 || !ok) {
           AuthGuard.clearAuthSession()
           setUserSession(null)
           setActorRole('GUEST')
-          setActiveView('auth')
-          showNotice(
-            'Phiên đăng nhập của bạn đã bị thu hồi do thay đổi mật khẩu hoặc kích hoạt khóa khẩn cấp.'
-          )
-        } else if (data.status === 'success' && data.user) {
+          if (data.status === 'session_revoked') {
+            setActiveView('auth')
+            showNotice(
+              'Phiên đăng nhập của bạn đã bị thu hồi do thay đổi mật khẩu hoặc kích hoạt khóa khẩn cấp.'
+            )
+          }
+          return
+        }
+
+        if (data.status === 'success' && data.user) {
+          const nextRole = data.user.role === 'ADMIN' ? 'ADMIN' : 'USER'
+          AuthGuard.updateSavedUserProfile(data.user, token)
           setUserSession(data.user)
-          setActorRole(data.user.role === 'ADMIN' ? 'ADMIN' : 'USER')
+          setActorRole(nextRole)
+          if (nextRole === 'ADMIN') {
+            fetchAdminUsersList(token)
+          }
         }
       })
       .catch(() => {
-        // Chạy độc lập nếu máy chủ Backend chưa bật
+        // Giữ phiên hiện tại nếu mạng tạm thời gián đoạn
       })
   }, [])
 
@@ -152,44 +171,48 @@ export default function App() {
     setActiveView('upload')
   }
 
-  const handleSwitchActorRole = (nextRole) => {
-    const canonicalRole = nextRole === 'STUDENT' ? 'USER' : nextRole
-    setActorRole(canonicalRole)
-    if (canonicalRole === 'GUEST') {
-      setUserSession(null)
-      if (['upload', 'my-docs', 'bookmarks', 'profile'].includes(activeView)) {
+  const handleSwitchSavedAccount = async (savedEntry) => {
+    if (!savedEntry || !savedEntry.token) {
+      handleOpenAuth('login')
+      return
+    }
+
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${savedEntry.token}` }
+      })
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok || data.status !== 'success' || !data.user) {
+        AuthGuard.removeSavedAccount(savedEntry.email)
+        showNotice('Phiên đã lưu của tài khoản này đã hết hạn hoặc bị thu hồi. Vui lòng đăng nhập lại.')
+        handleOpenAuth('login')
+        return
+      }
+
+      const verifiedUser = data.user
+      const nextRole = verifiedUser.role === 'ADMIN' ? 'ADMIN' : 'USER'
+      AuthGuard.saveAuthSession(savedEntry.token, verifiedUser, true)
+      setUserSession(verifiedUser)
+      setActorRole(nextRole)
+
+      if (nextRole === 'ADMIN') {
+        fetchAdminUsersList(savedEntry.token)
+      } else if (
+        ['admin', 'admin-dashboard', 'admin-moderation', 'admin-courses', 'admin-users'].includes(
+          activeView
+        )
+      ) {
         setActiveView('discovery')
       }
-      showNotice('Đang trải nghiệm với vai trò Khách vãng lai: Xem trước trực tuyến tối đa 3 trang đầu của mỗi học liệu.')
-    } else if (canonicalRole === 'USER') {
-      const activeStudent = users.find((u) => u.id === 'user-vi') || {
-        id: 'user-vi',
-        email: 'vi.phantrieu.k50@hcmue.edu.vn',
-        fullName: 'Phan Triệu Vĩ',
-        role: 'STUDENT',
-        cohort: 'K50 SPTH',
-        studentId: '50.01.103.089',
-        points: studentPoints,
-        avatarInitials: 'TV',
-        isActive: true
-      }
-      setUserSession(activeStudent)
-      showNotice('Đang trải nghiệm với vai trò Sinh viên: Đọc toàn văn PDF, Tải tệp gốc và Đóng góp học liệu.')
-    } else if (canonicalRole === 'ADMIN') {
-      const activeAdmin = users.find((u) => u.id === 'user-khoa') || {
-        id: 'user-khoa',
-        email: 'admin.khoacntt@hcmue.edu.vn',
-        fullName: 'Nguyễn Trần Đăng Khoa',
-        role: 'ADMIN',
-        cohort: 'Khoa CNTT',
-        studentId: '50.01.103.033',
-        points: 500,
-        avatarInitials: 'ĐK',
-        isActive: true
-      }
-      setUserSession(activeAdmin)
-      setActiveView('admin')
-      showNotice('Đang trải nghiệm Không gian Quản trị học thuật: Kiểm duyệt 8 tiêu chí và Quản lý danh mục học phần.')
+
+      showNotice(
+        `Đã chuyển sang tài khoản "${verifiedUser.fullName}" (${
+          nextRole === 'ADMIN' ? 'Quản trị viên' : 'Sinh viên'
+        }).`
+      )
+    } catch {
+      showNotice('Không thể xác thực phiên tài khoản đã lưu với máy chủ.')
     }
   }
 
@@ -224,9 +247,12 @@ export default function App() {
   }
 
   const handleAuthSuccess = (profile) => {
-    const isLocked = users.some(
-      (u) => (u.id === profile.id || u.email === profile.email) && u.isActive === false
-    )
+    const isLocked =
+      profile.isActive === false ||
+      profile.status === 'locked' ||
+      users.some(
+        (u) => (u.id === profile.id || u.email === profile.email) && u.isActive === false
+      )
     if (isLocked) {
       showNotice('Tài khoản đã bị tạm khóa do vi phạm chuẩn mực học thuật. Vui lòng liên hệ Ban Quản trị.')
       return
@@ -234,13 +260,37 @@ export default function App() {
     const nextRole = profile.role === 'ADMIN' ? 'ADMIN' : 'USER'
     setUserSession(profile)
     setActorRole(nextRole)
-    setActiveView(nextRole === 'ADMIN' ? 'admin' : 'detail')
-    showNotice(`Đăng nhập thành công với vai trò ${nextRole === 'ADMIN' ? 'Quản trị viên' : 'Sinh viên'}.`)
+    setActiveView('discovery')
+    if (nextRole === 'ADMIN') {
+      fetchAdminUsersList(AuthGuard.getAuthToken())
+    }
+    showNotice(
+      `Đăng nhập thành công! Chào mừng ${profile.fullName} (${
+        nextRole === 'ADMIN' ? 'Quản trị viên' : 'Sinh viên'
+      }).`
+    )
   }
 
   const handleLogout = () => {
     AuthGuard.clearAuthSession()
-    handleSwitchActorRole('GUEST')
+    setUserSession(null)
+    setActorRole('GUEST')
+    if (
+      [
+        'upload',
+        'my-docs',
+        'bookmarks',
+        'profile',
+        'admin',
+        'admin-dashboard',
+        'admin-moderation',
+        'admin-courses',
+        'admin-users'
+      ].includes(activeView)
+    ) {
+      setActiveView('discovery')
+    }
+    showNotice('Đã đăng xuất khỏi tài khoản. Bạn đang tra cứu học liệu với vai trò Khách vãng lai.')
   }
 
   const handleSelectDocument = (doc) => {
@@ -287,29 +337,72 @@ export default function App() {
     showNotice(`Đang tải tệp gốc "${doc.fileName}". Đã cập nhật số lượt tải của học liệu.`)
   }
 
-  const handleUpdateProfile = (updatedFields) => {
-    setUserSession((prev) => {
-      const updated = { ...prev, ...updatedFields }
-      try {
-        localStorage.setItem('5share_user', JSON.stringify(updated))
-      } catch {
-        // ignore
-      }
-      return updated
+  const handleUpdateProfile = async (updatedFields) => {
+    const token = AuthGuard.getAuthToken()
+    if (!token) {
+      throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+    }
+
+    const res = await fetch(`${getApiBaseUrl()}/api/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        fullName: updatedFields.fullName,
+        cohort: updatedFields.cohort,
+        studentCode: updatedFields.studentId,
+        avatarUrl: updatedFields.avatarUrl
+      })
     })
-    showNotice('Đã cập nhật thông tin hồ sơ sinh viên thành công!')
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || data.status !== 'success') {
+      throw new Error(data.message || 'Không thể cập nhật thông tin hồ sơ trên máy chủ.')
+    }
+
+    const mergedUser = {
+      ...userSession,
+      ...data.user,
+      avatarPreset: updatedFields.avatarPreset || userSession?.avatarPreset
+    }
+    setUserSession(mergedUser)
+    AuthGuard.updateSavedUserProfile(mergedUser, token)
+    setUsers((prev) =>
+      prev.map((u) => (u.id === mergedUser.id ? { ...u, ...mergedUser } : u))
+    )
+    showNotice(data.message || 'Đã cập nhật thông tin hồ sơ cá nhân thành công!')
   }
 
-  const handleChangePassword = ({ oldPassword, newPassword, confirmPassword }) => {
-    if (!oldPassword) {
-      showNotice('Vui lòng nhập mật khẩu hiện tại.')
-      return
-    }
+  const handleChangePassword = async ({ oldPassword, newPassword, confirmPassword }) => {
     if (!newPassword || newPassword !== confirmPassword) {
-      showNotice('Mật khẩu xác nhận không khớp.')
-      return
+      throw new Error('Mật khẩu xác nhận không trùng khớp.')
     }
-    showNotice('Đổi mật khẩu tài khoản thành công! Vui lòng ghi nhớ mật khẩu mới.')
+    const token = AuthGuard.getAuthToken()
+    if (!token) {
+      throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+    }
+
+    const res = await fetch(`${getApiBaseUrl()}/api/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ oldPassword, newPassword })
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || data.status !== 'success') {
+      throw new Error(data.message || 'Không thể đổi mật khẩu. Vui lòng kiểm tra lại mật khẩu hiện tại.')
+    }
+
+    const updatedUser = { ...userSession, ...(data.user || {}) }
+    const freshToken = data.token || token
+    setUserSession(updatedUser)
+    AuthGuard.updateSavedUserProfile(updatedUser, freshToken)
+    showNotice(
+      data.message || 'Đổi mật khẩu thành công! Các phiên đăng nhập cũ trên thiết bị khác đã được thu hồi.'
+    )
   }
 
   const handleCreateBounty = ({ title, courseCode, courseName, rewardPoints, description }) => {
@@ -645,7 +738,31 @@ export default function App() {
     }
   }
 
-  const handleToggleUserStatus = (userId, lockReason = null) => {
+  const handleToggleUserStatus = async (userId, lockReason = null) => {
+    const target = users.find((u) => u.id === userId)
+    if (!target) return
+
+    const nextDbStatus = target.isActive ? 'locked' : 'active'
+    const token = AuthGuard.getAuthToken()
+
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/users/${userId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ status: nextDbStatus })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || data.status !== 'success') {
+        showNotice(data.message || 'Không thể cập nhật trạng thái tài khoản này.')
+        return
+      }
+    } catch {
+      // Nếu chạy ngoại tuyến thì vẫn cập nhật state cục bộ
+    }
+
     setUsers((prev) =>
       prev.map((u) => {
         if (u.id === userId) {
@@ -665,41 +782,34 @@ export default function App() {
         return u
       })
     )
-    setUserSession((prev) => {
-      if (prev && prev.id === userId) {
-        const nextStatus = !prev.isActive
-        return {
-          ...prev,
-          isActive: nextStatus,
-          lockReason: nextStatus ? null : lockReason
-        }
-      }
-      return prev
-    })
-
-    const target = users.find((u) => u.id === userId)
-    if (target) {
-      const nextDbStatus = target.isActive ? 'locked' : 'active'
-      fetch(`${getApiBaseUrl()}/api/auth/users/${userId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextDbStatus })
-      }).catch(() => {})
-    }
   }
 
-  const handleToggleUserRole = (userId, nextRole) => {
+  const handleToggleUserRole = async (userId, nextRole) => {
+    const token = AuthGuard.getAuthToken()
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/users/${userId}/role`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ role: nextRole })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || data.status !== 'success') {
+        showNotice(data.message || 'Không thể thay đổi quyền của tài khoản này.')
+        return
+      }
+    } catch {
+      // Nếu chạy ngoại tuyến thì vẫn cập nhật state cục bộ
+    }
+
     const canonicalUiRole = nextRole === 'ADMIN' ? 'ADMIN' : 'USER'
     setUsers((prev) =>
       prev.map((u) =>
         u.id === userId ? { ...u, role: canonicalUiRole, dbRole: nextRole } : u
       )
     )
-    fetch(`${getApiBaseUrl()}/api/auth/users/${userId}/role`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: nextRole })
-    }).catch(() => {})
   }
 
   const handleSubmitFeedback = (feedbackPayload) => {
@@ -756,7 +866,12 @@ export default function App() {
   const totalPendingRequests = pendingDocsCount + pendingReportsCount
   const pendingCount = pendingDocsCount
 
-  const isAuthorizedAdmin = userSession?.role === 'ADMIN' || actorRole === 'ADMIN'
+  const isAuthorizedAdmin = Boolean(
+    userSession &&
+      userSession.role === 'ADMIN' &&
+      actorRole === 'ADMIN' &&
+      AuthGuard.getAuthToken()
+  )
   const isAdminView =
     activeView === 'admin' ||
     ['admin-dashboard', 'admin-moderation', 'admin-courses', 'admin-users'].includes(activeView)
@@ -787,7 +902,7 @@ export default function App() {
         userSession={userSession}
         activeView={activeView}
         onNavigate={handleNavigate}
-        onSwitchActorRole={handleSwitchActorRole}
+        onSwitchSavedAccount={handleSwitchSavedAccount}
         onOpenAuth={handleOpenAuth}
         onLogout={handleLogout}
         notifications={notifications}
@@ -901,10 +1016,10 @@ export default function App() {
                     justifyContent: 'center',
                     gap: '8px'
                   }}
-                  onClick={() => handleSwitchActorRole('ADMIN')}
+                  onClick={() => handleOpenAuth('login')}
                 >
                   <ShieldCheck size={16} />
-                  <span>Chuyển sang tài khoản Quản trị viên (Admin)</span>
+                  <span>Đăng nhập bằng tài khoản Quản trị viên</span>
                 </button>
 
                 <button
@@ -1134,6 +1249,7 @@ export default function App() {
 
           {activeView === 'profile' && (
             <UserProfile
+              key={userSession?.id || userSession?.email || 'guest-profile'}
               currentUser={userSession}
               documents={documents}
               bookmarkedIds={bookmarkedIds}
