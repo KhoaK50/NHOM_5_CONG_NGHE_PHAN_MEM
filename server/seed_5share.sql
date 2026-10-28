@@ -8,17 +8,13 @@ BEGIN;
 -- 1. USERS (6 tài khoản: 5 thành viên Nhóm 5 + 1 tài khoản kiểm thử khóa)
 INSERT INTO public.users (id, student_code, full_name, email, password_hash, auth_provider, google_id, role, cohort, status, avatar_url, token_version)
 VALUES
-  (1, '5001104001', 'Nguyễn Trần Đăng Khoa', 'khoantd.spth@hcmue.edu.vn', '$2b$10$5ShareHashAdminKhoa2026HCMUE999999999999999999999999', 'local', NULL, 'ADMIN', 'K50', 'active', '/avatars/khoa.png', 1),
+  (1, '5001104001', 'Nguyễn Trần Đăng Khoa', 'sc3.nguyentrandangkhoa@gmail.com', '$2b$10$5ShareHashAdminKhoa2026HCMUE999999999999999999999999', 'google', '109577355129298409444', 'ADMIN', 'K50', 'active', '/avatars/khoa.png', 1),
   (2, '5001104002', 'Lê Nguyễn Thùy Trâm', 'tramlnt.spth@hcmue.edu.vn', '$2b$10$5ShareHashStudentTram2026HCMUE8888888888888888888888', 'local', NULL, 'STUDENT', 'K50', 'active', '/avatars/tram.png', 1),
   (3, '5001104003', 'Phan Triệu Vĩ', 'vipt.spth@hcmue.edu.vn', '$2b$10$5ShareHashStudentVi2026HCMUE777777777777777777777777', 'google', 'google-oauth2|5001104003', 'STUDENT', 'K50', 'active', '/avatars/vi.png', 1),
   (4, '5001104004', 'Nguyễn Hoàng Danh', 'danhnh.spth@hcmue.edu.vn', '$2b$10$5ShareHashStudentDanh2026HCMUE6666666666666666666666', 'local', NULL, 'STUDENT', 'K50', 'active', '/avatars/danh.png', 1),
   (5, '5001104005', 'Trần Đức Đạt', 'dattd.spth@hcmue.edu.vn', '$2b$10$5ShareHashStudentDat2026HCMUE55555555555555555555555', 'local', NULL, 'STUDENT', 'K50', 'active', '/avatars/dat.png', 1),
   (6, '4801104099', 'Trần Văn Nam', 'namtv.spth@hcmue.edu.vn', '$2b$10$5ShareHashStudentNam2026HCMUE44444444444444444444444', 'local', NULL, 'STUDENT', 'K48', 'locked', '/avatars/default.png', 2)
-ON CONFLICT (id) DO UPDATE SET
-  full_name = EXCLUDED.full_name,
-  email = EXCLUDED.email,
-  role = EXCLUDED.role,
-  status = EXCLUDED.status;
+ON CONFLICT DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('public.users', 'id'), (SELECT MAX(id) FROM public.users));
 

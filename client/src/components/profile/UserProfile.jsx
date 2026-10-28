@@ -53,13 +53,18 @@ export default function UserProfile({
   const [activeTab, setActiveTab] = useState(initialTab)
 
   // Tab Info Form State
-  const [fullName, setFullName] = useState(currentUser?.fullName || 'Phan Triệu Vĩ')
+  const [fullName, setFullName] = useState(currentUser?.fullName || currentUser?.display_name || '')
   const [cohort, setCohort] = useState(currentUser?.cohort || 'K50')
-  const [studentId, setStudentId] = useState(currentUser?.studentId || '50.01.103.089')
+  const [studentId, setStudentId] = useState(
+    currentUser?.studentId || currentUser?.studentCode || ''
+  )
   const [avatarPreset, setAvatarPreset] = useState('grad-blue')
-  const [customAvatarUrl, setCustomAvatarUrl] = useState(currentUser?.avatarUrl || '')
+  const [customAvatarUrl, setCustomAvatarUrl] = useState(
+    currentUser?.avatarUrl || currentUser?.avatar_url || ''
+  )
   const [infoError, setInfoError] = useState('')
   const [infoSuccess, setInfoSuccess] = useState('')
+  const [infoSubmitting, setInfoSubmitting] = useState(false)
 
   // Tab Password Form State
   const [oldPassword, setOldPassword] = useState('')
@@ -93,7 +98,7 @@ export default function UserProfile({
   ]
   const isPwdFormValid = pwdChecklist.every((c) => c.met) && oldPassword.length > 0
 
-  const handleSaveInfo = (e) => {
+  const handleSaveInfo = async (e) => {
     e.preventDefault()
     setInfoError('')
     setInfoSuccess('')
@@ -110,17 +115,24 @@ export default function UserProfile({
       return
     }
 
-    if (onUpdateProfile) {
-      onUpdateProfile({
-        fullName: trimmedName,
-        cohort,
-        studentId: studentId.trim(),
-        avatarUrl: customAvatarUrl.trim() || null,
-        avatarPreset
-      })
+    setInfoSubmitting(true)
+    try {
+      if (onUpdateProfile) {
+        await onUpdateProfile({
+          fullName: trimmedName,
+          cohort,
+          studentId: studentId.trim(),
+          avatarUrl: customAvatarUrl.trim() || null,
+          avatarPreset
+        })
+      }
+      setInfoSuccess('Đã cập nhật thông tin hồ sơ cá nhân thành công.')
+      setTimeout(() => setInfoSuccess(''), 4000)
+    } catch (err) {
+      setInfoError(err.message || 'Không thể cập nhật thông tin hồ sơ lúc này.')
+    } finally {
+      setInfoSubmitting(false)
     }
-    setInfoSuccess('Đã cập nhật thông tin hồ sơ sinh viên thành công.')
-    setTimeout(() => setInfoSuccess(''), 4000)
   }
 
   const handleSavePassword = async (e) => {
@@ -220,9 +232,9 @@ export default function UserProfile({
             </div>
 
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-              <span>{currentUser?.email || 'vi.phantrieu.k50@hcmue.edu.vn'}</span>
+              <span>{currentUser?.email || 'Chưa cập nhật email'}</span>
               <span>•</span>
-              <span>MSSV: <strong>{studentId}</strong></span>
+              <span>MSSV: <strong>{studentId || 'Chưa cập nhật'}</strong></span>
               <span>•</span>
               <span style={{ color: 'var(--text-tertiary)' }}>Khoa Công nghệ Thông tin</span>
             </div>
@@ -454,7 +466,7 @@ export default function UserProfile({
                 <input
                   id="profile-email"
                   type="email"
-                  value={currentUser?.email || 'vi.phantrieu.k50@hcmue.edu.vn'}
+                  value={currentUser?.email || ''}
                   readOnly
                   disabled
                   style={{
@@ -635,11 +647,18 @@ export default function UserProfile({
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
               <button
                 type="submit"
+                disabled={infoSubmitting}
                 className="btn-solid-primary"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px' }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 24px',
+                  opacity: infoSubmitting ? 0.6 : 1
+                }}
               >
                 <Save size={15} />
-                <span>Lưu thay đổi hồ sơ</span>
+                <span>{infoSubmitting ? 'Đang lưu...' : 'Lưu thay đổi hồ sơ'}</span>
               </button>
             </div>
           </form>

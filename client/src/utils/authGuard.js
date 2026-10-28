@@ -1,7 +1,7 @@
 /**
  * ============================================================================
- * AUTH GUARD — QUẢN LÝ PHIÊN ĐĂNG NHẬP, JWT EXPIRY & ĐA TÀI KHOẢN
- * Đồng bộ 100% kiến trúc `js/app/auth.js` (AuthGuard) của Vectoria
+ * AUTH GUARD — QUẢN LÝ PHIÊN ĐĂNG NHẬP, JWT EXPIRY & ĐA TÀI KHOẢN THỰC TẾ
+ * Đồng bộ 100% kiến trúc bảo mật chuẩn Production của 5Share
  * ============================================================================
  */
 
@@ -55,6 +55,38 @@ export function isJwtExpired(token) {
 }
 
 /**
+ * Lấy danh sách các tài khoản đã từng đăng nhập hợp lệ trên trình duyệt này
+ */
+export function getSavedAccounts() {
+  try {
+    const raw = localStorage.getItem(SAVED_ACCOUNTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((acc) => acc && acc.email && acc.token && !isJwtExpired(acc.token));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Xóa một tài khoản khỏi danh sách chuyển đổi nhanh trên trình duyệt
+ */
+export function removeSavedAccount(email) {
+  try {
+    if (!email) return [];
+    const current = getSavedAccounts();
+    const next = current.filter(
+      (acc) => String(acc.email).toLowerCase() !== String(email).toLowerCase()
+    );
+    localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(next));
+    return next;
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Lưu Token & Hồ sơ người dùng theo lựa chọn "Ghi nhớ đăng nhập":
  * - remember = true  -> lưu vào localStorage (duy trì sau khi đóng trình duyệt)
  * - remember = false -> lưu vào sessionStorage (tự xóa khi đóng trình duyệt)
@@ -74,10 +106,9 @@ export function saveAuthSession(token, userProfile, remember = true) {
       targetStorage.setItem(USER_KEY, JSON.stringify(userProfile));
     }
 
-    // Lưu vào danh sách tài khoản đã đăng nhập (phục vụ chuyển đổi nhanh trên Topbar như Vectoria)
-    if (userProfile && userProfile.email) {
-      const rawAccounts = localStorage.getItem(SAVED_ACCOUNTS_KEY);
-      const accounts = rawAccounts ? JSON.parse(rawAccounts) : [];
+    // Lưu vào danh sách tài khoản đã đăng nhập hợp lệ trên trình duyệt
+    if (userProfile && userProfile.email && token) {
+      const accounts = getSavedAccounts();
       const existingIdx = accounts.findIndex(
         (acc) => acc.email?.toLowerCase() === userProfile.email.toLowerCase()
       );
@@ -85,10 +116,11 @@ export function saveAuthSession(token, userProfile, remember = true) {
         id: userProfile.id,
         email: userProfile.email,
         fullName: userProfile.fullName || userProfile.display_name,
-        role: userProfile.role || 'USER',
+        role: userProfile.role === 'ADMIN' ? 'ADMIN' : 'USER',
+        isRootAdmin: Boolean(userProfile.isRootAdmin),
         cohort: userProfile.cohort || 'K50',
-        studentId: userProfile.studentId || '50.01.104.001',
-        avatar_url: userProfile.avatar_url || null,
+        studentId: userProfile.studentId || userProfile.studentCode || '',
+        avatar_url: userProfile.avatar_url || userProfile.avatarUrl || null,
         avatarInitials: userProfile.avatarInitials || 'SV',
         token,
         lastLogin: new Date().toISOString()
@@ -102,6 +134,19 @@ export function saveAuthSession(token, userProfile, remember = true) {
     }
   } catch {
     // Bỏ qua nếu môi trường chặn Web Storage
+  }
+}
+
+/**
+ * Cập nhật hồ sơ người dùng (và token mới nếu có) trong phiên hiện tại
+ */
+export function updateSavedUserProfile(userProfile, newToken = null) {
+  try {
+    const isLocal = Boolean(localStorage.getItem(TOKEN_KEY) || localStorage.getItem(USER_KEY));
+    const currentToken = newToken || getAuthToken();
+    saveAuthSession(currentToken, userProfile, isLocal);
+  } catch {
+    // ignore
   }
 }
 
@@ -138,7 +183,7 @@ export function getSavedUserProfile() {
 }
 
 /**
- * Xóa toàn bộ phiên đăng nhập trên cả localStorage và sessionStorage
+ * Xóa toàn bộ phiên đăng nhập hiện hành trên cả localStorage và sessionStorage
  */
 export function clearAuthSession() {
   try {
@@ -152,9 +197,13 @@ export function clearAuthSession() {
 }
 
 export const AuthGuard = {
+  getApiBaseUrl,
   saveAuthSession,
+  updateSavedUserProfile,
   getAuthToken,
   getSavedUserProfile,
+  getSavedAccounts,
+  removeSavedAccount,
   clearAuthSession,
   decodeJwtPayload,
   isJwtExpired

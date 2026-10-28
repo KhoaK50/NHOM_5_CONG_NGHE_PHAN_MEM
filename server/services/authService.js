@@ -43,12 +43,15 @@ function formatUserProfile(userRow, extra = {}) {
     display_name: userRow.full_name,
     role: canonicalRole,
     dbRole: userRow.role,
+    isRootAdmin: authRepo.isRootAdminEmail(userRow.email),
+    authProvider: userRow.auth_provider || 'local',
     cohort: userRow.cohort || 'K50',
-    studentId: userRow.student_code || '50.01.104.001',
+    studentId: userRow.student_code || '',
     studentCode: userRow.student_code || null,
     status: userRow.status || 'active',
     isActive: userRow.status === 'active',
-    avatar_url: userRow.avatar_url || '/avatars/default.png',
+    avatar_url: userRow.avatar_url || null,
+    avatarUrl: userRow.avatar_url || null,
     avatarInitials: computeInitials(userRow.full_name),
     token_version: userRow.token_version || 1,
     points: userRow.role === 'ADMIN' ? 500 : 140,
@@ -499,7 +502,6 @@ async function loginUser({
 async function googleLogin({
   accessToken,
   credential,
-  fallbackProfile,
   ipAddress = '127.0.0.1',
   deviceInfo = 'Windows 10/11 (Chrome)',
   backendUrl = 'http://localhost:5000',
@@ -540,16 +542,10 @@ async function googleLogin({
     googleName = info.name;
     googleSub = info.sub;
     googlePicture = info.picture;
-  } else if (fallbackProfile && fallbackProfile.email) {
-    // Hỗ trợ môi trường trình duyệt chặn popup thứ ba hoặc kiểm thử nội bộ HCMUE
-    googleEmail = fallbackProfile.email;
-    googleName = fallbackProfile.fullName || fallbackProfile.name;
-    googleSub = fallbackProfile.googleId || `google-hcmue-${googleEmail}`;
-    googlePicture = fallbackProfile.avatarUrl || '/avatars/vi.png';
   } else {
     return {
       statusCode: 400,
-      body: { status: 'error', message: 'Thiếu thông tin xác thực từ Google OAuth 2.0.' }
+      body: { status: 'error', message: 'Thiếu thông tin xác thực hợp lệ từ Google OAuth 2.0.' }
     };
   }
 
@@ -786,13 +782,14 @@ async function triggerEmergencyAccountLockdown(token, frontendUrl = 'http://loca
 }
 
 /**
- * 10. Kiểm tra phiên đăng nhập hiện tại (GET /api/auth/me) — đối chiếu token_version
+ * Hàm phụ trợ: Xác thực Bearer JWT & đối chiếu token_version với CSDL
  */
-async function verifySessionAndGetProfile(authHeader) {
+async function authenticateRequest(authHeader) {
   if (!authHeader || !String(authHeader).startsWith('Bearer ')) {
     return {
+      ok: false,
       statusCode: 401,
-      body: { status: 'error', message: 'Thiếu token xác thực.' }
+      body: { status: 'error', message: 'Thiếu token xác thực phiên đăng nhập.' }
     };
   }
 
@@ -802,32 +799,35 @@ async function verifySessionAndGetProfile(authHeader) {
     payload = verifyJwt(rawToken);
   } catch (err) {
     return {
+      ok: false,
       statusCode: 401,
-      body: { status: 'error', message: err.message || 'Phiên đăng nhập không hợp lệ.' }
+      body: { status: 'error', message: err.message || 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.' }
     };
   }
 
   const user = await authRepo.findUserById(payload.sub);
   if (!user) {
     return {
+      ok: false,
       statusCode: 401,
-      body: { status: 'error', message: 'Tài khoản không tồn tại.' }
+      body: { status: 'error', message: 'Tài khoản không tồn tại trên hệ thống.' }
     };
   }
 
   if (user.status !== 'active') {
     return {
+      ok: false,
       statusCode: 403,
-      body: { status: 'error', message: 'Tài khoản hiện không ở trạng thái hoạt động.' }
+      body: { status: 'error', message: 'Tài khoản hiện đang bị khóa hoặc chưa kích hoạt.' }
     };
   }
 
-  // Kiểm tra token_version: nếu người dùng đã đổi mật khẩu hoặc bấm Khóa khẩn cấp -> từ chối ngay!
   if (
     payload.token_version !== undefined &&
     Number(payload.token_version) !== Number(user.token_version || 1)
   ) {
     return {
+      ok: false,
       statusCode: 401,
       body: {
         status: 'session_revoked',
@@ -836,21 +836,179 @@ async function verifySessionAndGetProfile(authHeader) {
     };
   }
 
-  const loginHistory = await authRepo.getRecentLoginHistory(user.id, 5);
+  return { ok: true, user, payload };
+}
+
+/**
+ * Hàm phụ trợ: Kiểm tra quyền Quản trị viên (ADMIN) từ Bearer JWT
+ */
+async function requireAdminRequest(authHeader) {
+  const auth = await authenticateRequest(authHeader);
+  if (!auth.ok) return auth;
+
+  if (auth.user.role !== 'ADMIN') {
+    return {
+      ok: false,
+      statusCode: 403,
+      body: {
+        status: 'error',
+        message: 'Truy cập bị từ chối: Yêu cầu quyền Quản trị viên hệ thống (ADMIN).'
+      }
+    };
+  }
+
+  return auth;
+}
+
+/**
+ * 10. Kiểm tra phiên đăng nhập hiện tại (GET /api/auth/me) — đối chiếu token_version
+ */
+async function verifySessionAndGetProfile(authHeader) {
+  const auth = await authenticateRequest(authHeader);
+  if (!auth.ok) {
+    return { statusCode: auth.statusCode, body: auth.body };
+  }
+
+  const loginHistory = await authRepo.getRecentLoginHistory(auth.user.id, 5);
 
   return {
     statusCode: 200,
     body: {
       status: 'success',
-      user: formatUserProfile(user, { loginHistory })
+      user: formatUserProfile(auth.user, { loginHistory })
     }
   };
 }
 
 /**
- * 11. Lấy danh sách toàn bộ tài khoản từ Supabase (phục vụ Quản trị người dùng UC10)
+ * 11. Cập nhật thông tin hồ sơ cá nhân (PUT /api/auth/profile - UC03)
  */
-async function listUsersForAdmin() {
+async function updateUserProfile(authHeader, { fullName, cohort, studentCode, avatarUrl }) {
+  const auth = await authenticateRequest(authHeader);
+  if (!auth.ok) {
+    return { statusCode: auth.statusCode, body: auth.body };
+  }
+
+  const cleanedName = fullName !== undefined ? String(fullName || '').trim() : auth.user.full_name;
+  if (!cleanedName || cleanedName.length < 2) {
+    return {
+      statusCode: 400,
+      body: { status: 'error', message: 'Họ và tên phải có tối thiểu 2 ký tự.' }
+    };
+  }
+
+  const cleanedStudentCode =
+    studentCode !== undefined
+      ? String(studentCode || '').trim() || null
+      : auth.user.student_code;
+
+  if (cleanedStudentCode && cleanedStudentCode !== auth.user.student_code) {
+    const existingCode = await authRepo.findUserByStudentCode(cleanedStudentCode);
+    if (existingCode && Number(existingCode.id) !== Number(auth.user.id)) {
+      return {
+        statusCode: 409,
+        body: {
+          status: 'error',
+          message: 'Mã số sinh viên này đã được liên kết với một tài khoản khác.'
+        }
+      };
+    }
+  }
+
+  const updated = await authRepo.updateUserProfileInfo(auth.user.id, {
+    fullName: cleanedName,
+    cohort: cohort || auth.user.cohort || 'K50',
+    studentCode: cleanedStudentCode,
+    avatarUrl: avatarUrl !== undefined ? avatarUrl : auth.user.avatar_url
+  });
+
+  const loginHistory = await authRepo.getRecentLoginHistory(updated.id, 5);
+
+  return {
+    statusCode: 200,
+    body: {
+      status: 'success',
+      message: 'Đã cập nhật thông tin hồ sơ cá nhân thành công.',
+      user: formatUserProfile(updated, { loginHistory })
+    }
+  };
+}
+
+/**
+ * 12. Đổi mật khẩu khi đang đăng nhập (POST /api/auth/change-password - UC03)
+ * Tăng token_version + 1 để thu hồi các phiên trên thiết bị khác và cấp JWT mới cho phiên hiện tại
+ */
+async function changeUserPassword(authHeader, { oldPassword, newPassword }) {
+  const auth = await authenticateRequest(authHeader);
+  if (!auth.ok) {
+    return { statusCode: auth.statusCode, body: auth.body };
+  }
+
+  const isGoogleOnlyPassword = String(auth.user.password_hash || '').startsWith(
+    'google_oauth2_unusable'
+  );
+
+  if (!isGoogleOnlyPassword) {
+    if (!oldPassword) {
+      return {
+        statusCode: 400,
+        body: { status: 'error', message: 'Vui lòng nhập mật khẩu hiện tại.' }
+      };
+    }
+    const isOldValid = verifyPassword(oldPassword, auth.user.password_hash);
+    if (!isOldValid) {
+      return {
+        statusCode: 400,
+        body: { status: 'error', message: 'Mật khẩu hiện tại không chính xác.' }
+      };
+    }
+  }
+
+  const pwdError = validatePasswordRules(newPassword);
+  if (pwdError) {
+    return { statusCode: 400, body: { status: 'error', message: pwdError } };
+  }
+
+  const newHash = hashPassword(newPassword);
+  const updatedUser = await authRepo.updatePasswordAndRevokeSessions(
+    auth.user.id,
+    newHash,
+    null
+  );
+
+  const freshToken = signJwt(
+    {
+      sub: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.full_name,
+      role: updatedUser.role,
+      token_version: updatedUser.token_version || 1
+    },
+    30 * 24 * 3600
+  );
+
+  return {
+    statusCode: 200,
+    body: {
+      status: 'success',
+      message:
+        'Đổi mật khẩu thành công! Các phiên đăng nhập cũ trên thiết bị khác đã được thu hồi.',
+      token: freshToken,
+      user: formatUserProfile(updatedUser)
+    }
+  };
+}
+
+/**
+ * 13. Lấy danh sách toàn bộ tài khoản từ Supabase (phục vụ Quản trị người dùng UC10)
+ * Yêu cầu bắt buộc JWT của Quản trị viên (ADMIN)
+ */
+async function listUsersForAdmin(authHeader) {
+  const adminCheck = await requireAdminRequest(authHeader);
+  if (!adminCheck.ok) {
+    return { statusCode: adminCheck.statusCode, body: adminCheck.body };
+  }
+
   const rows = await authRepo.listAllUsers();
   return {
     statusCode: 200,
@@ -862,48 +1020,88 @@ async function listUsersForAdmin() {
 }
 
 /**
- * 12. Thăng chức Quản trị viên (ADMIN) hoặc Hạ xuống Sinh viên (STUDENT)
+ * 14. Thăng chức Quản trị viên (ADMIN) hoặc Hạ xuống Sinh viên (STUDENT)
+ * Yêu cầu bắt buộc JWT của Quản trị viên (ADMIN) & Bảo vệ Root Admin
  */
-async function updateUserRoleByAdmin({ userId, role }) {
-  const updated = await authRepo.updateUserRole(userId, role);
-  if (!updated) {
-    return {
-      statusCode: 404,
-      body: { status: 'error', message: 'Không tìm thấy người dùng.' }
-    };
+async function updateUserRoleByAdmin(authHeader, { userId, role }) {
+  const adminCheck = await requireAdminRequest(authHeader);
+  if (!adminCheck.ok) {
+    return { statusCode: adminCheck.statusCode, body: adminCheck.body };
   }
-  return {
-    statusCode: 200,
-    body: {
-      status: 'success',
-      message: `Đã cập nhật vai trò của "${updated.full_name}" thành ${updated.role === 'ADMIN' ? 'Quản trị viên' : 'Sinh viên'}.`,
-      user: formatUserProfile(updated, { createdAt: updated.created_at })
+
+  try {
+    const updated = await authRepo.updateUserRole(userId, role);
+    if (!updated) {
+      return {
+        statusCode: 404,
+        body: { status: 'error', message: 'Không tìm thấy người dùng.' }
+      };
     }
-  };
+    return {
+      statusCode: 200,
+      body: {
+        status: 'success',
+        message: `Đã cập nhật vai trò của "${updated.full_name}" thành ${updated.role === 'ADMIN' ? 'Quản trị viên' : 'Sinh viên'}.`,
+        user: formatUserProfile(updated, { createdAt: updated.created_at })
+      }
+    };
+  } catch (err) {
+    if (err.code === 'ROOT_ADMIN_PROTECTED' || err.message === 'ROOT_ADMIN_PROTECTED') {
+      return {
+        statusCode: 403,
+        body: {
+          status: 'error',
+          message: 'Không thể hạ quyền tài khoản Quản trị viên gốc của hệ thống.'
+        }
+      };
+    }
+    throw err;
+  }
 }
 
 /**
- * 13. Khóa / Mở khóa tài khoản người dùng trên Supabase
+ * 15. Khóa / Mở khóa tài khoản người dùng trên Supabase
+ * Yêu cầu bắt buộc JWT của Quản trị viên (ADMIN) & Bảo vệ Root Admin
  */
-async function updateUserStatusByAdmin({ userId, status }) {
-  const updated = await authRepo.updateUserStatus(userId, status);
-  if (!updated) {
-    return {
-      statusCode: 404,
-      body: { status: 'error', message: 'Không tìm thấy người dùng.' }
-    };
+async function updateUserStatusByAdmin(authHeader, { userId, status }) {
+  const adminCheck = await requireAdminRequest(authHeader);
+  if (!adminCheck.ok) {
+    return { statusCode: adminCheck.statusCode, body: adminCheck.body };
   }
-  return {
-    statusCode: 200,
-    body: {
-      status: 'success',
-      message: `Đã cập nhật trạng thái tài khoản "${updated.full_name}".`,
-      user: formatUserProfile(updated, { createdAt: updated.created_at })
+
+  try {
+    const updated = await authRepo.updateUserStatus(userId, status);
+    if (!updated) {
+      return {
+        statusCode: 404,
+        body: { status: 'error', message: 'Không tìm thấy người dùng.' }
+      };
     }
-  };
+    return {
+      statusCode: 200,
+      body: {
+        status: 'success',
+        message: `Đã cập nhật trạng thái tài khoản "${updated.full_name}".`,
+        user: formatUserProfile(updated, { createdAt: updated.created_at })
+      }
+    };
+  } catch (err) {
+    if (err.code === 'ROOT_ADMIN_PROTECTED' || err.message === 'ROOT_ADMIN_PROTECTED') {
+      return {
+        statusCode: 403,
+        body: {
+          status: 'error',
+          message: 'Không thể khóa tài khoản Quản trị viên gốc của hệ thống.'
+        }
+      };
+    }
+    throw err;
+  }
 }
 
 module.exports = {
+  authenticateRequest,
+  requireAdminRequest,
   registerUser,
   verifyAccount,
   resendActivation,
@@ -914,6 +1112,8 @@ module.exports = {
   confirmTrustedDevice,
   triggerEmergencyAccountLockdown,
   verifySessionAndGetProfile,
+  updateUserProfile,
+  changeUserPassword,
   listUsersForAdmin,
   updateUserRoleByAdmin,
   updateUserStatusByAdmin

@@ -15,10 +15,12 @@ import {
   Plus,
   MessageSquare,
   Menu,
-  X
+  X,
+  Trash2
 } from 'lucide-react'
 import BrandLogo from './BrandLogo'
 import NotificationList from '../notifications/NotificationList'
+import { AuthGuard } from '../../utils/authGuard'
 
 // Bảng màu Radix 12 tông của Vectoria cho avatar chữ cái đầu
 const RADIX_AVATAR_PALETTE = [
@@ -45,46 +47,12 @@ function getInitial(name = '') {
   return trimmed.charAt(0).toUpperCase()
 }
 
-// 3 Tài khoản mẫu có sẵn cho người dùng & giám khảo trải nghiệm tức thì
-const PRESET_ACCOUNTS = [
-  {
-    id: 'student-vi',
-    role: 'STUDENT',
-    actorRole: 'USER',
-    name: 'Phan Triệu Vĩ',
-    email: 'vi.phantrieu.k50@hcmue.edu.vn',
-    cohort: 'K50 Sư phạm Tin học',
-    points: 140,
-    avatarUrl: null
-  },
-  {
-    id: 'admin-khoa',
-    role: 'ADMIN',
-    actorRole: 'ADMIN',
-    name: 'Nguyễn Trần Đăng Khoa',
-    email: 'admin.khoacntt@hcmue.edu.vn',
-    cohort: 'Ban Quản trị Khoa CNTT',
-    points: 500,
-    avatarUrl: null
-  },
-  {
-    id: 'guest-persona',
-    role: 'GUEST',
-    actorRole: 'GUEST',
-    name: 'Khách vãng lai',
-    email: 'guest@5share.edu.vn',
-    cohort: 'Khách truy cập công khai',
-    points: 0,
-    avatarUrl: null
-  }
-]
-
 export default function Navbar({
-  actorRole = 'USER', // 'GUEST' | 'USER' | 'STUDENT' | 'ADMIN'
+  actorRole = 'GUEST', // 'GUEST' | 'USER' | 'ADMIN'
   userSession,
   activeView = 'landing',
   onNavigate,
-  onSwitchActorRole,
+  onSwitchSavedAccount,
   onOpenAuth,
   onLogout,
   notifications = [],
@@ -94,19 +62,24 @@ export default function Navbar({
   pendingCount = 0,
   logoVariant = 'loops-weave'
 }) {
-  const isGuest = actorRole === 'GUEST'
-  const isAdmin = actorRole === 'ADMIN'
+  const isGuest = actorRole === 'GUEST' || !userSession
+  const isAdmin = !isGuest && actorRole === 'ADMIN' && userSession?.role === 'ADMIN'
 
   // Popovers state
   const [isAvatarOpen, setIsAvatarOpen] = useState(false)
   const [isAccountPickerOpen, setIsAccountPickerOpen] = useState(false)
   const [isNotifOpen, setIsNotifOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [savedAccounts, setSavedAccounts] = useState(() => AuthGuard.getSavedAccounts())
 
   const avatarRef = useRef(null)
   const notifRef = useRef(null)
 
   const unreadCount = notifications.filter((n) => !n.isRead).length
+
+  const refreshSavedAccounts = () => {
+    setSavedAccounts(AuthGuard.getSavedAccounts())
+  }
 
   // Click outside to close popovers
   useEffect(() => {
@@ -134,18 +107,27 @@ export default function Navbar({
     setIsAvatarOpen(false)
   }
 
-  // Chuyển tài khoản trong Account Picker panel
-  const handleSelectAccount = (acc) => {
-    if (onSwitchActorRole) {
-      onSwitchActorRole(acc.actorRole || acc.role)
+  // Chuyển sang một tài khoản đã đăng nhập hợp lệ trên trình duyệt
+  const handleSelectSavedAccount = (acc) => {
+    if (onSwitchSavedAccount) {
+      onSwitchSavedAccount(acc)
     }
     setIsAccountPickerOpen(false)
     setIsAvatarOpen(false)
   }
 
-  const displayName = isGuest ? 'Khách vãng lai' : (userSession?.fullName || userSession?.name || 'Thành viên 5share')
-  const displayEmail = isGuest ? 'Chưa đăng nhập' : (userSession?.email || '')
-  const displayPoints = userSession?.points ?? (actorRole === 'ADMIN' ? 500 : (actorRole === 'GUEST' ? 0 : 140))
+  const handleRemoveSavedAccount = (e, email) => {
+    e.stopPropagation()
+    const nextList = AuthGuard.removeSavedAccount(email)
+    setSavedAccounts(nextList)
+  }
+
+  const displayName = isGuest
+    ? 'Khách vãng lai'
+    : userSession?.fullName || userSession?.display_name || userSession?.name || 'Thành viên 5share'
+  const displayEmail = isGuest ? 'Chưa đăng nhập' : userSession?.email || ''
+  const displayPoints = userSession?.points ?? (isAdmin ? 500 : isGuest ? 0 : 140)
+  const avatarUrl = userSession?.avatar_url || userSession?.avatarUrl || null
   const avatarBgColor = getAvatarColor(displayName)
   const avatarInitials = userSession?.avatarInitials || getInitial(displayName)
 
@@ -153,7 +135,7 @@ export default function Navbar({
     <header className="vec-topbar" id="appHeader" role="banner">
       {/* 1. LEFT: Brand Logo & Navigation Links */}
       <div className="vec-topbar-left">
-        {/* Mobile Hamburger Toggle Button (Chỉ hiển thị trên màn hình di động <= 768px) */}
+        {/* Mobile Hamburger Toggle Button */}
         <button
           type="button"
           className="vec-icon-btn vec-mobile-menu-btn"
@@ -236,7 +218,7 @@ export default function Navbar({
         </nav>
       </div>
 
-      {/* 2. RIGHT: Notification Center & Vectoria Topbar Avatar Popover */}
+      {/* 2. RIGHT: Notification Center & Topbar Avatar Popover */}
       <div className="vec-topbar-right">
         {/* Notification Bell Icon Button with Unread Badge */}
         {!isGuest && (
@@ -279,6 +261,7 @@ export default function Navbar({
             className="vec-topbar-avatar-btn"
             id="btnTopAvatar"
             onClick={() => {
+              refreshSavedAccounts()
               setIsAvatarOpen((prev) => !prev)
               setIsAccountPickerOpen(false)
             }}
@@ -286,33 +269,30 @@ export default function Navbar({
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
+                refreshSavedAccounts()
                 setIsAvatarOpen((prev) => !prev)
                 setIsAccountPickerOpen(false)
               }
             }}
             title={isGuest ? 'Đăng nhập vào 5share' : `Tài khoản: ${displayName}`}
             style={{
-              backgroundColor: isGuest ? 'var(--slate-2, #f9f9fb)' : (userSession?.avatarUrl ? 'transparent' : avatarBgColor),
+              backgroundColor: isGuest ? 'var(--slate-2, #f9f9fb)' : avatarUrl ? 'transparent' : avatarBgColor,
               color: isGuest ? 'var(--slate-11, #687076)' : '#ffffff',
-              backgroundImage: userSession?.avatarUrl ? `url(${userSession.avatarUrl})` : 'none',
+              backgroundImage: !isGuest && avatarUrl ? `url(${avatarUrl})` : 'none',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               fontWeight: 700,
               fontSize: '14px'
             }}
           >
-            {isGuest ? (
-              <User size={18} />
-            ) : (
-              !userSession?.avatarUrl && avatarInitials
-            )}
+            {isGuest ? <User size={18} /> : !avatarUrl && avatarInitials}
           </div>
 
           {/* 260px Profile Popover (#menuTopAvatar) */}
           {isAvatarOpen && (
             <div className="vec-avatar-popover" id="menuTopAvatar">
               {/* VIEW A: GUEST POPOVER */}
-              {isGuest ? (
+              {isGuest && !isAccountPickerOpen ? (
                 <div style={{ padding: '20px', textAlign: 'center' }}>
                   <div
                     style={{
@@ -335,7 +315,7 @@ export default function Navbar({
                     Chưa đăng nhập
                   </h3>
                   <p style={{ margin: '0 0 16px 0', fontSize: '12.5px', color: 'var(--slate-11, #687076)', lineHeight: 1.45 }}>
-                    Đăng nhập để đọc toàn văn học liệu, tải tệp tin gốc và tích lũy điểm thưởng.
+                    Đăng nhập bằng tài khoản học thuật để đọc toàn văn PDF, tải tệp tin gốc và tích lũy điểm thưởng.
                   </p>
 
                   <button
@@ -377,32 +357,35 @@ export default function Navbar({
                     Tạo tài khoản mới
                   </button>
 
-                  <div className="vec-dropdown-divider" style={{ margin: '12px 0' }} />
-
-                  {/* Nút chuyển nhanh vào Account Picker cho việc trải nghiệm/test nhanh */}
-                  <button
-                    type="button"
-                    onClick={() => setIsAccountPickerOpen(true)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--slate-11, #687076)',
-                      fontSize: '12px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      width: '100%',
-                      padding: '4px'
-                    }}
-                  >
-                    <User size={13} />
-                    <span>Trải nghiệm Sinh viên / Quản trị</span>
-                  </button>
+                  {savedAccounts.length > 0 && (
+                    <>
+                      <div className="vec-dropdown-divider" style={{ margin: '12px 0' }} />
+                      <button
+                        type="button"
+                        onClick={() => setIsAccountPickerOpen(true)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--slate-11, #687076)',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          width: '100%',
+                          padding: '4px'
+                        }}
+                      >
+                        <User size={13} />
+                        <span>Tài khoản đã lưu trên thiết bị ({savedAccounts.length})</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               ) : isAccountPickerOpen ? (
-                /* VIEW B: INLINE SLIDE-IN ACCOUNT SWITCHER PANEL (.switch-account-panel) */
+                /* VIEW B: INLINE SLIDE-IN SAVED ACCOUNT SWITCHER PANEL */
                 <div className="vec-switch-account-panel">
                   <div className="vec-switch-account-header">
                     <button
@@ -427,55 +410,112 @@ export default function Navbar({
                   </div>
 
                   <div className="vec-switch-account-list">
-                    {PRESET_ACCOUNTS.map((acc) => {
-                      const isCurrent = (acc.actorRole === actorRole) || (acc.role === actorRole)
-                      const itemBg = getAvatarColor(acc.name)
-                      const itemInitial = getInitial(acc.name)
+                    {savedAccounts.length === 0 ? (
+                      <div
+                        style={{
+                          padding: '18px 14px',
+                          textAlign: 'center',
+                          fontSize: '12.5px',
+                          color: 'var(--slate-11)'
+                        }}
+                      >
+                        Chưa có tài khoản nào khác được lưu trên trình duyệt này.
+                      </div>
+                    ) : (
+                      savedAccounts.map((acc) => {
+                        const isCurrent =
+                          !isGuest &&
+                          String(acc.email || '').toLowerCase() ===
+                            String(userSession?.email || '').toLowerCase()
+                        const itemName = acc.fullName || acc.email
+                        const itemBg = getAvatarColor(itemName)
+                        const itemInitial = acc.avatarInitials || getInitial(itemName)
 
-                      return (
-                        <div
-                          key={acc.id}
-                          className={`vec-switch-account-item ${isCurrent ? 'active' : ''}`}
-                          onClick={() => !isCurrent && handleSelectAccount(acc)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !isCurrent) handleSelectAccount(acc)
-                          }}
-                        >
+                        return (
                           <div
-                            style={{
-                              width: '34px',
-                              height: '34px',
-                              borderRadius: '50%',
-                              backgroundColor: acc.role === 'GUEST' ? 'var(--slate-3)' : itemBg,
-                              color: acc.role === 'GUEST' ? 'var(--slate-11)' : '#ffffff',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontWeight: 700,
-                              fontSize: '12.5px',
-                              flexShrink: 0
+                            key={acc.email}
+                            className={`vec-switch-account-item ${isCurrent ? 'active' : ''}`}
+                            onClick={() => !isCurrent && handleSelectSavedAccount(acc)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !isCurrent) handleSelectSavedAccount(acc)
                             }}
                           >
-                            {acc.role === 'GUEST' ? <User size={16} /> : itemInitial}
-                          </div>
-
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--slate-12)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {acc.name}
+                            <div
+                              style={{
+                                width: '34px',
+                                height: '34px',
+                                borderRadius: '50%',
+                                backgroundColor: acc.avatar_url ? 'transparent' : itemBg,
+                                color: '#ffffff',
+                                backgroundImage: acc.avatar_url ? `url(${acc.avatar_url})` : 'none',
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 700,
+                                fontSize: '12.5px',
+                                flexShrink: 0
+                              }}
+                            >
+                              {!acc.avatar_url && itemInitial}
                             </div>
-                            <div style={{ fontSize: '11px', color: 'var(--slate-11)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {acc.email}
-                            </div>
-                          </div>
 
-                          {isCurrent && (
-                            <CheckCircle2 size={16} style={{ color: 'var(--primary-base, #0090ff)', flexShrink: 0 }} />
-                          )}
-                        </div>
-                      )
-                    })}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div
+                                style={{
+                                  fontWeight: 600,
+                                  fontSize: '13px',
+                                  color: 'var(--slate-12)',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}
+                              >
+                                {itemName}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: '11px',
+                                  color: 'var(--slate-11)',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}
+                              >
+                                {acc.email}
+                              </div>
+                            </div>
+
+                            {isCurrent ? (
+                              <CheckCircle2
+                                size={16}
+                                style={{ color: 'var(--primary-base, #0090ff)', flexShrink: 0 }}
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => handleRemoveSavedAccount(e, acc.email)}
+                                title="Xóa tài khoản khỏi thiết bị này"
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'var(--slate-10, #889096)',
+                                  cursor: 'pointer',
+                                  padding: '4px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })
+                    )}
                   </div>
 
                   <div
@@ -497,7 +537,7 @@ export default function Navbar({
                     }}
                   >
                     <Plus size={14} />
-                    <span>Thêm tài khoản khác...</span>
+                    <span>Đăng nhập tài khoản khác</span>
                   </div>
                 </div>
               ) : (
@@ -510,7 +550,7 @@ export default function Navbar({
                         width: '64px',
                         height: '64px',
                         borderRadius: '50%',
-                        backgroundColor: avatarBgColor,
+                        backgroundColor: avatarUrl ? 'transparent' : avatarBgColor,
                         color: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
@@ -518,40 +558,83 @@ export default function Navbar({
                         fontSize: '24px',
                         fontWeight: 700,
                         margin: '0 auto 10px',
-                        backgroundImage: userSession?.avatarUrl ? `url(${userSession.avatarUrl})` : 'none',
+                        backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                       }}
                     >
-                      {!userSession?.avatarUrl && avatarInitials}
+                      {!avatarUrl && avatarInitials}
                     </div>
 
                     <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--slate-12)', marginBottom: '2px' }}>
                       {displayName}
                     </div>
 
-                    <div style={{ fontSize: '12px', color: 'var(--slate-11)', marginBottom: '8px', padding: '0 12px', wordBreak: 'break-all' }}>
+                    <div
+                      style={{
+                        fontSize: '12px',
+                        color: 'var(--slate-11)',
+                        marginBottom: '8px',
+                        padding: '0 12px',
+                        wordBreak: 'break-all'
+                      }}
+                    >
                       {displayEmail}
                     </div>
 
-                    {/* Điểm thưởng badge */}
+                    {/* Huy hiệu Vai trò & Điểm thưởng */}
                     <div
                       style={{
-                        display: 'inline-flex',
+                        display: 'flex',
+                        flexWrap: 'wrap',
                         alignItems: 'center',
-                        gap: '5px',
-                        backgroundColor: 'var(--amber-1, #fefdfb)',
-                        color: 'var(--amber-11, #ab6400)',
-                        border: '1px solid var(--amber-3, #fff7c2)',
-                        padding: '2px 10px',
-                        borderRadius: '999px',
-                        fontSize: '11.5px',
-                        fontWeight: 700
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '0 12px'
                       }}
                     >
-                      <Coins size={12} />
-                      <span>{displayPoints} điểm cống hiến</span>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          backgroundColor: isAdmin ? 'var(--blue-2, #e6f4fe)' : 'var(--slate-3, #f0f0f3)',
+                          color: isAdmin ? 'var(--blue-11, #0d74ce)' : 'var(--slate-11, #687076)',
+                          border: `1px solid ${isAdmin ? 'var(--blue-5, #b7d9f8)' : 'var(--slate-6, #e6e8eb)'}`,
+                          padding: '2px 9px',
+                          borderRadius: '999px',
+                          fontSize: '11px',
+                          fontWeight: 700
+                        }}
+                      >
+                        {isAdmin && <ShieldCheck size={12} />}
+                        <span>
+                          {userSession?.isRootAdmin
+                            ? 'Quản trị viên gốc'
+                            : isAdmin
+                            ? 'Quản trị viên'
+                            : 'Sinh viên'}
+                        </span>
+                      </span>
+
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          backgroundColor: 'var(--amber-1, #fefdfb)',
+                          color: 'var(--amber-11, #ab6400)',
+                          border: '1px solid var(--amber-3, #fff7c2)',
+                          padding: '2px 9px',
+                          borderRadius: '999px',
+                          fontSize: '11px',
+                          fontWeight: 700
+                        }}
+                      >
+                        <Coins size={12} />
+                        <span>{displayPoints} điểm</span>
+                      </span>
                     </div>
                   </div>
 
@@ -564,7 +647,7 @@ export default function Navbar({
                     onClick={() => handleTabClick('profile')}
                   >
                     <User size={15} style={{ color: 'var(--slate-11)' }} />
-                    <span>Hồ sơ cá nhân (/profile)</span>
+                    <span>Hồ sơ cá nhân</span>
                   </button>
 
                   <button
@@ -582,7 +665,7 @@ export default function Navbar({
                     onClick={() => handleTabClick('bookmarks')}
                   >
                     <Bookmark size={15} style={{ color: 'var(--slate-11)' }} />
-                    <span>Tài liệu đã lưu (Bookmarks)</span>
+                    <span>Tài liệu đã lưu</span>
                   </button>
 
                   {isAdmin && (
@@ -613,14 +696,17 @@ export default function Navbar({
 
                   <div className="vec-dropdown-divider" />
 
-                  {/* Chuyển tài khoản (Trượt panel vào trong) */}
+                  {/* Chuyển tài khoản đã lưu trên thiết bị */}
                   <button
                     type="button"
                     className="vec-dropdown-item"
-                    onClick={() => setIsAccountPickerOpen(true)}
+                    onClick={() => {
+                      refreshSavedAccounts()
+                      setIsAccountPickerOpen(true)
+                    }}
                   >
                     <ArrowLeft size={15} style={{ transform: 'rotate(180deg)', color: 'var(--slate-11)' }} />
-                    <span>Chuyển tài khoản...</span>
+                    <span>Chuyển đổi tài khoản</span>
                   </button>
 
                   {/* Đăng xuất */}
