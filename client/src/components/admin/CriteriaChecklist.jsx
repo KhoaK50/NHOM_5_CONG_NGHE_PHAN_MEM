@@ -1,131 +1,110 @@
-import { ShieldCheck, CheckSquare, RotateCcw } from 'lucide-react'
-import { EIGHT_MODERATION_CRITERIA } from '../../data/mockData'
+import { Check, Lock, ShieldCheck } from 'lucide-react'
+import { AUTO_CRITERIA, MANUAL_CRITERIA } from '../../utils/documentCourseApi'
 
-export default function CriteriaChecklist({
-  checks = { 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true },
-  onToggleCriterion,
-  onCheckAll,
-  onResetChecks,
-  // Backward compatibility
-  adminChecks,
-  onToggleAdminCriterion
-}) {
-  // Normalize checks in case caller passes adminChecks
-  const activeChecks = adminChecks
-    ? { 1: true, 2: true, 3: true, 4: true, 5: true, ...adminChecks, ...checks }
-    : checks
+const sectionLabelStyle = {
+  fontSize: '10.5px',
+  fontWeight: 700,
+  letterSpacing: '0.04em',
+  color: 'var(--text-tertiary)',
+  textTransform: 'uppercase'
+}
 
-  const handleToggle = (id) => {
-    if (onToggleCriterion) {
-      onToggleCriterion(id)
-    } else if (onToggleAdminCriterion) {
-      onToggleAdminCriterion(id)
-    }
-  }
+const rowTextStyle = { display: 'flex', flexDirection: 'column', gap: '1px', flex: 1, minWidth: 0 }
 
-  const totalPassed = [1, 2, 3, 4, 5, 6, 7, 8].filter((id) => Boolean(activeChecks[id])).length
-  const allPassed = totalPassed === 8
+function CriterionText({ title, hint }) {
+  return (
+    <div style={rowTextStyle}>
+      <strong style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>{title}</strong>
+      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{hint}</span>
+    </div>
+  )
+}
+
+export default function CriteriaChecklist({ autoChecks = {}, checks = {}, onToggleCriterion }) {
+  const passedAuto = AUTO_CRITERIA.filter((item) => autoChecks[item.key]).length
+  const passedManual = MANUAL_CRITERIA.filter((item) => checks[item.key]).length
+  const totalPassed = passedAuto + passedManual
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {/* Tiêu đề & Bộ đếm */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-        <strong style={{ fontSize: '13.5px', color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <ShieldCheck size={16} style={{ color: 'var(--primary-base)' }} />
-          <span>Bảng kiểm 8 Tiêu chí Thẩm định</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+        <strong style={{ fontSize: '13px', color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <ShieldCheck size={15} style={{ color: 'var(--primary-base)' }} />
+          <span>Bảng kiểm 8 tiêu chí</span>
         </strong>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span className={`status-badge ${allPassed ? 'green' : 'amber'}`}>
-            {totalPassed}/8 Đạt chuẩn
-          </span>
-          {onCheckAll && (
-            <button
-              type="button"
-              onClick={onCheckAll}
-              className="btn-ghost"
-              style={{ fontSize: '11px', padding: '3px 7px', height: 'auto', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-              title="Đánh dấu đạt tất cả 8 tiêu chí"
-            >
-              <CheckSquare size={12} />
-              <span>Chọn tất cả</span>
-            </button>
-          )}
-          {onResetChecks && (
-            <button
-              type="button"
-              onClick={onResetChecks}
-              className="btn-ghost"
-              style={{ fontSize: '11px', padding: '3px 7px', height: 'auto', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-              title="Đặt lại trạng thái kiểm tra"
-            >
-              <RotateCcw size={12} />
-              <span>Đặt lại</span>
-            </button>
-          )}
-        </div>
+        <span className={`status-badge ${totalPassed === 8 ? 'green' : 'amber'}`}>{totalPassed}/8 đạt</span>
       </div>
 
-      {/* Danh sách 8 tiêu chí hiển thị nhất quán */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-        {EIGHT_MODERATION_CRITERIA.map((item) => {
-          const isChecked = Boolean(activeChecks[item.id])
-          return (
-            <label
-              key={item.id}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '10px',
-                padding: '9px 12px',
-                borderRadius: '8px',
-                backgroundColor: isChecked ? 'var(--blue-1)' : 'var(--bg-surface)',
-                border: isChecked ? '1.5px solid var(--primary-base)' : '1px solid var(--border-subtle)',
-                cursor: 'pointer',
-                fontSize: '12.5px',
-                lineHeight: 1.4,
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={isChecked}
-                onChange={() => handleToggle(item.id)}
-                style={{
-                  marginTop: '2.5px',
-                  width: '15px',
-                  height: '15px',
-                  accentColor: 'var(--primary-base)',
-                  flexShrink: 0,
-                  cursor: 'pointer'
-                }}
-              />
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginBottom: '2px' }}>
-                  <strong style={{ color: 'var(--text-primary)', fontSize: '12.5px' }}>
-                    {item.id}. {item.title}
-                  </strong>
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      padding: '1px 6px',
-                      borderRadius: '4px',
-                      backgroundColor: item.type === 'AUTO' ? 'var(--green-2)' : 'var(--slate-3)',
-                      color: item.type === 'AUTO' ? 'var(--green-9)' : 'var(--text-secondary)',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {item.executor}
-                  </span>
-                </div>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '11.5px', display: 'block' }}>
-                  {item.rule}
-                </span>
-              </div>
-            </label>
-          )
-        })}
+      <div
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={8}
+        aria-valuenow={totalPassed}
+        aria-label="Số tiêu chí đã đạt"
+        style={{ height: '6px', borderRadius: '3px', backgroundColor: 'var(--bg-hover)', overflow: 'hidden' }}
+      >
+        <div
+          style={{
+            height: '100%',
+            width: `${(totalPassed / 8) * 100}%`,
+            borderRadius: '3px',
+            backgroundColor: totalPassed === 8 ? 'var(--green-9)' : 'var(--primary-base)',
+            transition: 'width 0.2s ease'
+          }}
+        />
       </div>
+
+      <span style={sectionLabelStyle}>Hệ thống đã kiểm tra</span>
+      {AUTO_CRITERIA.map((item) => {
+        const passed = Boolean(autoChecks[item.key])
+        return (
+          <div
+            key={item.key}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '9px',
+              padding: '8px 10px',
+              borderRadius: '8px',
+              backgroundColor: passed ? 'var(--green-2)' : 'var(--red-3)',
+              border: `1px solid ${passed ? 'var(--green-6)' : 'var(--red-6)'}`
+            }}
+          >
+            <Lock size={14} style={{ color: passed ? 'var(--green-11)' : 'var(--red-11)', flexShrink: 0 }} />
+            <CriterionText title={item.title} hint={passed ? item.hint : 'Không đạt: tài liệu cần được từ chối để tác giả bổ sung'} />
+            {passed && <Check size={15} style={{ color: 'var(--green-9)', flexShrink: 0 }} />}
+          </div>
+        )
+      })}
+
+      <span style={sectionLabelStyle}>Quản trị viên xác nhận sau khi đọc</span>
+      {MANUAL_CRITERIA.map((item) => {
+        const isChecked = Boolean(checks[item.key])
+        return (
+          <label
+            key={item.key}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '9px',
+              padding: '8px 10px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              backgroundColor: isChecked ? 'var(--blue-2)' : 'var(--bg-surface)',
+              border: `1px solid ${isChecked ? 'var(--primary-base)' : 'var(--border-subtle)'}`,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={() => onToggleCriterion(item.key)}
+              style={{ width: '16px', height: '16px', accentColor: 'var(--primary-base)', flexShrink: 0, cursor: 'pointer' }}
+            />
+            <CriterionText title={item.title} hint={item.hint} />
+          </label>
+        )
+      })}
     </div>
   )
 }

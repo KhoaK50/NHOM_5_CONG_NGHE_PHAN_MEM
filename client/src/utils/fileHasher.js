@@ -222,7 +222,7 @@ export async function verifyFileAndHash(fileObj, existingDocuments = [], options
 
       if (isMzExe || isElfExe) {
         magicBytesOk = false
-        magicHeaderHex = '4D 5A 90 00 (MZ - Tệp thực thi nguy hiểm)'
+        magicHeaderHex = `${Array.from(firstBytes.slice(0, 4)).map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ')} (Tệp thực thi giả mạo)`
       } else if (detectedFormat === 'pdf') {
         const asciiPrefix = String.fromCharCode(...firstBytes.slice(0, 5))
         const hexPrefix = Array.from(firstBytes.slice(0, 5))
@@ -295,7 +295,7 @@ export async function verifyFileAndHash(fileObj, existingDocuments = [], options
       isDuplicate: true,
       duplicateDoc,
       stageFailed: 'DUPLICATE_HASH',
-      errorMessage: `Tài liệu này đã tồn tại trên hệ thống (trùng mã băm SHA-256 với "${duplicateDoc.title}"), vui lòng không đăng tải lặp lại.`
+      errorMessage: 'Tài liệu này đã có trên hệ thống. Bạn không cần đóng góp lại.'
     }
   }
 

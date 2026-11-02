@@ -9,6 +9,7 @@ import {
   Copy,
   Check
 } from 'lucide-react'
+import { MAX_FILE_SIZE_BYTES } from '../../utils/fileHasher'
 
 export default function Sha256Verifier({ verificationResult }) {
   const [hashCopied, setHashCopied] = useState(false)
@@ -41,42 +42,21 @@ export default function Sha256Verifier({ verificationResult }) {
     'pdf'
   ).toLowerCase()
 
-  const formatMeta = {
-    pdf: {
-      label: 'PDF',
-      icon: FileText,
-      asciiSig: '%PDF-1.7',
-      rawHex: '25 50 44 2D 31 2E 37'
-    },
-    docx: {
-      label: 'DOCX',
-      icon: FileSpreadsheet,
-      asciiSig: 'PK.. (OOXML)',
-      rawHex: '50 4B 03 04 14 00 06 00'
-    },
-    pptx: {
-      label: 'PPTX',
-      icon: Presentation,
-      asciiSig: 'PK.. (OOXML)',
-      rawHex: '50 4B 03 04 14 00 06 00'
-    }
-  }[formatKey] || {
-    label: 'FILE',
-    icon: FileText,
-    asciiSig: 'UNKNOWN',
-    rawHex: '00 00 00 00'
+  const FORMAT_META = {
+    pdf: { label: 'PDF', icon: FileText },
+    docx: { label: 'DOCX', icon: FileSpreadsheet },
+    pptx: { label: 'PPTX', icon: Presentation }
   }
+  const formatMeta = FORMAT_META[formatKey] || { label: 'FILE', icon: FileText }
 
   const FileFormatIcon = formatMeta.icon
-  const sizeNum = parseFloat(verificationResult.sizeMb || '0') || 0
-  const quotaPct = Math.min(100, Math.max(2, (sizeNum / 25) * 100))
+  const sizeBytes = Number(verificationResult.sizeBytes) || 0
+  const quotaPct = Math.min(100, Math.max(2, (sizeBytes / MAX_FILE_SIZE_BYTES) * 100))
 
-  const displayHex = verificationResult.magicBytesOk
-    ? formatMeta.rawHex
-    : '4D 5A 90 00 03 00 00 00'
-  const displayAscii = verificationResult.magicBytesOk
-    ? formatMeta.asciiSig
-    : 'MZ.. (PE EXE)'
+  // magicHeaderHex dạng `25 50 44 46 2D (%PDF-)`: tách phần bytes và phần diễn giải đọc từ tệp thật
+  const headerMatch = String(verificationResult.magicHeaderHex || '').match(/^([0-9A-F ]+?)\s*\((.*)\)$/i)
+  const displayHex = headerMatch ? headerMatch[1] : verificationResult.magicHeaderHex || 'N/A'
+  const displayAscii = headerMatch ? headerMatch[2] : ''
 
   return (
     <div
@@ -146,7 +126,7 @@ export default function Sha256Verifier({ verificationResult }) {
         <div className="vec-quota-track">
           <div
             className={`vec-quota-fill ${verificationResult.sizeOk ? '' : 'danger'}`}
-            style={{ width: `${sizeNum === 0 ? 100 : quotaPct}%` }}
+            style={{ width: `${quotaPct}%` }}
           />
         </div>
       </div>
@@ -228,11 +208,6 @@ export default function Sha256Verifier({ verificationResult }) {
           <strong style={{ display: 'block', marginBottom: '2px' }}>
             {verificationResult.errorMessage}
           </strong>
-          {verificationResult.isDuplicate && verificationResult.duplicateDoc && (
-            <span style={{ display: 'block', color: 'var(--slate-12, #11181c)' }}>
-              Tài liệu gốc đã tồn tại: <strong>{verificationResult.duplicateDoc.courseCode}</strong> — &ldquo;{verificationResult.duplicateDoc.title}&rdquo; (Người đăng: {verificationResult.duplicateDoc.uploaderName})
-            </span>
-          )}
         </div>
       )}
     </div>

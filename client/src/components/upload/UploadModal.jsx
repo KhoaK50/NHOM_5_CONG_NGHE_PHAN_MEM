@@ -12,6 +12,7 @@ import {
 import MetadataForm from './MetadataForm'
 import Sha256Verifier from './Sha256Verifier'
 import { EIGHT_MODERATION_CRITERIA } from '../../data/mockData'
+import { checkDocumentHash } from '../../utils/documentCourseApi'
 import { verifyFileAndHash, computeDeterministicHexHash } from '../../utils/fileHasher'
 
 function buildUniqueSampleHash(existingDocs = [], baseName = 'KHBD_TinHoc11_Bai9_TruyVanSQL_CV5512') {
@@ -107,13 +108,32 @@ export default function UploadModal({
     }
   }
 
+  // UC08: máy chủ đọc bytes gốc và đối chiếu kho thật; lỗi kết nối thì chặn thay vì cho qua
+  const confirmWithServer = async (file, clientResult) => {
+    if (clientResult.format !== 'pdf') return clientResult
+    try {
+      const { data } = await checkDocumentHash(file)
+      return { ...clientResult, sha256Hash: data.fileHash, isDuplicate: false, duplicateDoc: null }
+    } catch (err) {
+      return {
+        ...clientResult,
+        isValid: false,
+        isDuplicate: err.code === 'DUPLICATE_FILE',
+        duplicateDoc: null,
+        magicBytesOk: err.code !== 'INVALID_PDF' && clientResult.magicBytesOk,
+        stageFailed: err.code === 'DUPLICATE_FILE' ? 'DUPLICATE_HASH' : 'SERVER_CHECK',
+        errorMessage: err.message
+      }
+    }
+  }
+
   const processIncomingFile = async (file) => {
     if (!file) return
     setFormError('')
     setActiveScenario('CUSTOM_FILE')
     inferMetadataFromFilename(file.name)
     const res = await verifyFileAndHash(file, existingDocuments)
-    setVerificationResult(res)
+    setVerificationResult(res.isValid ? await confirmWithServer(file, res) : res)
   }
 
   const handleFileChange = async (e) => {
