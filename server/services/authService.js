@@ -1,7 +1,7 @@
 /**
  * ============================================================================
- * TẦNG BUSINESS LOGIC (SERVICE): XÁC THỰC, PHÂN QUYỀN JWT & AN NINH THIẾT BỊ
- * Đồng bộ 100% quy trình bảo mật của Vectoria (user.py)
+ * TẦNG BUSINESS LOGIC (SERVICE): XÁC THỰC, PHÂN QUYỀN JWT, AN NINH THIẾT BỊ
+ * & LƯU TRỮ ẢNH ĐẠI DIỆN ĐÁM MÂY CLOUDINARY (UC01, UC02)
  * ============================================================================
  */
 
@@ -11,16 +11,15 @@ const {
   verifyPassword,
   signJwt,
   verifyJwt,
-  generateActivationBundle,
   generatePasswordResetToken
 } = require('../utils/security');
 const {
-  buildActivationEmail,
   buildPasswordResetEmail,
   buildSecurityAlertEmail,
   buildWelcomeEmail,
   sendEnterpriseEmail
 } = require('./emailService');
+const { uploadAvatarBufferToCloudinary } = require('./cloudinaryService');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -36,6 +35,8 @@ function computeInitials(fullName) {
 
 function formatUserProfile(userRow, extra = {}) {
   const canonicalRole = userRow.role === 'ADMIN' ? 'ADMIN' : 'USER';
+  const dbContribution = Number(userRow.contribution_score || 0);
+  const basePoints = userRow.role === 'ADMIN' ? 500 : 140;
   return {
     id: userRow.id,
     email: userRow.email,
@@ -54,7 +55,8 @@ function formatUserProfile(userRow, extra = {}) {
     avatarUrl: userRow.avatar_url || null,
     avatarInitials: computeInitials(userRow.full_name),
     token_version: userRow.token_version || 1,
-    points: userRow.role === 'ADMIN' ? 500 : 140,
+    contributionScore: dbContribution,
+    points: dbContribution > 0 ? dbContribution : basePoints,
     ...extra
   };
 }
@@ -75,14 +77,12 @@ function validatePasswordRules(password) {
 
 /**
  * Xử lý nhận diện thiết bị khi đăng nhập & gửi Email cảnh báo nếu phát hiện thiết bị lạ
- * Đồng bộ với hàm process_device_login() trong Vectoria user.py
  */
 async function processDeviceLogin({
   user,
   ipAddress,
   deviceInfo,
-  backendUrl,
-  frontendUrl
+  backendUrl
 }) {
   const { isTrusted, isNewDeviceAlert } = await authRepo.recordDeviceLogin({
     userId: user.id,
@@ -91,7 +91,6 @@ async function processDeviceLogin({
   });
 
   if (isNewDeviceAlert) {
-    // 1. Tạo token xác nhận thiết bị tin cậy (hiệu lực 24h)
     const confirmToken = signJwt(
       {
         user_id: user.id,
@@ -101,7 +100,6 @@ async function processDeviceLogin({
       24 * 3600
     );
 
-    // 2. Tạo token khóa khẩn cấp & thu hồi phiên (hiệu lực 24h)
     const emergencyToken = signJwt(
       {
         user_id: user.id,
@@ -151,7 +149,9 @@ async function processDeviceLogin({
 }
 
 /**
- * 1. Đăng ký tài khoản mới (UC01)
+ * 1. Đăng ký tài khoản mới (UC02):
+ * Tạo bản ghi người dùng với trạng thái 'active' và cấp phiên đăng nhập ngay
+ * đúng chuẩn Đặc tả Use Case UC02 (không bắt nhập mã OTP 6 số).
  */
 async function registerUser({
   fullName,
@@ -159,7 +159,8 @@ async function registerUser({
   password,
   studentCode,
   cohort = 'K50',
-  frontendUrl = 'http://localhost:5173'
+  ipAddress = '127.0.0.1',
+  deviceInfo = 'Windows 10/11 (Chrome)'
 }) {
   const cleanedName = String(fullName || '').trim();
   const cleanedEmail = String(email || '').trim().toLowerCase();
@@ -210,175 +211,56 @@ async function registerUser({
     email: cleanedEmail,
     passwordHash,
     cohort: cohort || 'K50',
-    status: 'pending'
+    status: 'active'
   });
-
-  const { otpCode, activationToken } = generateActivationBundle();
-  await authRepo.upsertAccountActivation(newUser.id, activationToken);
-
-  const verificationUrl = `${frontendUrl}/?verify_token=${encodeURIComponent(activationToken)}`;
-  const emailContent = buildActivationEmail({
-    fullName: cleanedName,
-    otpCode,
-    verificationUrl
-  });
-
-  const mailResult = await sendEnterpriseEmail({
-    toEmail: cleanedEmail,
-    subject: emailContent.subject,
-    html: emailContent.html
-  });
-
-  return {
-    statusCode: 201,
-    body: {
-      status: 'success',
-      message: mailResult.delivered
-        ? 'Đăng ký thành công! Vui lòng kiểm tra hộp thư điện tử để lấy mã OTP hoặc nhấn liên kết kích hoạt.'
-        : `Đăng ký thành công! Đã tạo mã xác thực OTP cho ${cleanedEmail}.`,
-      email: cleanedEmail,
-      user_id: newUser.id,
-      email_delivery: mailResult.mode,
-      dev_otp: mailResult.delivered ? undefined : otpCode,
-      dev_verification_url: mailResult.delivered ? undefined : verificationUrl
-    }
-  };
-}
-
-/**
- * 2. Kích hoạt tài khoản qua Token URL hoặc Mã OTP 6 số (UC01)
- */
-async function verifyAccount({ token, email, otpCode, ipAddress, deviceInfo }) {
-  const record = await authRepo.findActivationRecord({ token, email, otpCode });
-  if (!record) {
-    return {
-      statusCode: 400,
-      body: {
-        status: 'error',
-        message: 'Mã xác thực OTP hoặc đường dẫn kích hoạt không chính xác.'
-      }
-    };
-  }
-
-  if (record.is_used && record.status === 'active') {
-    const jwtToken = signJwt({
-      sub: record.user_id,
-      email: record.email,
-      name: record.full_name,
-      role: record.role,
-      token_version: record.token_version || 1
-    });
-    return {
-      statusCode: 200,
-      body: {
-        status: 'success',
-        message: 'Tài khoản này đã được kích hoạt trước đó. Bạn có thể đăng nhập ngay.',
-        token: jwtToken,
-        user: formatUserProfile({
-          id: record.user_id,
-          email: record.email,
-          full_name: record.full_name,
-          role: record.role,
-          cohort: record.cohort,
-          student_code: record.student_code,
-          status: 'active',
-          avatar_url: record.avatar_url,
-          token_version: record.token_version
-        })
-      }
-    };
-  }
-
-  if (record.is_expired) {
-    return {
-      statusCode: 400,
-      body: {
-        status: 'error',
-        message: 'Mã kích hoạt đã hết hạn (quá 24 giờ). Vui lòng yêu cầu gửi lại mã mới.'
-      }
-    };
-  }
-
-  const activatedUser = await authRepo.markAccountActivated(record.user_id);
 
   if (ipAddress && deviceInfo) {
     await authRepo.recordDeviceLogin({
-      userId: activatedUser.id,
+      userId: newUser.id,
       ipAddress,
       deviceInfo
     });
   }
 
-  const jwtToken = signJwt({
-    sub: activatedUser.id,
-    email: activatedUser.email,
-    name: activatedUser.full_name,
-    role: activatedUser.role,
-    token_version: activatedUser.token_version || 1
+  // Gửi thư chào mừng không chặn luồng
+  const welcomeMail = buildWelcomeEmail({
+    fullName: newUser.full_name,
+    email: newUser.email,
+    deviceInfo
   });
+  sendEnterpriseEmail({
+    toEmail: newUser.email,
+    subject: welcomeMail.subject,
+    html: welcomeMail.html
+  }).catch(() => {});
+
+  const jwtToken = signJwt(
+    {
+      sub: newUser.id,
+      email: newUser.email,
+      name: newUser.full_name,
+      role: newUser.role,
+      token_version: newUser.token_version || 1
+    },
+    30 * 24 * 3600
+  );
 
   return {
-    statusCode: 200,
+    statusCode: 201,
     body: {
       status: 'success',
-      message: 'Xác thực email thành công! Tài khoản học thuật 5Share của bạn đã được kích hoạt.',
+      message: 'Đăng ký tài khoản thành công! Chào mừng bạn đến với hệ thống học liệu 5Share.',
       token: jwtToken,
-      display_name: activatedUser.full_name,
-      email: activatedUser.email,
-      avatar_url: activatedUser.avatar_url,
-      user: formatUserProfile(activatedUser)
+      display_name: newUser.full_name,
+      email: newUser.email,
+      avatar_url: newUser.avatar_url,
+      user: formatUserProfile(newUser)
     }
   };
 }
 
 /**
- * 3. Gửi lại mã OTP kích hoạt tài khoản
- */
-async function resendActivation({ email, frontendUrl = 'http://localhost:5173' }) {
-  const cleanedEmail = String(email || '').trim().toLowerCase();
-  const user = await authRepo.findUserByEmail(cleanedEmail);
-  if (!user) {
-    return {
-      statusCode: 404,
-      body: { status: 'error', message: 'Không tìm thấy tài khoản với địa chỉ email này.' }
-    };
-  }
-  if (user.status === 'active') {
-    return {
-      statusCode: 400,
-      body: { status: 'error', message: 'Tài khoản này đã được kích hoạt rồi.' }
-    };
-  }
-
-  const { otpCode, activationToken } = generateActivationBundle();
-  await authRepo.upsertAccountActivation(user.id, activationToken);
-
-  const verificationUrl = `${frontendUrl}/?verify_token=${encodeURIComponent(activationToken)}`;
-  const emailContent = buildActivationEmail({
-    fullName: user.full_name,
-    otpCode,
-    verificationUrl
-  });
-
-  const mailResult = await sendEnterpriseEmail({
-    toEmail: cleanedEmail,
-    subject: emailContent.subject,
-    html: emailContent.html
-  });
-
-  return {
-    statusCode: 200,
-    body: {
-      status: 'success',
-      message: 'Đã cấp phát lại mã xác thực OTP mới (hiệu lực 24 giờ).',
-      dev_otp: mailResult.delivered ? undefined : otpCode,
-      dev_verification_url: mailResult.delivered ? undefined : verificationUrl
-    }
-  };
-}
-
-/**
- * 4. Đăng nhập tài khoản (UC02) kèm nhận diện thiết bị lạ (login_history)
+ * 2. Đăng nhập tài khoản (UC01) kèm nhận diện thiết bị lạ (login_history)
  */
 async function loginUser({
   email,
@@ -397,7 +279,7 @@ async function loginUser({
     };
   }
 
-  const user = await authRepo.findUserByEmail(cleanedEmail);
+  let user = await authRepo.findUserByEmail(cleanedEmail);
   if (!user) {
     return {
       statusCode: 401,
@@ -434,32 +316,9 @@ async function loginUser({
   }
 
   if (user.status === 'pending') {
-    const { otpCode, activationToken } = generateActivationBundle();
-    await authRepo.upsertAccountActivation(user.id, activationToken);
-    const verificationUrl = `${frontendUrl}/?verify_token=${encodeURIComponent(activationToken)}`;
-    const emailContent = buildActivationEmail({
-      fullName: user.full_name,
-      otpCode,
-      verificationUrl
-    });
-    const mailResult = await sendEnterpriseEmail({
-      toEmail: user.email,
-      subject: emailContent.subject,
-      html: emailContent.html
-    });
-
-    return {
-      statusCode: 403,
-      body: {
-        status: 'pending_verification',
-        message: 'Tài khoản của bạn chưa được kích hoạt. Hệ thống vừa gửi mã OTP xác thực mới tới email của bạn.',
-        email: user.email,
-        dev_otp: mailResult.delivered ? undefined : otpCode
-      }
-    };
+    user = (await authRepo.updateUserStatus(user.id, 'active')) || { ...user, status: 'active' };
   }
 
-  // Ghi nhận lịch sử thiết bị vào bảng public.login_history & kiểm tra thiết bị lạ
   const deviceSecurity = await processDeviceLogin({
     user,
     ipAddress,
@@ -496,8 +355,7 @@ async function loginUser({
 }
 
 /**
- * 5. Đăng nhập qua Google OAuth 2.0 (GSI Access Token / ID Token)
- * Đồng bộ với /api/google-login trong Vectoria user.py
+ * 3. Đăng nhập qua Google OAuth 2.0 (GSI Access Token / ID Token)
  */
 async function googleLogin({
   accessToken,
@@ -566,7 +424,6 @@ async function googleLogin({
     };
   }
 
-  // Nếu là tài khoản Google đăng nhập lần đầu tiên -> gửi thư Chào mừng chính thức qua Resend!
   if (isNewUser) {
     const welcomeMail = buildWelcomeEmail({
       fullName: user.full_name,
@@ -615,7 +472,7 @@ async function googleLogin({
 }
 
 /**
- * 6. Yêu cầu khôi phục mật khẩu (Forgot Password) -> Ghi vào bảng public.password_reset
+ * 4. Yêu cầu khôi phục mật khẩu (Forgot Password) -> Ghi vào bảng public.password_reset
  */
 async function requestPasswordReset({ email, frontendUrl = 'http://localhost:5173' }) {
   const cleanedEmail = String(email || '').trim().toLowerCase();
@@ -669,7 +526,7 @@ async function requestPasswordReset({ email, frontendUrl = 'http://localhost:517
 }
 
 /**
- * 7. Đặt lại mật khẩu mới (Reset Password) -> Tăng token_version + 1 để thu hồi mọi JWT cũ
+ * 5. Đặt lại mật khẩu mới (Reset Password) -> Tăng token_version + 1 để thu hồi mọi JWT cũ
  */
 async function resetPassword({ token, email, newPassword }) {
   if (!token) {
@@ -726,7 +583,7 @@ async function resetPassword({ token, email, newPassword }) {
 }
 
 /**
- * 8. Xác nhận thiết bị tin cậy từ liên kết trong Email cảnh báo (GET /api/auth/confirm-device)
+ * 6. Xác nhận thiết bị tin cậy từ liên kết trong Email cảnh báo
  */
 async function confirmTrustedDevice(token) {
   try {
@@ -757,8 +614,7 @@ async function confirmTrustedDevice(token) {
 }
 
 /**
- * 9. Khóa phiên khẩn cấp từ Email cảnh báo (GET /api/auth/secure-account)
- * Tăng token_version lên +1 để đá văng mọi phiên đăng nhập trái phép và cấp token đổi mật khẩu ngay
+ * 7. Khóa phiên khẩn cấp từ Email cảnh báo
  */
 async function triggerEmergencyAccountLockdown(token, frontendUrl = 'http://localhost:5173') {
   const payload = verifyJwt(token);
@@ -766,13 +622,11 @@ async function triggerEmergencyAccountLockdown(token, frontendUrl = 'http://loca
     throw new Error('Token khẩn cấp không hợp lệ');
   }
 
-  // 1. Tăng token_version + 1 để vô hiệu hóa toàn bộ JWT đang mở của kẻ xâm nhập
   const user = await authRepo.incrementUserTokenVersion(payload.user_id);
   if (!user) {
     throw new Error('Không tìm thấy tài khoản');
   }
 
-  // 2. Tạo ngay một token đặt lại mật khẩu khẩn cấp
   const { resetToken } = generatePasswordResetToken();
   await authRepo.createPasswordResetToken(user.id, resetToken);
 
@@ -818,7 +672,7 @@ async function authenticateRequest(authHeader) {
     return {
       ok: false,
       statusCode: 403,
-      body: { status: 'error', message: 'Tài khoản hiện đang bị khóa hoặc chưa kích hoạt.' }
+      body: { status: 'error', message: 'Tài khoản hiện đang bị khóa.' }
     };
   }
 
@@ -861,7 +715,7 @@ async function requireAdminRequest(authHeader) {
 }
 
 /**
- * 10. Kiểm tra phiên đăng nhập hiện tại (GET /api/auth/me) — đối chiếu token_version
+ * 8. Kiểm tra phiên đăng nhập hiện tại (GET /api/auth/me)
  */
 async function verifySessionAndGetProfile(authHeader) {
   const auth = await authenticateRequest(authHeader);
@@ -881,7 +735,7 @@ async function verifySessionAndGetProfile(authHeader) {
 }
 
 /**
- * 11. Cập nhật thông tin hồ sơ cá nhân (PUT /api/auth/profile - UC03)
+ * 9. Cập nhật thông tin hồ sơ cá nhân (PUT /api/auth/profile)
  */
 async function updateUserProfile(authHeader, { fullName, cohort, studentCode, avatarUrl }) {
   const auth = await authenticateRequest(authHeader);
@@ -935,8 +789,41 @@ async function updateUserProfile(authHeader, { fullName, cohort, studentCode, av
 }
 
 /**
- * 12. Đổi mật khẩu khi đang đăng nhập (POST /api/auth/change-password - UC03)
- * Tăng token_version + 1 để thu hồi các phiên trên thiết bị khác và cấp JWT mới cho phiên hiện tại
+ * 10. Tải ảnh đại diện từ máy tính lên Cloudinary & lưu vào PostgreSQL (POST /api/auth/avatar)
+ */
+async function uploadUserAvatar(authHeader, file) {
+  const auth = await authenticateRequest(authHeader);
+  if (!auth.ok) {
+    return { statusCode: auth.statusCode, body: auth.body };
+  }
+
+  const buffer = file?.buffer;
+  const uploadResult = await uploadAvatarBufferToCloudinary(buffer, auth.user.id);
+  if (!uploadResult.ok) {
+    return {
+      statusCode: uploadResult.statusCode,
+      body: { status: 'error', message: uploadResult.message }
+    };
+  }
+
+  const updated = await authRepo.updateUserProfileInfo(auth.user.id, {
+    avatarUrl: uploadResult.secureUrl
+  });
+  const loginHistory = await authRepo.getRecentLoginHistory(updated.id, 5);
+
+  return {
+    statusCode: 200,
+    body: {
+      status: 'success',
+      message: 'Đã tải ảnh đại diện lên Cloudinary và cập nhật hồ sơ thành công.',
+      avatarUrl: uploadResult.secureUrl,
+      user: formatUserProfile(updated, { loginHistory })
+    }
+  };
+}
+
+/**
+ * 11. Đổi mật khẩu khi đang đăng nhập (POST /api/auth/change-password)
  */
 async function changeUserPassword(authHeader, { oldPassword, newPassword }) {
   const auth = await authenticateRequest(authHeader);
@@ -1000,8 +887,7 @@ async function changeUserPassword(authHeader, { oldPassword, newPassword }) {
 }
 
 /**
- * 13. Lấy danh sách toàn bộ tài khoản từ Supabase (phục vụ Quản trị người dùng UC10)
- * Yêu cầu bắt buộc JWT của Quản trị viên (ADMIN)
+ * 12. Lấy danh sách toàn bộ tài khoản từ Supabase (phục vụ Quản trị người dùng)
  */
 async function listUsersForAdmin(authHeader) {
   const adminCheck = await requireAdminRequest(authHeader);
@@ -1020,8 +906,7 @@ async function listUsersForAdmin(authHeader) {
 }
 
 /**
- * 14. Thăng chức Quản trị viên (ADMIN) hoặc Hạ xuống Sinh viên (STUDENT)
- * Yêu cầu bắt buộc JWT của Quản trị viên (ADMIN) & Bảo vệ Root Admin
+ * 13. Thăng chức Quản trị viên (ADMIN) hoặc Hạ xuống Sinh viên (STUDENT)
  */
 async function updateUserRoleByAdmin(authHeader, { userId, role }) {
   const adminCheck = await requireAdminRequest(authHeader);
@@ -1060,8 +945,7 @@ async function updateUserRoleByAdmin(authHeader, { userId, role }) {
 }
 
 /**
- * 15. Khóa / Mở khóa tài khoản người dùng trên Supabase
- * Yêu cầu bắt buộc JWT của Quản trị viên (ADMIN) & Bảo vệ Root Admin
+ * 14. Khóa / Mở khóa tài khoản người dùng trên Supabase
  */
 async function updateUserStatusByAdmin(authHeader, { userId, status }) {
   const adminCheck = await requireAdminRequest(authHeader);
@@ -1103,8 +987,6 @@ module.exports = {
   authenticateRequest,
   requireAdminRequest,
   registerUser,
-  verifyAccount,
-  resendActivation,
   loginUser,
   googleLogin,
   requestPasswordReset,
@@ -1113,6 +995,7 @@ module.exports = {
   triggerEmergencyAccountLockdown,
   verifySessionAndGetProfile,
   updateUserProfile,
+  uploadUserAvatar,
   changeUserPassword,
   listUsersForAdmin,
   updateUserRoleByAdmin,

@@ -1,7 +1,8 @@
 /**
  * ============================================================================
- * TẦNG DATA ACCESS (REPOSITORY): TRUY VẤN 4 BẢNG XÁC THỰC & BẢO MẬT
- * Bảng: public.users, public.account_activation, public.login_history, public.password_reset
+ * TẦNG DATA ACCESS (REPOSITORY): TRUY VẤN 3 BẢNG XÁC THỰC & BẢO MẬT
+ * Bảng: public.users, public.login_history, public.password_reset
+ * (Chuẩn hóa đúng mô hình 14 thực thể của hệ thống 5Share)
  * ============================================================================
  */
 
@@ -10,6 +11,16 @@ const { query } = require('../db/pool');
 const ROOT_ADMIN_EMAILS = new Set([
   'sc3.nguyentrandangkhoa@gmail.com'
 ]);
+
+const USER_SELECT_COLS = `
+  id, student_code, full_name, email, password_hash, auth_provider, google_id,
+  role, cohort, contribution_score, status, avatar_url, token_version, created_at, updated_at
+`;
+
+const USER_RETURN_COLS = `
+  id, student_code, full_name, email, auth_provider, google_id,
+  role, cohort, contribution_score, status, avatar_url, token_version, created_at
+`;
 
 function isRootAdminEmail(email) {
   return ROOT_ADMIN_EMAILS.has(String(email || '').trim().toLowerCase());
@@ -25,8 +36,7 @@ function resolveInitialRole(email) {
 async function findUserByGoogleId(googleId) {
   if (!googleId) return null;
   const res = await query(
-    `SELECT id, student_code, full_name, email, password_hash, auth_provider, google_id,
-            role, cohort, status, avatar_url, token_version, created_at, updated_at
+    `SELECT ${USER_SELECT_COLS}
      FROM public.users
      WHERE google_id = $1
      LIMIT 1`,
@@ -41,8 +51,7 @@ async function findUserByGoogleId(googleId) {
 async function findUserByEmail(email) {
   const normalized = String(email || '').trim().toLowerCase();
   const res = await query(
-    `SELECT id, student_code, full_name, email, password_hash, auth_provider, google_id,
-            role, cohort, status, avatar_url, token_version, created_at, updated_at
+    `SELECT ${USER_SELECT_COLS}
      FROM public.users
      WHERE LOWER(email) = $1
      LIMIT 1`,
@@ -56,8 +65,7 @@ async function findUserByEmail(email) {
  */
 async function findUserById(userId) {
   const res = await query(
-    `SELECT id, student_code, full_name, email, password_hash, auth_provider, google_id,
-            role, cohort, status, avatar_url, token_version, created_at, updated_at
+    `SELECT ${USER_SELECT_COLS}
      FROM public.users
      WHERE id = $1
      LIMIT 1`,
@@ -81,7 +89,7 @@ async function findUserByStudentCode(studentCode) {
 }
 
 /**
- * Khởi tạo tài khoản người dùng mới hoặc ghi đè tài khoản pending chưa kích hoạt
+ * Khởi tạo tài khoản người dùng mới với trạng thái 'active' ngay lập tức (UC02)
  */
 async function createOrUpdatePendingUser({
   studentCode,
@@ -91,7 +99,7 @@ async function createOrUpdatePendingUser({
   cohort = 'K50',
   authProvider = 'local',
   googleId = null,
-  status = 'pending',
+  status = 'active',
   avatarUrl = '/avatars/default.png'
 }) {
   const normalizedEmail = String(email).trim().toLowerCase();
@@ -105,9 +113,10 @@ async function createOrUpdatePendingUser({
            password_hash = $2,
            student_code = COALESCE($3, student_code),
            cohort = COALESCE($4, cohort),
+           status = 'active',
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $5
-       RETURNING id, student_code, full_name, email, auth_provider, role, cohort, status, avatar_url, token_version, created_at`,
+       RETURNING ${USER_RETURN_COLS}`,
       [fullName.trim(), passwordHash, cleanedCode, cohort || 'K50', existing.id]
     );
     return updated.rows[0];
@@ -118,7 +127,7 @@ async function createOrUpdatePendingUser({
     `INSERT INTO public.users
        (student_code, full_name, email, password_hash, auth_provider, google_id, role, cohort, status, avatar_url, token_version)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1)
-     RETURNING id, student_code, full_name, email, auth_provider, role, cohort, status, avatar_url, token_version, created_at`,
+     RETURNING ${USER_RETURN_COLS}`,
     [
       cleanedCode,
       fullName.trim(),
@@ -128,7 +137,7 @@ async function createOrUpdatePendingUser({
       googleId,
       initialRole,
       cohort || 'K50',
-      status,
+      status === 'pending' ? 'active' : status,
       avatarUrl
     ]
   );
@@ -136,87 +145,9 @@ async function createOrUpdatePendingUser({
 }
 
 /**
- * Lưu hoặc làm mới token kích hoạt trong bảng public.account_activation (hạn 24 giờ)
- */
-async function upsertAccountActivation(userId, activationToken) {
-  const res = await query(
-    `INSERT INTO public.account_activation (user_id, activation_token, created_at, expires_at, is_used)
-     VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '24 hours', FALSE)
-     ON CONFLICT (user_id) DO UPDATE
-     SET activation_token = EXCLUDED.activation_token,
-         created_at = CURRENT_TIMESTAMP,
-         expires_at = CURRENT_TIMESTAMP + INTERVAL '24 hours',
-         is_used = FALSE
-     RETURNING user_id, activation_token, created_at, expires_at, is_used`,
-    [Number(userId), activationToken]
-  );
-  return res.rows[0];
-}
-
-/**
- * Tra cứu bản ghi kích hoạt theo token đầy đủ hoặc theo(email + mã OTP 6 số)
- */
-async function findActivationRecord({ token, email, otpCode }) {
-  if (token) {
-    const res = await query(
-      `SELECT aa.user_id, aa.activation_token, aa.created_at, aa.expires_at, aa.is_used,
-              (aa.expires_at < CURRENT_TIMESTAMP) AS is_expired,
-              u.full_name, u.email, u.role, u.cohort, u.student_code, u.status, u.avatar_url, u.token_version
-       FROM public.account_activation aa
-       JOIN public.users u ON u.id = aa.user_id
-       WHERE aa.activation_token = $1
-       LIMIT 1`,
-      [String(token).trim()]
-    );
-    return res.rows[0] || null;
-  }
-
-  if (email && otpCode) {
-    const normalizedEmail = String(email).trim().toLowerCase();
-    const cleanedOtp = String(otpCode).trim();
-    const res = await query(
-      `SELECT aa.user_id, aa.activation_token, aa.created_at, aa.expires_at, aa.is_used,
-              (aa.expires_at < CURRENT_TIMESTAMP) AS is_expired,
-              u.full_name, u.email, u.role, u.cohort, u.student_code, u.status, u.avatar_url, u.token_version
-       FROM public.account_activation aa
-       JOIN public.users u ON u.id = aa.user_id
-       WHERE LOWER(u.email) = $1
-         AND (aa.activation_token = $2 OR aa.activation_token LIKE $3)
-       LIMIT 1`,
-      [normalizedEmail, cleanedOtp, `act_${cleanedOtp}_%`]
-    );
-    return res.rows[0] || null;
-  }
-
-  return null;
-}
-
-/**
- * Đánh dấu kích hoạt tài khoản thành công (users.status = 'active', account_activation.is_used = TRUE)
- */
-async function markAccountActivated(userId) {
-  await query(
-    `UPDATE public.account_activation
-     SET is_used = TRUE
-     WHERE user_id = $1`,
-    [Number(userId)]
-  );
-  const res = await query(
-    `UPDATE public.users
-     SET status = 'active', updated_at = CURRENT_TIMESTAMP
-     WHERE id = $1
-     RETURNING id, student_code, full_name, email, role, cohort, status, avatar_url, token_version`,
-    [Number(userId)]
-  );
-  return res.rows[0];
-}
-
-/**
  * Kiểm tra lịch sử thiết bị tin cậy và ghi nhận lượt đăng nhập vào public.login_history
- * Đồng bộ với process_device_login() trong Vectoria user.py
  */
 async function recordDeviceLogin({ userId, ipAddress, deviceInfo }) {
-  // 1. Lấy tất cả các thiết bị đã được tin cậy của người dùng này
   const trustedRes = await query(
     `SELECT device_info
      FROM public.login_history
@@ -229,13 +160,10 @@ async function recordDeviceLogin({ userId, ipAddress, deviceInfo }) {
   let isNewDeviceAlert = false;
 
   if (trustedDevices.size === 0) {
-    // Lần đăng nhập đầu tiên của tài khoản -> tự động đánh dấu tin cậy
     isTrusted = true;
   } else if (trustedDevices.has(deviceInfo)) {
-    // Thiết bị đã nằm trong danh sách tin cậy
     isTrusted = true;
   } else {
-    // Thiết bị mới lạ chưa từng được xác nhận!
     isTrusted = false;
     isNewDeviceAlert = true;
   }
@@ -281,7 +209,6 @@ async function getRecentLoginHistory(userId, limit = 10) {
  * Tạo yêu cầu khôi phục mật khẩu mới trong bảng public.password_reset (hạn 15 phút)
  */
 async function createPasswordResetToken(userId, resetToken) {
-  // Vô hiệu hóa các token cũ chưa dùng của user này
   await query(
     `UPDATE public.password_reset
      SET is_used = TRUE
@@ -299,7 +226,7 @@ async function createPasswordResetToken(userId, resetToken) {
 }
 
 /**
- * Tra cứu yêu cầu đặt lại mật khẩu theo token đầy đủ hoặc theo mã OTP 6 số
+ * Tra cứu yêu cầu đặt lại mật khẩu theo token đầy đủ hoặc theo mã khôi phục
  */
 async function findPasswordResetRecord({ token, email }) {
   const cleaned = String(token || '').trim();
@@ -338,7 +265,6 @@ async function findPasswordResetRecord({ token, email }) {
 
 /**
  * Cập nhật mật khẩu mới, đánh dấu token khôi phục đã dùng và tăng token_version + 1
- * (Thu hồi lập tức toàn bộ các JWT cũ đang hoạt động trên mọi thiết bị)
  */
 async function updatePasswordAndRevokeSessions(userId, newPasswordHash, usedToken = null) {
   if (usedToken) {
@@ -363,14 +289,14 @@ async function updatePasswordAndRevokeSessions(userId, newPasswordHash, usedToke
          token_version = COALESCE(token_version, 1) + 1,
          updated_at = CURRENT_TIMESTAMP
      WHERE id = $2
-     RETURNING id, student_code, full_name, email, role, cohort, status, avatar_url, token_version`,
+     RETURNING ${USER_RETURN_COLS}`,
     [newPasswordHash, Number(userId)]
   );
   return res.rows[0];
 }
 
 /**
- * Khóa phiên khẩn cấp (Tăng token_version + 1 ngay lập tức khi người dùng bấm nút từ Email cảnh báo)
+ * Khóa phiên khẩn cấp (Tăng token_version + 1 ngay lập tức)
  */
 async function incrementUserTokenVersion(userId) {
   const res = await query(
@@ -409,7 +335,7 @@ async function linkOrCreateGoogleUser({ email, fullName, googleId, avatarUrl }) 
            status = CASE WHEN status = 'pending' THEN 'active' ELSE status END,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $6
-       RETURNING id, student_code, full_name, email, auth_provider, google_id, role, cohort, status, avatar_url, token_version`,
+       RETURNING ${USER_RETURN_COLS}`,
       [normalizedEmail, resolvedName, googleId, avatarUrl, shouldBeAdmin, existing.id]
     );
     return { user: updated.rows[0], isNewUser: false };
@@ -421,7 +347,7 @@ async function linkOrCreateGoogleUser({ email, fullName, googleId, avatarUrl }) 
     `INSERT INTO public.users
        (student_code, full_name, email, password_hash, auth_provider, google_id, role, cohort, status, avatar_url, token_version)
      VALUES (NULL, $1, $2, $3, 'google', $4, $5, 'K50', 'active', $6, 1)
-     RETURNING id, student_code, full_name, email, auth_provider, google_id, role, cohort, status, avatar_url, token_version`,
+     RETURNING ${USER_RETURN_COLS}`,
     [
       fullName || normalizedEmail.split('@')[0],
       normalizedEmail,
@@ -435,7 +361,7 @@ async function linkOrCreateGoogleUser({ email, fullName, googleId, avatarUrl }) 
 }
 
 /**
- * Cập nhật thông tin hồ sơ cá nhân của người dùng (UC03 / FR-02)
+ * Cập nhật thông tin hồ sơ cá nhân của người dùng (UC01 / FR-02)
  */
 async function updateUserProfileInfo(userId, { fullName, cohort, studentCode, avatarUrl }) {
   const cleanedCode = studentCode ? String(studentCode).replace(/\./g, '').trim() : null;
@@ -447,7 +373,7 @@ async function updateUserProfileInfo(userId, { fullName, cohort, studentCode, av
          avatar_url = COALESCE($4, avatar_url),
          updated_at = CURRENT_TIMESTAMP
      WHERE id = $5
-     RETURNING id, student_code, full_name, email, auth_provider, role, cohort, status, avatar_url, token_version, created_at`,
+     RETURNING ${USER_RETURN_COLS}`,
     [
       fullName ? String(fullName).trim() : null,
       cohort ? String(cohort).trim() : null,
@@ -460,11 +386,11 @@ async function updateUserProfileInfo(userId, { fullName, cohort, studentCode, av
 }
 
 /**
- * Lấy danh sách toàn bộ người dùng từ Supabase phục vụ Quản trị viên (UC10)
+ * Lấy danh sách toàn bộ người dùng từ Supabase phục vụ Quản trị viên
  */
 async function listAllUsers() {
   const res = await query(
-    `SELECT id, student_code, full_name, email, auth_provider, role, cohort, status, avatar_url, created_at
+    `SELECT ${USER_RETURN_COLS}
      FROM public.users
      ORDER BY CASE WHEN role = 'ADMIN' THEN 0 ELSE 1 END, id ASC`
   );
@@ -485,14 +411,14 @@ async function updateUserRole(userId, nextRole) {
     `UPDATE public.users
      SET role = $1, updated_at = CURRENT_TIMESTAMP
      WHERE id = $2
-     RETURNING id, student_code, full_name, email, role, cohort, status, avatar_url, created_at`,
+     RETURNING ${USER_RETURN_COLS}`,
     [canonical, Number(userId)]
   );
   return res.rows[0] || null;
 }
 
 /**
- * Khóa / Mở khóa tài khoản người dùng trên Supabase (UC10, bảo vệ Root Admin)
+ * Khóa / Mở khóa tài khoản người dùng trên Supabase (bảo vệ Root Admin)
  */
 async function updateUserStatus(userId, nextStatus) {
   const target = await findUserById(userId);
@@ -507,7 +433,7 @@ async function updateUserStatus(userId, nextStatus) {
          token_version = CASE WHEN $1 = 'locked' THEN COALESCE(token_version, 1) + 1 ELSE token_version END,
          updated_at = CURRENT_TIMESTAMP
      WHERE id = $2
-     RETURNING id, student_code, full_name, email, role, cohort, status, avatar_url, created_at`,
+     RETURNING ${USER_RETURN_COLS}`,
     [canonical, Number(userId)]
   );
   return res.rows[0] || null;
@@ -520,9 +446,6 @@ module.exports = {
   findUserByGoogleId,
   findUserByStudentCode,
   createOrUpdatePendingUser,
-  upsertAccountActivation,
-  findActivationRecord,
-  markAccountActivated,
   recordDeviceLogin,
   markDeviceTrusted,
   getRecentLoginHistory,

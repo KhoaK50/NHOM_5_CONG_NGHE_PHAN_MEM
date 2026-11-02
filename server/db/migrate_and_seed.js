@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * SCRIPT TỰ ĐỘNG KHỞI TẠO LƯỢC ĐỒ (16 BẢNG) & NẠP DỮ LIỆU MẪU (SEED DATA)
+ * SCRIPT TỰ ĐỘNG KHỞI TẠO LƯỢC ĐỒ (14 BẢNG) & NẠP DỮ LIỆU MẪU (SEED DATA)
  * DỰ ÁN: 5SHARE — HỆ THỐNG QUẢN LÝ & CHIA SẺ HỌC LIỆU SPTH (HCMUE)
  * ============================================================================
  * Cách chạy:
@@ -45,9 +45,9 @@ async function runMigrationAndSeed() {
     await client.connect();
     console.log('✅ Kết nối thành công!\n');
 
-    console.log('📐 [1/2] Đang thực thi lược đồ 16 bảng từ server/schema_5share.sql (kèm GRANT Supabase 30/10)...');
+    console.log('📐 [1/2] Đang thực thi lược đồ 14 bảng từ server/schema_5share.sql (kèm GRANT Supabase 30/10)...');
     await client.query(schemaSql);
-    console.log('✅ Đã khởi tạo thành công 16 bảng chuẩn hóa!\n');
+    console.log('✅ Đã khởi tạo thành công 14 bảng chuẩn hóa!\n');
 
     console.log('🔐 Đang áp dụng migration bổ sung trong server/db/migrations...');
     const migrationsDir = path.join(__dirname, 'migrations');
@@ -65,7 +65,6 @@ async function runMigrationAndSeed() {
       'users',
       'login_history',
       'password_reset',
-      'account_activation',
       'courses',
       'documents',
       'bookmarks',
@@ -74,20 +73,19 @@ async function runMigrationAndSeed() {
       'document_access_logs',
       'ratings',
       'document_comments',
-      'comment_upvotes',
       'document_reports',
       'notifications',
       'admin_logs'
     ];
 
-    console.log('📊 THỐNG KÊ SỐ BẢN GHI TRÊN 16 BẢNG (PUBLIC SCHEMA):');
+    console.log('📊 THỐNG KÊ SỐ BẢN GHI TRÊN 14 BẢNG (PUBLIC SCHEMA):');
     console.log('----------------------------------------------------');
     for (const tbl of tables) {
       const res = await client.query(`SELECT COUNT(*)::int AS cnt FROM public.${tbl}`);
       console.log(`  • ${tbl.padEnd(24, ' ')} : ${res.rows[0].cnt} dòng`);
     }
     console.log('----------------------------------------------------');
-    console.log('🎉 Hoàn tất! Bạn có thể bấm Ctrl + R trong TablePlus để xem toàn bộ 16 bảng và dữ liệu.');
+    console.log('🎉 Hoàn tất! Bạn có thể bấm Ctrl + R trong TablePlus để xem toàn bộ 14 bảng và dữ liệu.');
   } catch (err) {
     console.error('❌ Lỗi khi thực thi SQL:', err.message);
     process.exit(1);

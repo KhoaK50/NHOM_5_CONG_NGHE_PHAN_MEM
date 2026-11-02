@@ -23,7 +23,8 @@ function resolveUrls(req) {
 async function handleRegister(req, res) {
   try {
     const { fullName, display_name, email, password, studentCode, cohort } = req.body || {};
-    const { frontendUrl } = resolveUrls(req);
+    const ipAddress = getClientIp(req);
+    const deviceInfo = parseUserAgent(req.headers['user-agent']);
 
     const result = await authService.registerUser({
       fullName: fullName || display_name,
@@ -31,7 +32,8 @@ async function handleRegister(req, res) {
       password,
       studentCode,
       cohort,
-      frontendUrl
+      ipAddress,
+      deviceInfo
     });
     return res.status(result.statusCode).json(result.body);
   } catch (err) {
@@ -39,46 +41,6 @@ async function handleRegister(req, res) {
     return res.status(500).json({
       status: 'error',
       message: 'Lỗi hệ thống khi khởi tạo tài khoản. Vui lòng thử lại sau.'
-    });
-  }
-}
-
-async function handleVerify(req, res) {
-  try {
-    const token = req.query?.token || req.body?.token;
-    const email = req.body?.email || req.query?.email;
-    const otpCode = req.body?.otpCode || req.body?.otp || req.query?.otp;
-    const ipAddress = getClientIp(req);
-    const deviceInfo = parseUserAgent(req.headers['user-agent']);
-
-    const result = await authService.verifyAccount({
-      token,
-      email,
-      otpCode,
-      ipAddress,
-      deviceInfo
-    });
-    return res.status(result.statusCode).json(result.body);
-  } catch (err) {
-    console.error('[AuthController.handleVerify]', err);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Lỗi máy chủ khi xác thực tài khoản.'
-    });
-  }
-}
-
-async function handleResendActivation(req, res) {
-  try {
-    const { email } = req.body || {};
-    const { frontendUrl } = resolveUrls(req);
-    const result = await authService.resendActivation({ email, frontendUrl });
-    return res.status(result.statusCode).json(result.body);
-  } catch (err) {
-    console.error('[AuthController.handleResendActivation]', err);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Không thể gửi lại mã kích hoạt lúc này.'
     });
   }
 }
@@ -240,6 +202,20 @@ async function handleUpdateProfile(req, res) {
   }
 }
 
+async function handleUploadAvatar(req, res) {
+  try {
+    const authHeader = req.headers.authorization;
+    const result = await authService.uploadUserAvatar(authHeader, req.file);
+    return res.status(result.statusCode).json(result.body);
+  } catch (err) {
+    console.error('[AuthController.handleUploadAvatar]', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Không thể tải ảnh đại diện lên lúc này.'
+    });
+  }
+}
+
 async function handleChangePassword(req, res) {
   try {
     const authHeader = req.headers.authorization;
@@ -306,8 +282,6 @@ async function handleUpdateUserStatus(req, res) {
 
 module.exports = {
   handleRegister,
-  handleVerify,
-  handleResendActivation,
   handleLogin,
   handleGoogleLogin,
   handleForgotPassword,
@@ -316,6 +290,7 @@ module.exports = {
   handleSecureAccount,
   handleGetMe,
   handleUpdateProfile,
+  handleUploadAvatar,
   handleChangePassword,
   handleListUsers,
   handleUpdateUserRole,
