@@ -154,6 +154,7 @@ vite.config.ts.timestamp-*
 *.key
 *.cert
 secrets.*
+!.env.example
 
 # OS Files
 .DS_Store

@@ -244,8 +244,57 @@ COMMIT;
 
 
 -- ============================================================================
+-- MIGRATION BỔ SUNG CHO schema_5share.sql (5S-043) - KHÔNG ĐỔI MÔ HÌNH 14 THỰC THỂ
+-- 1. Thêm users.contribution_score đã có trong Đặc tả Thực thể nhưng thiếu ở schema.
+-- 2. Thu hồi quyền anon/authenticated và bật RLS: backend là lối truy cập duy nhất,
+--    tránh Supabase Data API đọc được password_hash bằng khóa anon công khai.
+-- Chạy lại nhiều lần vẫn an toàn.
+-- ============================================================================
+
+BEGIN;
+
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS contribution_score INT NOT NULL DEFAULT 0;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'users_contribution_score_check'
+  ) THEN
+    ALTER TABLE public.users
+      ADD CONSTRAINT users_contribution_score_check CHECK (contribution_score >= 0);
+  END IF;
+END
+$$;
+
+CREATE INDEX IF NOT EXISTS idx_documents_status_created ON public.documents (status, created_at);
+CREATE INDEX IF NOT EXISTS idx_documents_course ON public.documents (course_id);
+CREATE INDEX IF NOT EXISTS idx_reports_status_created ON public.document_reports (status, created_at);
+
+DO $$
+DECLARE
+  tbl TEXT;
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+    REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+  END IF;
+
+  -- Chủ bảng (role backend) vẫn bỏ qua RLS; role khác bị từ chối vì không có policy nào.
+  FOR tbl IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', tbl);
+  END LOOP;
+END
+$$;
+
+COMMIT;
+
+
+-- ============================================================================
 -- DỮ LIỆU MẪU CHUẨN HÓA (SEED DATA) - DỰ ÁN 5SHARE (SPTH - HCMUE)
--- Khớp 100% với 16 bảng trong server/schema_5share.sql
+-- Khớp 100% với 16 bảng trong server/schema_5share.sql + db/migrations (20 tài liệu, 14 môn)
 -- ============================================================================
 
 BEGIN;
@@ -253,7 +302,7 @@ BEGIN;
 -- 1. USERS (6 tài khoản: 5 thành viên Nhóm 5 + 1 tài khoản kiểm thử khóa)
 INSERT INTO public.users (id, student_code, full_name, email, password_hash, auth_provider, google_id, role, cohort, status, avatar_url, token_version)
 VALUES
-  (1, '5001104001', 'Nguyễn Trần Đăng Khoa', 'khoantd.spth@hcmue.edu.vn', '$2b$10$5ShareHashAdminKhoa2026HCMUE999999999999999999999999', 'local', NULL, 'ADMIN', 'K50', 'active', '/avatars/khoa.png', 1),
+  (1, '5001104001', 'Nguyễn Trần Đăng Khoa', 'sc3.nguyentrandangkhoa@gmail.com', '$2b$10$5ShareHashAdminKhoa2026HCMUE999999999999999999999999', 'google', '109577355129298409444', 'ADMIN', 'K50', 'active', '/avatars/khoa.png', 1),
   (2, '5001104002', 'Lê Nguyễn Thùy Trâm', 'tramlnt.spth@hcmue.edu.vn', '$2b$10$5ShareHashStudentTram2026HCMUE8888888888888888888888', 'local', NULL, 'STUDENT', 'K50', 'active', '/avatars/tram.png', 1),
   (3, '5001104003', 'Phan Triệu Vĩ', 'vipt.spth@hcmue.edu.vn', '$2b$10$5ShareHashStudentVi2026HCMUE777777777777777777777777', 'google', 'google-oauth2|5001104003', 'STUDENT', 'K50', 'active', '/avatars/vi.png', 1),
   (4, '5001104004', 'Nguyễn Hoàng Danh', 'danhnh.spth@hcmue.edu.vn', '$2b$10$5ShareHashStudentDanh2026HCMUE6666666666666666666666', 'local', NULL, 'STUDENT', 'K50', 'active', '/avatars/danh.png', 1),
@@ -419,6 +468,33 @@ ON CONFLICT (id) DO UPDATE SET
   total_downloads = EXCLUDED.total_downloads,
   rating_avg = EXCLUDED.rating_avg;
 
+-- 6b. DOCUMENTS bổ sung (5S-044): nâng tổng số lên 20 tài liệu, đủ PENDING/APPROVED/REJECTED/HIDDEN/DELETED
+INSERT INTO public.documents (
+  id, course_id, uploader_id, reviewed_by, title, description, doc_type, academic_year,
+  lecturer_name, file_name, file_url, preview_url, file_size_bytes, page_count, file_hash,
+  status, reject_reason, total_views, total_downloads, rating_avg, reviewed_at
+)
+VALUES
+  (9, 2, 4, NULL, 'Bài tập lớn Lập trình nâng cao: Quản lý thư viện bằng C++', 'Đề bài, lời giải tham khảo và hướng dẫn tổ chức mã nguồn nhiều tệp, có minh họa con trỏ và cấp phát động.', 'DO_AN_MAU', '2025-2026', 'ThS. Lê Minh Tuấn', 'BTL_LapTrinhNangCao_QuanLyThuVien.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/BTL_LapTrinhNangCao_QuanLyThuVien.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_09.pdf', 3145728, 32, 'cc7e51f2b2dcc23e27e9c4ff59ef552184477e8ae636308c9427f7490a1126ed', 'PENDING', NULL, 0, 0, 0.00, NULL),
+  (10, 4, 2, NULL, 'Đề cương ôn tập Cơ sở dữ liệu: Chuẩn hóa và SQL nâng cao', 'Tổng hợp lý thuyết phụ thuộc hàm, các dạng chuẩn 1NF đến BCNF và 40 câu truy vấn SQL có đáp án.', 'TAI_LIEU_THAM_KHAO', '2025-2026', 'TS. Phạm Thị Hoa', 'DeCuong_CSDL_ChuanHoa_SQL.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/DeCuong_CSDL_ChuanHoa_SQL.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_10.pdf', 1887436, 26, '7a46b18fc86a4ac6fd5724ef1148fe94e8ac811877f99b01da2320bb0eca6975', 'PENDING', NULL, 0, 0, 0.00, NULL),
+  (11, 9, 5, NULL, 'Slide bài giảng Học máy: Hồi quy tuyến tính và Logistic', 'Bộ slide kèm ví dụ Python giải thích hàm mất mát, gradient descent và đánh giá mô hình phân loại.', 'SLIDE_BAI_GIANG', '2025-2026', 'TS. Võ Thanh Sơn', 'Slide_HocMay_HoiQuy.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/Slide_HocMay_HoiQuy.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_11.pdf', 5242880, 58, 'acdfda770345686935bc4511b0eafa9de44115c6063cd58f50b4b4d1ee9e7cfc', 'PENDING', NULL, 0, 0, 0.00, NULL),
+  (12, 11, 3, NULL, 'Kế hoạch bài dạy Tin học 11: Lập trình Python theo Công văn 5512', 'KHBD đủ bốn hoạt động, phiếu học tập và rubric đánh giá cho chủ đề cấu trúc lặp trong Python.', 'KHBD_5512', '2025-2026', 'ThS. Đỗ Thị Mai', 'KHBD_Tin11_Python_5512.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/KHBD_Tin11_Python_5512.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_12.pdf', 2097152, 21, '2bab9d98a0229f01569151f09f9180f466c67b59be7ce18b62a47f409a2372db', 'PENDING', NULL, 0, 0, 0.00, NULL),
+  (13, 13, 4, NULL, 'Tóm tắt Triết học Mác - Lênin theo chương và câu hỏi tự luận', 'Tóm tắt nội dung trọng tâm từng chương, kèm 30 câu hỏi tự luận có gợi ý trả lời để ôn thi cuối kỳ.', 'TAI_LIEU_THAM_KHAO', '2024-2025', NULL, 'TomTat_TrietHoc_MacLenin.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/TomTat_TrietHoc_MacLenin.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_13.pdf', 1048576, 44, 'c54511bd49c28b500d1a2d87ec360d359d41d7f527611a015cda337f8835795c', 'PENDING', NULL, 0, 0, 0.00, NULL),
+  (14, 8, 5, 1, 'Giáo trình Lý thuyết đồ thị và ứng dụng trong Tin học', 'Trình bày đồ thị Euler, Hamilton, đường đi ngắn nhất và cây khung nhỏ nhất kèm bài tập có lời giải.', 'GIAO_TRINH', '2024-2025', 'TS. Nguyễn Văn Bình', 'GiaoTrinh_LyThuyetDoThi.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/GiaoTrinh_LyThuyetDoThi.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_14.pdf', 8388608, 120, 'ddfb73b679295f78a608c8510fba719a0876348f6cb4049d0c29320769ac673c', 'APPROVED', NULL, 210, 96, 4.50, CURRENT_TIMESTAMP - INTERVAL '6 days'),
+  (15, 10, 2, 1, 'Đề cương Giáo dục học: Lý luận dạy học và giáo dục đại cương', 'Đề cương chi tiết theo chương trình Sư phạm, tóm tắt các nguyên tắc và phương pháp dạy học.', 'TAI_LIEU_THAM_KHAO', '2025-2026', 'PGS.TS. Trần Thị Lan', 'DeCuong_GiaoDucHoc.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/DeCuong_GiaoDucHoc.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_15.pdf', 1572864, 30, '19915a39754d8893ec98e7352079e6f9fea8eabdc91967f12c7f938267159082', 'APPROVED', NULL, 143, 61, 4.20, CURRENT_TIMESTAMP - INTERVAL '5 days'),
+  (16, 12, 4, 1, 'Ngân hàng câu hỏi Kiểm tra đánh giá trong giáo dục Tin học', 'Ma trận đề, bảng đặc tả và 60 câu trắc nghiệm mẫu theo định hướng phát triển năng lực.', 'DE_THI_DAP_AN', '2025-2026', 'TS. Hồ Ngọc Anh', 'NganHangCauHoi_KTDG_TinHoc.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/NganHangCauHoi_KTDG_TinHoc.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_16.pdf', 2621440, 38, '573620e5491867aff19bfd9e8a5c6ffe8f4454af2d44e6cb9a44206de9460ec9', 'APPROVED', NULL, 98, 44, 4.00, CURRENT_TIMESTAMP - INTERVAL '4 days'),
+  (17, 3, 3, 1, 'Sổ tay Cấu trúc dữ liệu: Danh sách liên kết, ngăn xếp và hàng đợi', 'Sổ tay kèm minh họa thao tác và mã nguồn C++, phù hợp để ôn tập trước khi vào phần cây và đồ thị.', 'TAI_LIEU_THAM_KHAO', '2024-2025', 'ThS. Lê Minh Tuấn', 'SoTay_CauTrucDuLieu.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/SoTay_CauTrucDuLieu.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_17.pdf', 2359296, 48, 'e74c3cb9291acf54924884f18db3351f46781525d91d001cd7725bdaa73f28b2', 'HIDDEN', NULL, 87, 31, 3.60, CURRENT_TIMESTAMP - INTERVAL '3 days'),
+  (18, 5, 5, 1, 'Tổng hợp đề thi Mạng máy tính các năm kèm đáp án tham khảo', 'Tổng hợp đề thi cuối kỳ các năm kèm đáp án tham khảo về chia mạng con và định tuyến.', 'DE_THI_DAP_AN', '2024-2025', 'ThS. Bùi Văn Khánh', 'TongHop_DeThi_MangMayTinh.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/TongHop_DeThi_MangMayTinh.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_18.pdf', 3670016, 27, '6b8fc1b3ebfeb211bdb2318d15d10f5d8d7029d19153adab54f31064aa4dc438', 'HIDDEN', NULL, 152, 70, 3.20, CURRENT_TIMESTAMP - INTERVAL '3 days'),
+  (19, 1, 2, 1, 'Bài giảng Lập trình cơ bản: Biến, vòng lặp và hàm trong C', 'Bài giảng nhập môn tư duy thuật toán, có ví dụ từng bước và bài tập cuối mỗi chương.', 'SLIDE_BAI_GIANG', '2024-2025', 'ThS. Đỗ Thị Mai', 'BaiGiang_LapTrinhCoBan_C.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/BaiGiang_LapTrinhCoBan_C.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_19.pdf', 4194304, 64, '9ccea5ddf3d8df523908de11ce55640fb69e49bbeede1e4398fc141ccef83101', 'DELETED', NULL, 60, 12, 2.80, CURRENT_TIMESTAMP - INTERVAL '2 days'),
+  (20, 14, 3, 1, 'Mẫu đề cương Khóa luận tốt nghiệp Sư phạm Tin học', 'Biểu mẫu đề cương còn thiếu mục tiêu nghiên cứu và phần tài liệu tham khảo, cần bổ sung trước khi đăng lại.', 'DO_AN_MAU', '2025-2026', NULL, 'MauDeCuong_KhoaLuan.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/MauDeCuong_KhoaLuan.pdf', 'https://res.cloudinary.com/demo/image/upload/v1/5share/preview_doc_20.pdf', 524288, 6, '44b3af82f864dbd9176b03083b4f69786e1581e64d9de51a28e6b2b9b43d4686', 'REJECTED', 'Tài liệu thiếu mục tiêu nghiên cứu và danh mục tham khảo, vui lòng bổ sung rồi đóng góp lại.', 5, 0, 0.00, CURRENT_TIMESTAMP - INTERVAL '1 days')
+ON CONFLICT (id) DO UPDATE SET
+  title = EXCLUDED.title,
+  status = EXCLUDED.status,
+  reject_reason = EXCLUDED.reject_reason,
+  total_views = EXCLUDED.total_views,
+  total_downloads = EXCLUDED.total_downloads,
+  rating_avg = EXCLUDED.rating_avg;
+
 SELECT setval(pg_get_serial_sequence('public.documents', 'id'), (SELECT MAX(id) FROM public.documents));
 
 -- 7. BOOKMARKS
@@ -438,6 +514,18 @@ VALUES
   (2, CURRENT_TIMESTAMP - INTERVAL '9 days', 1, 'PENDING', 'APPROVED', 'Đạt 8/8 tiêu chí. Code C++ minh họa cây AVL chạy chính xác, trình bày LaTeX sạch sẽ.'),
   (3, CURRENT_TIMESTAMP - INTERVAL '8 days', 1, 'PENDING', 'APPROVED', 'Đạt 8/8 tiêu chí. Bộ sơ đồ BFD/DFD/ERD chuẩn ký pháp Gane & Sarson.'),
   (8, CURRENT_TIMESTAMP - INTERVAL '2 days', 1, 'PENDING', 'REJECTED', 'Không đạt tiêu chí độ nét và tính toàn vẹn nội dung.')
+ON CONFLICT DO NOTHING;
+
+-- 8b. MODERATION_LOGS cho các tài liệu bổ sung đã qua kiểm duyệt
+INSERT INTO public.moderation_logs (document_id, action_at, actor_id, old_status, new_status, review_note)
+VALUES
+  (14, CURRENT_TIMESTAMP - INTERVAL '6 days', 1, 'PENDING', 'APPROVED', 'Đạt 8/8 tiêu chí kiểm duyệt.'),
+  (15, CURRENT_TIMESTAMP - INTERVAL '5 days', 1, 'PENDING', 'APPROVED', 'Đạt 8/8 tiêu chí kiểm duyệt.'),
+  (16, CURRENT_TIMESTAMP - INTERVAL '4 days', 1, 'PENDING', 'APPROVED', 'Đạt 8/8 tiêu chí kiểm duyệt.'),
+  (17, CURRENT_TIMESTAMP - INTERVAL '3 days', 1, 'APPROVED', 'HIDDEN', 'Tạm ẩn để tác giả rà lại nội dung bị báo cáo.'),
+  (18, CURRENT_TIMESTAMP - INTERVAL '3 days', 1, 'APPROVED', 'HIDDEN', 'Tạm ẩn vì đề thi còn trong thời hạn bảo mật.'),
+  (19, CURRENT_TIMESTAMP - INTERVAL '2 days', 1, 'APPROVED', 'DELETED', 'Xóa mềm do vi phạm bản quyền đã được xác minh.'),
+  (20, CURRENT_TIMESTAMP - INTERVAL '1 day', 1, 'PENDING', 'REJECTED', 'Thiếu mục tiêu nghiên cứu và danh mục tham khảo.')
 ON CONFLICT DO NOTHING;
 
 -- 9. USER_DOCUMENT_HISTORY
@@ -501,6 +589,14 @@ VALUES
   (2, 3, 8, 1, 'LOI_HIEN_THI_MO', 'Tài liệu bị chụp nghiêng và thiếu mất 6 trang cuối.', 'RESOLVED_HIDDEN', 'Đã từ chối xuất bản và yêu cầu người đăng tải lại bản PDF gốc.', CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '1 day')
 ON CONFLICT (id) DO NOTHING;
 
+-- 14b. DOCUMENT_REPORTS bổ sung: báo cáo PENDING trên tài liệu APPROVED/HIDDEN để demo UC09
+INSERT INTO public.document_reports (id, reporter_id, document_id, resolved_by, reason_category, description, status, admin_note, created_at, resolved_at)
+VALUES
+  (3, 5, 14, NULL, 'SAI_MON_HOC', 'Tài liệu ghi học phần Lý thuyết đồ thị nhưng chương 5 thuộc Toán rời rạc, nhờ Ban quản trị kiểm tra lại.', 'PENDING', NULL, CURRENT_TIMESTAMP - INTERVAL '1 day', NULL),
+  (4, 2, 16, NULL, 'VI_PHAM_BAN_QUYEN', 'Một phần ngân hàng câu hỏi được sao chép từ sách có bản quyền, không ghi nguồn.', 'PENDING', NULL, CURRENT_TIMESTAMP - INTERVAL '6 hours', NULL),
+  (5, 3, 17, NULL, 'NOI_DUNG_RAC', 'Vài trang cuối lặp lại nội dung và chèn quảng cáo không liên quan đến môn học.', 'PENDING', NULL, CURRENT_TIMESTAMP - INTERVAL '3 hours', NULL)
+ON CONFLICT (id) DO NOTHING;
+
 SELECT setval(pg_get_serial_sequence('public.document_reports', 'id'), (SELECT MAX(id) FROM public.document_reports));
 
 -- 15. NOTIFICATIONS
@@ -522,5 +618,11 @@ VALUES
 ON CONFLICT (log_id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('public.admin_logs', 'log_id'), (SELECT MAX(log_id) FROM public.admin_logs));
+
+-- Đồng bộ điểm đóng góp với số tài liệu đã duyệt (+20 mỗi tài liệu APPROVED, UC09)
+UPDATE public.users u
+SET contribution_score = 20 * (
+  SELECT COUNT(*) FROM public.documents d WHERE d.uploader_id = u.id AND d.status = 'APPROVED'
+);
 
 COMMIT;

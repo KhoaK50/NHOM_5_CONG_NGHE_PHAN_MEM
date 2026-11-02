@@ -49,6 +49,14 @@ async function runMigrationAndSeed() {
     await client.query(schemaSql);
     console.log('✅ Đã khởi tạo thành công 16 bảng chuẩn hóa!\n');
 
+    console.log('🔐 Đang áp dụng migration bổ sung trong server/db/migrations...');
+    const migrationsDir = path.join(__dirname, 'migrations');
+    for (const file of fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort()) {
+      await client.query(fs.readFileSync(path.join(migrationsDir, file), 'utf8'));
+      console.log(`✅ ${file}`);
+    }
+    console.log('');
+
     console.log('🌱 [2/2] Đang nạp dữ liệu mẫu Sư phạm Tin học HCMUE từ server/seed_5share.sql...');
     await client.query(seedSql);
     console.log('✅ Đã nạp dữ liệu mẫu hoàn tất!\n');
