@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
   User,
   KeyRound,
@@ -15,10 +15,14 @@ import {
   Check,
   AlertTriangle,
   FolderOpen,
-  ArrowUpRight
+  ArrowUpRight,
+  Upload,
+  Loader2,
+  Trash2
 } from 'lucide-react'
 import MyDocuments from './MyDocuments'
 import SavedBookmarks from './SavedBookmarks'
+import { AuthGuard, getApiBaseUrl } from '../../utils/authGuard'
 
 const COHORT_OPTIONS = [
   { code: 'K48', label: 'K48 (Niên khóa 2022 - 2026)' },
@@ -37,6 +41,8 @@ const AVATAR_PRESETS = [
   { id: 'grad-rose', gradient: 'linear-gradient(135deg, #e11d48 0%, #f43f5e 100%)', label: 'Đỏ hồng' }
 ]
 
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024 // 5MB
+
 export default function UserProfile({
   currentUser,
   initialTab = 'info',
@@ -44,6 +50,7 @@ export default function UserProfile({
   bookmarkedIds = [],
   downloadHistory = [],
   onUpdateProfile,
+  onAvatarUploaded,
   onChangePassword,
   onSelectDoc,
   onToggleBookmark,
@@ -62,9 +69,11 @@ export default function UserProfile({
   const [customAvatarUrl, setCustomAvatarUrl] = useState(
     currentUser?.avatarUrl || currentUser?.avatar_url || ''
   )
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const [infoError, setInfoError] = useState('')
   const [infoSuccess, setInfoSuccess] = useState('')
   const [infoSubmitting, setInfoSubmitting] = useState(false)
+  const avatarFileInputRef = useRef(null)
 
   // Tab Password Form State
   const [oldPassword, setOldPassword] = useState('')
@@ -97,6 +106,68 @@ export default function UserProfile({
     { id: 'match', label: 'Xác nhận mật khẩu khớp hoàn toàn', met: confirmPassword === newPassword && newPassword !== '' }
   ]
   const isPwdFormValid = pwdChecklist.every((c) => c.met) && oldPassword.length > 0
+
+  const handleAvatarFileSelect = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+
+    setInfoError('')
+    setInfoSuccess('')
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      setInfoError('Định dạng ảnh không hợp lệ. Chỉ chấp nhận tệp .JPG, .PNG hoặc .WEBP.')
+      return
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      setInfoError('Kích thước ảnh vượt quá giới hạn tối đa 5MB.')
+      return
+    }
+
+    const token = AuthGuard.getAuthToken()
+    if (!token) {
+      setInfoError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tải ảnh đại diện.')
+      return
+    }
+
+    setAvatarUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/avatar`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || data.status !== 'success') {
+        throw new Error(data.message || 'Không thể tải ảnh đại diện lên Cloudinary.')
+      }
+
+      const uploadedUrl = data.avatarUrl || data.user?.avatar_url || data.user?.avatarUrl || ''
+      setCustomAvatarUrl(uploadedUrl)
+
+      if (data.user) {
+        AuthGuard.updateSavedUserProfile(data.user, token)
+        if (onAvatarUploaded) {
+          onAvatarUploaded(data.user, uploadedUrl)
+        }
+      }
+
+      setInfoSuccess(
+        data.message || 'Đã tải ảnh đại diện lên Cloudinary và cập nhật hồ sơ thành công.'
+      )
+      setTimeout(() => setInfoSuccess(''), 4500)
+    } catch (err) {
+      setInfoError(err.message || 'Không thể tải ảnh đại diện lên máy chủ lúc này.')
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
 
   const handleSaveInfo = async (e) => {
     e.preventDefault()
@@ -167,6 +238,15 @@ export default function UserProfile({
 
   return (
     <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Hidden File Input for Cloudinary Avatar Upload */}
+      <input
+        ref={avatarFileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleAvatarFileSelect}
+        style={{ display: 'none' }}
+      />
+
       {/* 1. Profile Header Card */}
       <section
         style={{
@@ -186,6 +266,8 @@ export default function UserProfile({
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', minWidth: 0 }}>
           {/* Circular Avatar */}
           <div
+            onClick={() => !avatarUploading && avatarFileInputRef.current?.click()}
+            title="Nhấn để tải ảnh đại diện từ thiết bị lên Cloudinary"
             style={{
               width: '72px',
               height: '72px',
@@ -200,7 +282,9 @@ export default function UserProfile({
               flexShrink: 0,
               boxShadow: '0 4px 12px rgba(0, 144, 255, 0.25)',
               overflow: 'hidden',
-              border: '2px solid #ffffff'
+              border: '2px solid #ffffff',
+              cursor: avatarUploading ? 'wait' : 'pointer',
+              position: 'relative'
             }}
           >
             {customAvatarUrl ? (
@@ -539,44 +623,103 @@ export default function UserProfile({
               </div>
             </div>
 
-            {/* Avatar Selector */}
+            {/* Avatar Selector + Cloudinary Upload */}
             <div>
               <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-                Ảnh đại diện hiển thị:
+                Ảnh đại diện hiển thị (Tải ảnh lên Cloudinary hoặc chọn bảng màu):
               </label>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                {AVATAR_PRESETS.map((p) => (
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {AVATAR_PRESETS.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setAvatarPreset(p.id)
+                        setCustomAvatarUrl('')
+                      }}
+                      title={p.label}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: p.gradient,
+                        border: avatarPreset === p.id && !customAvatarUrl ? '3px solid var(--primary-base)' : '2px solid #ffffff',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#ffffff'
+                      }}
+                    >
+                      {avatarPreset === p.id && !customAvatarUrl && <Check size={16} />}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Upload image from device button */}
+                <button
+                  type="button"
+                  disabled={avatarUploading}
+                  onClick={() => avatarFileInputRef.current?.click()}
+                  style={{
+                    height: '38px',
+                    padding: '0 14px',
+                    borderRadius: '8px',
+                    border: '1.5px dashed var(--primary-base)',
+                    backgroundColor: 'var(--bg-surface)',
+                    color: 'var(--primary-base)',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: avatarUploading ? 'wait' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '7px'
+                  }}
+                >
+                  {avatarUploading ? (
+                    <>
+                      <Loader2 size={15} className="spin-loader" />
+                      <span>Đang tải ảnh lên Cloudinary...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={15} />
+                      <span>Tải ảnh từ thiết bị (.JPG, .PNG, .WEBP ≤ 5MB)</span>
+                    </>
+                  )}
+                </button>
+
+                {customAvatarUrl && (
                   <button
-                    key={p.id}
                     type="button"
-                    onClick={() => {
-                      setAvatarPreset(p.id)
-                      setCustomAvatarUrl('')
-                    }}
-                    title={p.label}
+                    onClick={() => setCustomAvatarUrl('')}
                     style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      background: p.gradient,
-                      border: avatarPreset === p.id && !customAvatarUrl ? '3px solid var(--primary-base)' : '2px solid #ffffff',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                      height: '38px',
+                      padding: '0 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--bg-muted)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '12px',
+                      fontWeight: 600,
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#ffffff'
+                      gap: '6px'
                     }}
                   >
-                    {avatarPreset === p.id && !customAvatarUrl && <Check size={16} />}
+                    <Trash2 size={14} />
+                    <span>Dùng màu mặc định</span>
                   </button>
-                ))}
+                )}
               </div>
 
               <div style={{ marginTop: '10px' }}>
                 <input
                   type="url"
-                  placeholder="Hoặc nhập đường dẫn ảnh đại diện tùy chỉnh (URL)..."
+                  placeholder="Hoặc dán đường dẫn ảnh đại diện (URL Cloudinary / HTTPS)..."
                   value={customAvatarUrl}
                   onChange={(e) => setCustomAvatarUrl(e.target.value)}
                   style={{
@@ -647,14 +790,14 @@ export default function UserProfile({
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
               <button
                 type="submit"
-                disabled={infoSubmitting}
+                disabled={infoSubmitting || avatarUploading}
                 className="btn-solid-primary"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
                   padding: '10px 24px',
-                  opacity: infoSubmitting ? 0.6 : 1
+                  opacity: infoSubmitting || avatarUploading ? 0.6 : 1
                 }}
               >
                 <Save size={15} />

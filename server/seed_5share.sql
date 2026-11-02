@@ -1,6 +1,6 @@
 -- ============================================================================
 -- DỮ LIỆU MẪU CHUẨN HÓA (SEED DATA) - DỰ ÁN 5SHARE (SPTH - HCMUE)
--- Khớp 100% với 16 bảng trong server/schema_5share.sql + db/migrations (20 tài liệu, 14 môn)
+-- Khớp 100% với 14 bảng trong server/schema_5share.sql + db/migrations (20 tài liệu, 14 môn)
 -- ============================================================================
 
 BEGIN;
@@ -35,17 +35,7 @@ VALUES
   (4, 'rst_5share_k50_danh_1f2e3d4c5b6a79880011', CURRENT_TIMESTAMP - INTERVAL '10 minutes', CURRENT_TIMESTAMP + INTERVAL '50 minutes', FALSE)
 ON CONFLICT DO NOTHING;
 
--- 4. ACCOUNT_ACTIVATION
-INSERT INTO public.account_activation (user_id, activation_token, created_at, expires_at, is_used)
-VALUES
-  (1, 'act_khoa_5001104001', CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '29 days', TRUE),
-  (2, 'act_tram_5001104002', CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '29 days', TRUE),
-  (3, 'act_vi_5001104003', CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '29 days', TRUE),
-  (4, 'act_danh_5001104004', CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '29 days', TRUE),
-  (5, 'act_dat_5001104005', CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '29 days', TRUE)
-ON CONFLICT (user_id) DO NOTHING;
-
--- 5. COURSES (Danh mục Học phần chuẩn CTĐT Sư phạm Tin học HCMUE)
+-- 4. COURSES (Danh mục Học phần chuẩn CTĐT Sư phạm Tin học HCMUE)
 INSERT INTO public.courses (id, course_code, course_name, knowledge_block, credits, semester, summary, is_active)
 VALUES
   (1, 'COMP1010', 'Lập trình cơ bản', 'CO_SO_NGANH', 3, 1, 'Nhập môn tư duy thuật toán và lập trình C++ căn bản cho sinh viên SPTH.', TRUE),
@@ -70,7 +60,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 SELECT setval(pg_get_serial_sequence('public.courses', 'id'), (SELECT MAX(id) FROM public.courses));
 
--- 6. DOCUMENTS (Học liệu SPTH đã thẩm định & đang chờ duyệt, kèm mã băm SHA-256 64 ký tự chuẩn)
+-- 5. DOCUMENTS (Học liệu SPTH đã thẩm định & đang chờ duyệt, kèm mã băm SHA-256 64 ký tự chuẩn)
 INSERT INTO public.documents (
   id, course_id, uploader_id, reviewed_by, title, description, doc_type, academic_year,
   lecturer_name, file_name, file_url, preview_url, file_size_bytes, page_count, file_hash,
@@ -174,7 +164,7 @@ ON CONFLICT (id) DO UPDATE SET
   total_downloads = EXCLUDED.total_downloads,
   rating_avg = EXCLUDED.rating_avg;
 
--- 6b. DOCUMENTS bổ sung (5S-044): nâng tổng số lên 20 tài liệu, đủ PENDING/APPROVED/REJECTED/HIDDEN/DELETED
+-- 5b. DOCUMENTS bổ sung (5S-044): nâng tổng số lên 20 tài liệu, đủ PENDING/APPROVED/REJECTED/HIDDEN/DELETED
 INSERT INTO public.documents (
   id, course_id, uploader_id, reviewed_by, title, description, doc_type, academic_year,
   lecturer_name, file_name, file_url, preview_url, file_size_bytes, page_count, file_hash,
@@ -203,7 +193,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 SELECT setval(pg_get_serial_sequence('public.documents', 'id'), (SELECT MAX(id) FROM public.documents));
 
--- 7. BOOKMARKS
+-- 6. BOOKMARKS
 INSERT INTO public.bookmarks (user_id, document_id, note, saved_at, is_pinned)
 VALUES
   (2, 3, 'Tài liệu mẫu cực chuẩn để làm báo cáo Chương 2 & Chương 3 môn CNPM', CURRENT_TIMESTAMP - INTERVAL '5 days', TRUE),
@@ -213,7 +203,7 @@ VALUES
   (4, 5, 'Luyện giải đề chia mạng con VLSM', CURRENT_TIMESTAMP - INTERVAL '1 day', FALSE)
 ON CONFLICT (user_id, document_id) DO NOTHING;
 
--- 8. MODERATION_LOGS
+-- 7. MODERATION_LOGS
 INSERT INTO public.moderation_logs (document_id, action_at, actor_id, old_status, new_status, review_note)
 VALUES
   (1, CURRENT_TIMESTAMP - INTERVAL '10 days', 1, 'PENDING', 'APPROVED', 'Đạt đủ 8/8 tiêu chí thẩm định học thuật SPTH. KHBD trình bày đúng chuẩn Công văn 5512.'),
@@ -222,7 +212,7 @@ VALUES
   (8, CURRENT_TIMESTAMP - INTERVAL '2 days', 1, 'PENDING', 'REJECTED', 'Không đạt tiêu chí độ nét và tính toàn vẹn nội dung.')
 ON CONFLICT DO NOTHING;
 
--- 8b. MODERATION_LOGS cho các tài liệu bổ sung đã qua kiểm duyệt
+-- 7b. MODERATION_LOGS cho các tài liệu bổ sung đã qua kiểm duyệt
 INSERT INTO public.moderation_logs (document_id, action_at, actor_id, old_status, new_status, review_note)
 VALUES
   (14, CURRENT_TIMESTAMP - INTERVAL '6 days', 1, 'PENDING', 'APPROVED', 'Đạt 8/8 tiêu chí kiểm duyệt.'),
@@ -234,7 +224,7 @@ VALUES
   (20, CURRENT_TIMESTAMP - INTERVAL '1 day', 1, 'PENDING', 'REJECTED', 'Thiếu mục tiêu nghiên cứu và danh mục tham khảo.')
 ON CONFLICT DO NOTHING;
 
--- 9. USER_DOCUMENT_HISTORY
+-- 8. USER_DOCUMENT_HISTORY
 INSERT INTO public.user_document_history (user_id, document_id, last_read_page, last_read_percent, download_count_by_user, visited_at)
 VALUES
   (2, 1, 18, 100.00, 2, CURRENT_TIMESTAMP - INTERVAL '2 hours'),
@@ -244,7 +234,7 @@ VALUES
   (5, 5, 10, 71.43, 1, CURRENT_TIMESTAMP - INTERVAL '6 hours')
 ON CONFLICT (user_id, document_id) DO NOTHING;
 
--- 10. DOCUMENT_ACCESS_LOGS
+-- 9. DOCUMENT_ACCESS_LOGS
 INSERT INTO public.document_access_logs (id, document_id, user_id, action_type, ip_address, accessed_at)
 VALUES
   (1, 1, NULL, 'PREVIEW_3_PAGES', '14.161.22.88', CURRENT_TIMESTAMP - INTERVAL '5 hours'),
@@ -257,7 +247,7 @@ ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('public.document_access_logs', 'id'), (SELECT MAX(id) FROM public.document_access_logs));
 
--- 11. RATINGS
+-- 10. RATINGS
 INSERT INTO public.ratings (user_id, document_id, score, rated_at)
 VALUES
   (2, 3, 5, CURRENT_TIMESTAMP - INTERVAL '5 days'),
@@ -267,7 +257,7 @@ VALUES
   (3, 4, 5, CURRENT_TIMESTAMP - INTERVAL '2 days')
 ON CONFLICT (user_id, document_id) DO NOTHING;
 
--- 12. DOCUMENT_COMMENTS
+-- 11. DOCUMENT_COMMENTS
 INSERT INTO public.document_comments (id, user_id, document_id, parent_comment_id, content, upvote_count, is_hidden, created_at)
 VALUES
   (1, 3, 1, NULL, 'Giáo án thiết kế phần Hoạt động 2 (Hình thành kiến thức mới) rất rõ ràng, phiếu học tập giao nhiệm vụ đúng chuẩn Công văn 5512.', 14, FALSE, CURRENT_TIMESTAMP - INTERVAL '4 days'),
@@ -278,24 +268,14 @@ ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('public.document_comments', 'id'), (SELECT MAX(id) FROM public.document_comments));
 
--- 13. COMMENT_UPVOTES
-INSERT INTO public.comment_upvotes (user_id, comment_id, created_at)
-VALUES
-  (1, 1, CURRENT_TIMESTAMP - INTERVAL '3 days'),
-  (2, 1, CURRENT_TIMESTAMP - INTERVAL '3 days'),
-  (4, 1, CURRENT_TIMESTAMP - INTERVAL '2 days'),
-  (1, 3, CURRENT_TIMESTAMP - INTERVAL '1 day'),
-  (2, 3, CURRENT_TIMESTAMP - INTERVAL '1 day')
-ON CONFLICT (user_id, comment_id) DO NOTHING;
-
--- 14. DOCUMENT_REPORTS
+-- 12. DOCUMENT_REPORTS
 INSERT INTO public.document_reports (id, reporter_id, document_id, resolved_by, reason_category, description, status, admin_note, created_at, resolved_at)
 VALUES
   (1, 4, 5, NULL, 'SAI_KIEN_THUC', 'Ở câu 3b trang 9 phần chia mạng con /26 có nhầm địa chỉ Broadcast của nhánh LAN 2 (đúng là .127 thay vì .126). Nhờ tác giả và Ban quản trị kiểm tra giúp.', 'PENDING', NULL, CURRENT_TIMESTAMP - INTERVAL '6 hours', NULL),
   (2, 3, 8, 1, 'LOI_HIEN_THI_MO', 'Tài liệu bị chụp nghiêng và thiếu mất 6 trang cuối.', 'RESOLVED_HIDDEN', 'Đã từ chối xuất bản và yêu cầu người đăng tải lại bản PDF gốc.', CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '1 day')
 ON CONFLICT (id) DO NOTHING;
 
--- 14b. DOCUMENT_REPORTS bổ sung: báo cáo PENDING trên tài liệu APPROVED/HIDDEN để demo UC09
+-- 12b. DOCUMENT_REPORTS bổ sung: báo cáo PENDING trên tài liệu APPROVED/HIDDEN để demo UC09
 INSERT INTO public.document_reports (id, reporter_id, document_id, resolved_by, reason_category, description, status, admin_note, created_at, resolved_at)
 VALUES
   (3, 5, 14, NULL, 'SAI_MON_HOC', 'Tài liệu ghi học phần Lý thuyết đồ thị nhưng chương 5 thuộc Toán rời rạc, nhờ Ban quản trị kiểm tra lại.', 'PENDING', NULL, CURRENT_TIMESTAMP - INTERVAL '1 day', NULL),
@@ -305,7 +285,7 @@ ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('public.document_reports', 'id'), (SELECT MAX(id) FROM public.document_reports));
 
--- 15. NOTIFICATIONS
+-- 13. NOTIFICATIONS
 INSERT INTO public.notifications (id, user_id, related_document_id, type, title, message, is_read, created_at)
 VALUES
   (1, 2, 1, 'DOC_APPROVED', 'Học liệu đã được phê duyệt (+20 điểm)', 'Tài liệu "KHBD Tin học 10 - Chủ đề F (Chuẩn Công văn 5512)" đã vượt qua 8 tiêu chí kiểm duyệt và hiển thị trên Kho học liệu.', FALSE, CURRENT_TIMESTAMP - INTERVAL '2 hours'),
@@ -315,7 +295,7 @@ ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('public.notifications', 'id'), (SELECT MAX(id) FROM public.notifications));
 
--- 16. ADMIN_LOGS
+-- 14. ADMIN_LOGS
 INSERT INTO public.admin_logs (log_id, admin_id, action_type, entity_type, entity_id, action_details, ip_address, created_at)
 VALUES
   (1, 1, 'APPROVE_DOC', 'DOCUMENT', '1', '{"old_status":"PENDING","new_status":"APPROVED","reward_points":20,"criteria_passed":8}'::jsonb, '14.161.22.101', CURRENT_TIMESTAMP - INTERVAL '10 days'),

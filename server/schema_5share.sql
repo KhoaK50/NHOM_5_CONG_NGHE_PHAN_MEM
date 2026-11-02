@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     google_id VARCHAR(255) UNIQUE,
     role VARCHAR(20) NOT NULL DEFAULT 'STUDENT' CHECK (role IN ('STUDENT', 'ADMIN')),
     cohort VARCHAR(10) DEFAULT 'K50',
+    contribution_score INT NOT NULL DEFAULT 0 CHECK (contribution_score >= 0),
     status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('pending', 'active', 'locked', 'banned')),
     avatar_url VARCHAR(255) DEFAULT '/avatars/default.png',
     token_version INT NOT NULL DEFAULT 1,
@@ -53,21 +54,11 @@ CREATE TABLE IF NOT EXISTS public.password_reset (
     CHECK (expires_at > created_at)
 );
 
--- 4. Thực thể yếu (1--1 USERS): ACCOUNT_ACTIVATION (Xác thực kích hoạt tài khoản)
-CREATE TABLE IF NOT EXISTS public.account_activation (
-    user_id INT PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
-    activation_token VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '24 hours'),
-    is_used BOOLEAN NOT NULL DEFAULT FALSE,
-    CHECK (expires_at > created_at)
-);
-
 -- ============================================================================
 -- TAB 2: SỰ KIỆN ĐÓNG GÓP, KIỂM TRA TRÙNG LẶP SHA-256 & KIỂM DUYỆT HỌC LIỆU
 -- ============================================================================
 
--- 5. Thực thể mạnh: COURSES (Danh mục môn học / Học phần CTĐT SPTH - UC10)
+-- 4. Thực thể mạnh: COURSES (Danh mục môn học / Học phần CTĐT SPTH - UC10)
 CREATE TABLE IF NOT EXISTS public.courses (
     id SERIAL PRIMARY KEY,
     course_code VARCHAR(20) UNIQUE NOT NULL,
@@ -81,7 +72,7 @@ CREATE TABLE IF NOT EXISTS public.courses (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. Thực thể mạnh trung tâm: DOCUMENTS (Tài liệu học tập - UC07, UC08, UC09)
+-- 5. Thực thể mạnh trung tâm: DOCUMENTS (Tài liệu học tập - UC07, UC08, UC09)
 CREATE TABLE IF NOT EXISTS public.documents (
     id SERIAL PRIMARY KEY,
     course_id INT NOT NULL REFERENCES public.courses(id) ON DELETE RESTRICT,
@@ -108,7 +99,7 @@ CREATE TABLE IF NOT EXISTS public.documents (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 7. Thực thể kết hợp (USERS - DOCUMENTS): BOOKMARKS (Tủ tài liệu cá nhân - UC12)
+-- 6. Thực thể kết hợp (USERS - DOCUMENTS): BOOKMARKS (Tủ tài liệu cá nhân - UC12)
 CREATE TABLE IF NOT EXISTS public.bookmarks (
     user_id INT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     document_id INT NOT NULL REFERENCES public.documents(id) ON DELETE CASCADE,
@@ -118,7 +109,7 @@ CREATE TABLE IF NOT EXISTS public.bookmarks (
     PRIMARY KEY (user_id, document_id)
 );
 
--- 8. Thực thể yếu (N--1 DOCUMENTS): MODERATION_LOGS (Nhật ký lịch sử kiểm duyệt - UC09, UC11)
+-- 7. Thực thể yếu (N--1 DOCUMENTS): MODERATION_LOGS (Nhật ký lịch sử kiểm duyệt - UC09, UC11)
 CREATE TABLE IF NOT EXISTS public.moderation_logs (
     document_id INT NOT NULL REFERENCES public.documents(id) ON DELETE CASCADE,
     action_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -133,7 +124,7 @@ CREATE TABLE IF NOT EXISTS public.moderation_logs (
 -- TAB 3: SỰ KIỆN TRA CỨU, XEM TRƯỚC 3 TRANG, ĐỌC TOÀN VĂN & TẢI TÀI LIỆU
 -- ============================================================================
 
--- 9. Thực thể kết hợp (USERS - DOCUMENTS): USER_DOCUMENT_HISTORY (Lịch sử đọc & tiến độ trang)
+-- 8. Thực thể kết hợp (USERS - DOCUMENTS): USER_DOCUMENT_HISTORY (Lịch sử đọc & tiến độ trang)
 CREATE TABLE IF NOT EXISTS public.user_document_history (
     user_id INT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     document_id INT NOT NULL REFERENCES public.documents(id) ON DELETE CASCADE,
@@ -144,7 +135,7 @@ CREATE TABLE IF NOT EXISTS public.user_document_history (
     PRIMARY KEY (user_id, document_id)
 );
 
--- 10. Thực thể yếu (N--1 DOCUMENTS): DOCUMENT_ACCESS_LOGS (Nhật ký lượt xem & tải phục vụ Dashboard UC11)
+-- 9. Thực thể yếu (N--1 DOCUMENTS): DOCUMENT_ACCESS_LOGS (Nhật ký lượt xem & tải phục vụ Dashboard UC11)
 CREATE TABLE IF NOT EXISTS public.document_access_logs (
     id BIGSERIAL PRIMARY KEY,
     document_id INT NOT NULL REFERENCES public.documents(id) ON DELETE CASCADE,
@@ -158,7 +149,7 @@ CREATE TABLE IF NOT EXISTS public.document_access_logs (
 -- TAB 4: SỰ KIỆN TƯƠNG TÁC HỌC THUẬT, BÁO CÁO VI PHẠM, THÔNG BÁO & QUẢN TRỊ WEB
 -- ============================================================================
 
--- 11. Thực thể kết hợp (USERS - DOCUMENTS): RATINGS (Đánh giá điểm sao học liệu - UC13)
+-- 10. Thực thể kết hợp (USERS - DOCUMENTS): RATINGS (Đánh giá điểm sao học liệu - UC13)
 CREATE TABLE IF NOT EXISTS public.ratings (
     user_id INT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     document_id INT NOT NULL REFERENCES public.documents(id) ON DELETE CASCADE,
@@ -167,7 +158,7 @@ CREATE TABLE IF NOT EXISTS public.ratings (
     PRIMARY KEY (user_id, document_id)
 );
 
--- 12. Thực thể mạnh có tự tham chiếu đệ quy: DOCUMENT_COMMENTS (Bình luận học thuật - UC13)
+-- 11. Thực thể mạnh có tự tham chiếu đệ quy: DOCUMENT_COMMENTS (Bình luận học thuật - UC13)
 CREATE TABLE IF NOT EXISTS public.document_comments (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -179,15 +170,7 @@ CREATE TABLE IF NOT EXISTS public.document_comments (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 13. Thực thể kết hợp (DOCUMENT_COMMENTS - USERS): COMMENT_UPVOTES (Bình chọn bình luận bổ ích)
-CREATE TABLE IF NOT EXISTS public.comment_upvotes (
-    user_id INT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    comment_id INT NOT NULL REFERENCES public.document_comments(id) ON DELETE CASCADE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, comment_id)
-);
-
--- 14. Thực thể kết hợp (USERS - DOCUMENTS): DOCUMENT_REPORTS (Báo cáo tài liệu vi phạm - UC04, UC09)
+-- 12. Thực thể kết hợp (USERS - DOCUMENTS): DOCUMENT_REPORTS (Báo cáo tài liệu vi phạm - UC04, UC09)
 CREATE TABLE IF NOT EXISTS public.document_reports (
     id SERIAL PRIMARY KEY,
     reporter_id INT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -201,7 +184,7 @@ CREATE TABLE IF NOT EXISTS public.document_reports (
     resolved_at TIMESTAMP
 );
 
--- 15. Thực thể yếu (N--1 USERS): NOTIFICATIONS (Thông báo hệ thống trên Chuông - UC03)
+-- 13. Thực thể yếu (N--1 USERS): NOTIFICATIONS (Thông báo hệ thống trên Chuông - UC03)
 CREATE TABLE IF NOT EXISTS public.notifications (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -213,7 +196,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 16. Thực thể yếu (N--1 USERS): ADMIN_LOGS (Nhật ký thao tác Quản trị viên)
+-- 14. Thực thể yếu (N--1 USERS): ADMIN_LOGS (Nhật ký thao tác Quản trị viên)
 CREATE TABLE IF NOT EXISTS public.admin_logs (
     log_id SERIAL PRIMARY KEY,
     admin_id INT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
