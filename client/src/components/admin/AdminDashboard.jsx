@@ -111,6 +111,15 @@ export default function AdminDashboard({
     .sort((a, b) => (b.downloadCount || 0) - (a.downloadCount || 0))
     .slice(0, 4)
 
+  // Hàng chờ duyệt nhanh & Hoạt động gần đây (UC11)
+  const pendingDocsList = documents.filter((d) => d.status === 'PENDING').slice(0, 4)
+  const recentActivities = [
+    { text: 'Quản trị viên đã phê duyệt "Slide Cơ sở dữ liệu - Chương 3: SQL nâng cao"', time: '10 phút trước', color: 'var(--green-9)' },
+    { text: 'Quản trị viên đã từ chối "Tổng hợp công thức Toán rời rạc"', time: '1 giờ trước', color: 'var(--red-9)' },
+    { text: `Đang có ${pendingReportsCount} báo cáo vi phạm chờ xử lý tại hàng đợi`, time: '3 giờ trước', color: 'var(--amber-9)' },
+    { text: `Hệ thống ghi nhận ${activeUsersCount} tài khoản hoạt động ổn định`, time: 'Hôm nay', color: 'var(--blue-9)' }
+  ]
+
   const radixBarColors = [
     'var(--blue-9, #0090ff)',
     'var(--blue-8, #5eb1ef)',
@@ -681,6 +690,126 @@ export default function AdminDashboard({
               </span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* KHU VỰC HÀNG CHỜ DUYỆT NHANH & HOẠT ĐỘNG GẦN ĐÂY (UC11) */}
+      <div className="dashboard-charts-grid">
+        {/* Hàng chờ kiểm duyệt nhanh */}
+        <div
+          style={{
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '20px',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Tài liệu chờ kiểm duyệt ({pendingDocsCount})
+            </h3>
+            {onNavigateTab && (
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => onNavigateTab('moderation')}
+                style={{ padding: '4px 10px', fontSize: '12px', color: 'var(--primary-base)' }}
+              >
+                Xem tất cả hàng đợi
+              </button>
+            )}
+          </div>
+
+          {pendingDocsList.length === 0 ? (
+            <div style={{ padding: '16px', textAlign: 'center', fontSize: '12.5px', color: 'var(--text-tertiary)' }}>
+              Không có tài liệu nào đang tồn đọng trong hàng chờ kiểm duyệt.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {pendingDocsList.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--bg-muted)',
+                    border: '1px solid var(--border-subtle)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    flexWrap: 'wrap'
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        color: 'var(--text-primary)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      {item.title}
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      {item.uploaderName} • {item.courseCode} • {item.createdAt}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-solid-primary"
+                    onClick={() => onNavigateTab && onNavigateTab('moderation')}
+                    style={{ padding: '5px 12px', fontSize: '11.5px' }}
+                  >
+                    Thẩm định
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Nhật ký hoạt động gần đây */}
+        <div
+          style={{
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '20px',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+        >
+          <h3 style={{ margin: '0 0 14px 0', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+            Hoạt động quản trị gần đây
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {recentActivities.map((act, idx) => (
+              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                <span
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: act.color,
+                    marginTop: '6px',
+                    flexShrink: 0
+                  }}
+                />
+                <div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                    {act.text}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                    {act.time}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
