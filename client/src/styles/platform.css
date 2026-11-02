@@ -812,12 +812,28 @@
   margin: 0 auto;
 }
 
-/* Split-Review Workspace: Left PDF Reader + Right 8-Criteria Checklist */
-.admin-split-review-grid {
+/* Khung duyệt v2: hàng đợi + xem tài liệu + bảng kiểm */
+.moderation-review-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(390px, 0.88fr);
-  gap: 24px;
+  grid-template-columns: 270px minmax(0, 1fr) 360px;
+  gap: 18px;
   align-items: start;
+}
+
+@media (max-width: 1280px) {
+  .moderation-review-grid {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+  .moderation-review-grid > aside {
+    position: static !important;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 860px) {
+  .moderation-review-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .admin-split-grid {
@@ -935,7 +951,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .detail-workspace-grid,
-  .admin-split-review-grid,
   .admin-split-grid {
     grid-template-columns: 1fr;
   }
@@ -3820,4 +3835,55 @@
     left: 8px;
     right: 8px;
   }
+}
+
+/* ==========================================================================
+   NÚT DÙNG CHUNG: btn-solid-primary & btn-ghost (đang được dùng toàn hệ thống)
+   ========================================================================== */
+.btn-solid-primary,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-solid-primary {
+  background-color: var(--primary-base);
+  border: 1px solid var(--primary-base);
+  color: #ffffff;
+}
+
+.btn-solid-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.btn-ghost {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+}
+
+.btn-solid-primary:focus-visible,
+.btn-ghost:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.btn-solid-primary:disabled,
+.btn-ghost:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }

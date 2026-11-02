@@ -37,6 +37,7 @@ import {
   INITIAL_USERS,
   INITIAL_FEEDBACKS
 } from './data/mockData'
+import { listModerationDocuments, listReports } from './utils/documentCourseApi'
 
 export default function App() {
   const [actorRole, setActorRole] = useState(() => {
@@ -71,6 +72,7 @@ export default function App() {
   const [bookmarkedIds, setBookmarkedIds] = useState(['doc-1', 'doc-2', 'doc-4'])
   const [selectedDocId, setSelectedDocId] = useState('doc-1')
   const [bannerNotice, setBannerNotice] = useState(null)
+  const [adminPendingCount, setAdminPendingCount] = useState(0)
   const [studentPoints, setStudentPoints] = useState(140)
   const [userRatingsByDoc, setUserRatingsByDoc] = useState({
     'doc-1:dat': 5,
@@ -645,99 +647,6 @@ export default function App() {
     showNotice('Đóng góp thành công! Học liệu đã vượt qua kiểm tra SHA-256 và đang chờ Quản trị viên thẩm định.')
   }
 
-  const handleApproveDocument = (docId) => {
-    const target = documents.find((d) => d.id === docId)
-    setDocuments((prev) =>
-      prev.map((d) => (d.id === docId ? { ...d, status: 'APPROVED', rejectReason: null } : d))
-    )
-    setStudentPoints((prevPts) => prevPts + 20)
-    setUserSession((prevUser) =>
-      prevUser && (prevUser.role === 'USER' || prevUser.role === 'STUDENT')
-        ? { ...prevUser, points: (prevUser.points || 140) + 20 }
-        : prevUser
-    )
-    if (target) {
-      setUsers((prevUsers) =>
-        prevUsers.map((u) =>
-          u.id === target.uploaderId || u.fullName === target.uploaderName
-            ? { ...u, points: (u.points || 0) + 20 }
-            : u
-        )
-      )
-      setNotifications((prev) => [
-        {
-          id: `notif-${Date.now()}`,
-          type: 'APPROVED',
-          title: 'Học liệu được phê duyệt (+20 điểm thưởng)',
-          message: `Tài liệu "${target.title}" đã đạt 8/8 tiêu chí kiểm duyệt và được xuất bản công khai.`,
-          createdAt: 'Vừa xong',
-          isRead: false,
-          targetDocId: target.id,
-          targetScreen: 'detail'
-        },
-        ...prev
-      ])
-    }
-    showNotice('Đã phê duyệt xuất bản học liệu, cộng +20 điểm thưởng và gửi thông báo cho tác giả.')
-  }
-
-  const handleRejectDocument = (docId, reasonText) => {
-    const target = documents.find((d) => d.id === docId)
-    setDocuments((prev) =>
-      prev.map((d) =>
-        d.id === docId ? { ...d, status: 'REJECTED', rejectReason: reasonText } : d
-      )
-    )
-    if (target) {
-      setNotifications((prev) => [
-        {
-          id: `notif-${Date.now()}`,
-          type: 'REJECTED',
-          title: 'Học liệu cần chỉnh sửa (Bị từ chối phê duyệt)',
-          message: `Tài liệu "${target.title}" bị từ chối. Lý do: ${reasonText}`,
-          createdAt: 'Vừa xong',
-          isRead: false,
-          targetDocId: target.id,
-          targetScreen: 'my-docs'
-        },
-        ...prev
-      ])
-    }
-    showNotice('Đã từ chối học liệu và gửi lý do phản hồi chi tiết tới sinh viên đóng góp.')
-  }
-
-  const handleResolveReport = (reportId, docId, action, targetType = 'DOCUMENT', commentId = null) => {
-    setReports((prev) =>
-      prev.map((r) => (r.id === reportId ? { ...r, status: 'RESOLVED', resolvedAction: action } : r))
-    )
-    if (targetType === 'COMMENT' || action === 'DELETE_COMMENT') {
-      if (commentId) {
-        setDocuments((prev) =>
-          prev.map((d) =>
-            d.id === docId
-              ? { ...d, comments: (d.comments || []).filter((c) => c.id !== commentId) }
-              : d
-          )
-        )
-      }
-      showNotice('Đã xử lý vi phạm chuẩn mực học thuật đối với bình luận.')
-    } else if (action === 'HIDE_DOC') {
-      setDocuments((prev) =>
-        prev.map((d) => (d.id === docId ? { ...d, status: 'HIDDEN' } : d))
-      )
-      setBookmarkedIds((prev) => prev.filter((id) => id !== docId))
-      showNotice('Đã tạm ẩn học liệu khỏi kho công khai để rà soát nội dung.')
-    } else if (action === 'DELETE_DOC') {
-      setDocuments((prev) =>
-        prev.map((d) => (d.id === docId ? { ...d, status: 'DELETED' } : d))
-      )
-      setBookmarkedIds((prev) => prev.filter((id) => id !== docId))
-      showNotice('Đã gỡ vĩnh viễn tài liệu vi phạm khỏi hệ thống lưu trữ.')
-    } else {
-      showNotice('Đã đóng báo cáo và giữ nguyên trạng thái xuất bản của tài liệu.')
-    }
-  }
-
   const handleToggleUserStatus = async (userId, lockReason = null) => {
     const target = users.find((u) => u.id === userId)
     if (!target) return
@@ -817,28 +726,6 @@ export default function App() {
     showNotice('Cảm ơn bạn! Đã gửi ý kiến đóng góp thành công tới Ban Quản trị.')
   }
 
-  const handleSaveCourse = (courseObj) => {
-    setCourses((prev) => {
-      const exists = prev.some((c) => c.id === courseObj.id)
-      return exists
-        ? prev.map((c) => (c.id === courseObj.id ? courseObj : c))
-        : [courseObj, ...prev]
-    })
-    showNotice(`Đã lưu học phần "${courseObj.code} - ${courseObj.name}" vào danh mục đào tạo.`)
-  }
-
-  const handleToggleCourseActive = (courseId) => {
-    setCourses((prev) =>
-      prev.map((c) => (c.id === courseId ? { ...c, isActive: !c.isActive } : c))
-    )
-    showNotice('Đã cập nhật trạng thái hiển thị của học phần trên bộ lọc tra cứu.')
-  }
-
-  const handleDeleteCourse = (courseId) => {
-    setCourses((prev) => prev.filter((c) => c.id !== courseId))
-    showNotice('Đã xóa học phần chưa có tài liệu liên kết khỏi danh mục.')
-  }
-
   const handleMarkOneRead = (notifId) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === notifId ? { ...n, isRead: true } : n))
@@ -862,8 +749,6 @@ export default function App() {
   const selectedDocument =
     documents.find((d) => d.id === selectedDocId) || documents[0]
   const pendingDocsCount = documents.filter((d) => d.status === 'PENDING').length
-  const pendingReportsCount = reports.filter((r) => r.status === 'PENDING').length
-  const totalPendingRequests = pendingDocsCount + pendingReportsCount
   const pendingCount = pendingDocsCount
 
   const isAuthorizedAdmin = Boolean(
@@ -886,6 +771,23 @@ export default function App() {
       : activeView === 'admin-users'
       ? 'users'
       : adminSubTab
+
+  // Số trên sidebar Admin lấy từ CSDL thật, không phải dữ liệu mẫu
+  useEffect(() => {
+    if (!isAdminView || !AuthGuard.getAuthToken()) return undefined
+    let cancelled = false
+    Promise.all([
+      listModerationDocuments({ status: 'PENDING', limit: 1 }),
+      listReports({ status: 'PENDING', limit: 1 })
+    ])
+      .then(([docResult, reportResult]) => {
+        if (!cancelled) setAdminPendingCount(docResult.pagination.total + reportResult.pagination.total)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [isAdminView])
 
   const handleSelectAdminSubTab = (tabId) => {
     setAdminSubTab(tabId)
@@ -1074,8 +976,8 @@ export default function App() {
                   <ShieldAlert size={16} />
                   <span>Hàng đợi kiểm duyệt</span>
                 </span>
-                {totalPendingRequests > 0 && (
-                  <span className="admin-nav-badge">{totalPendingRequests}</span>
+                {adminPendingCount > 0 && (
+                  <span className="admin-nav-badge">{adminPendingCount}</span>
                 )}
               </button>
 
@@ -1117,23 +1019,11 @@ export default function App() {
 
             <main className="admin-workspace-content">
               {currentAdminTab === 'moderation' && (
-                <ModerationQueue
-                  documents={documents}
-                  reports={reports}
-                  onApproveDocument={handleApproveDocument}
-                  onRejectDocument={handleRejectDocument}
-                  onResolveReport={handleResolveReport}
-                />
+                <ModerationQueue onNotice={showNotice} onPendingCountChange={setAdminPendingCount} />
               )}
 
               {currentAdminTab === 'courses' && (
-                <CourseManagement
-                  courses={courses}
-                  documents={documents}
-                  onSaveCourse={handleSaveCourse}
-                  onToggleCourseActive={handleToggleCourseActive}
-                  onDeleteCourse={handleDeleteCourse}
-                />
+                <CourseManagement onNotice={showNotice} />
               )}
 
               {currentAdminTab === 'dashboard' && (
