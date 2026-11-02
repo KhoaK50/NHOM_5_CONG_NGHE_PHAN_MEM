@@ -1,107 +1,458 @@
-import { useState } from 'react';
+import { useState } from 'react'
+import {
+  Bookmark,
+  Compass,
+  Search,
+  BookOpen,
+  Plus,
+  Trash2,
+  FileText,
+  X
+} from 'lucide-react'
 
-// UC12 - Tài liệu đã lưu / đánh dấu trang (giao diện tĩnh, dữ liệu mẫu)
+// UC12 - Tài liệu đã lưu / Đánh dấu trang kèm ghi chú cá nhân
+const DEFAULT_PAGE_NOTES = {
+  'doc-1': [
+    { id: 'bm-1', page: 4, note: 'Khởi động & Hoạt động hình thành kiến thức mới (CV 5512)' },
+    { id: 'bm-2', page: 12, note: 'Rubric đánh giá năng lực giải quyết vấn đề với Python' }
+  ],
+  'doc-2': [
+    { id: 'bm-3', page: 7, note: 'Cây đỏ-đen và độ phức tạp cài đặt C++17' }
+  ],
+  'doc-4': [
+    { id: 'bm-4', page: 3, note: 'Ma trận đề thi kết thúc học phần Cơ sở dữ liệu' }
+  ]
+}
 
-const SAMPLE_SAVED = [
-  { id: 1, title: 'Giáo trình Cấu trúc dữ liệu và Giải thuật', course: 'Cấu trúc dữ liệu', savedAt: '30/10/2026', bookmarks: [{ page: 12, note: 'Định nghĩa danh sách liên kết' }, { page: 58, note: 'Thuật toán sắp xếp nhanh' }] },
-  { id: 2, title: 'Slide Cơ sở dữ liệu - Chương 3: SQL nâng cao', course: 'Cơ sở dữ liệu', savedAt: '28/10/2026', bookmarks: [{ page: 7, note: 'JOIN các loại' }] },
-  { id: 3, title: 'Bài giảng Lập trình hướng đối tượng với Java', course: 'Lập trình hướng đối tượng', savedAt: '25/10/2026', bookmarks: [] },
-  { id: 4, title: 'Đề cương ôn tập Phương pháp dạy học Tin học', course: 'PPDH Tin học', savedAt: '20/10/2026', bookmarks: [{ page: 3, note: 'Các phương pháp dạy học tích cực' }, { page: 15, note: '' }] },
-  { id: 5, title: 'Giáo trình Mạng máy tính căn bản', course: 'Mạng máy tính', savedAt: '18/10/2026', bookmarks: [{ page: 40, note: 'Mô hình OSI' }] },
-  { id: 6, title: 'Tổng hợp bài tập Toán rời rạc', course: 'Toán rời rạc', savedAt: '10/10/2026', bookmarks: [] },
-];
+export default function SavedBookmarks({
+  documents = [],
+  bookmarkedIds = [],
+  onSelectDoc,
+  onToggleBookmark,
+  onNavigateDiscovery
+}) {
+  const [keyword, setKeyword] = useState('')
+  const [pageNotesByDoc, setPageNotesByDoc] = useState(DEFAULT_PAGE_NOTES)
+  const [addingNoteDocId, setAddingNoteDocId] = useState(null)
+  const [newPageNum, setNewPageNum] = useState('')
+  const [newPageNote, setNewPageNote] = useState('')
 
-export default function SavedBookmarks() {
-  const [items, setItems] = useState(SAMPLE_SAVED);
-  const [keyword, setKeyword] = useState('');
+  const savedDocs = documents.filter(
+    (doc) => bookmarkedIds.includes(doc.id) && doc.status === 'APPROVED'
+  )
 
-  const filtered = items.filter((d) =>
-    d.title.toLowerCase().includes(keyword.trim().toLowerCase())
-  );
+  const filteredDocs = savedDocs.filter((doc) => {
+    const q = keyword.trim().toLowerCase()
+    if (!q) return true
+    return (
+      doc.title?.toLowerCase().includes(q) ||
+      doc.courseCode?.toLowerCase().includes(q) ||
+      doc.courseName?.toLowerCase().includes(q)
+    )
+  })
 
-  const removeItem = (id) => setItems((prev) => prev.filter((d) => d.id !== id));
+  const handleAddPageNote = (e, docId) => {
+    e.preventDefault()
+    const pageInt = Math.max(1, parseInt(newPageNum, 10) || 1)
+    const noteStr = newPageNote.trim()
+    const nextEntry = {
+      id: `bm-${Date.now()}`,
+      page: pageInt,
+      note: noteStr
+    }
+    setPageNotesByDoc((prev) => ({
+      ...prev,
+      [docId]: [...(prev[docId] || []), nextEntry]
+    }))
+    setAddingNoteDocId(null)
+    setNewPageNum('')
+    setNewPageNote('')
+  }
+
+  const handleRemovePageNote = (docId, noteId) => {
+    setPageNotesByDoc((prev) => ({
+      ...prev,
+      [docId]: (prev[docId] || []).filter((item) => item.id !== noteId)
+    }))
+  }
 
   return (
-    <section className="mx-auto max-w-6xl p-6">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      {/* Header & Thanh tìm kiếm nhanh trong tủ đã lưu */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '20px'
+        }}
+      >
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Tài liệu đã lưu</h1>
-          <p className="text-sm text-slate-500">
-            {items.length} tài liệu • các trang bạn đã đánh dấu để đọc lại nhanh.
+          <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
+            Tài liệu đã lưu & Đánh dấu trang
+          </h2>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
+            {savedDocs.length} học liệu đã lưu • Quản lý các trang quan trọng đã đánh dấu để đọc tiếp nhanh chóng.
           </p>
         </div>
-        <input
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="Tìm trong tài liệu đã lưu..."
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 sm:w-72"
-        />
-      </header>
 
-      {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-slate-500">
-          Không có tài liệu nào phù hợp.
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div
+            style={{
+              position: 'relative',
+              display: 'inline-flex',
+              alignItems: 'center'
+            }}
+          >
+            <Search
+              size={14}
+              style={{
+                position: 'absolute',
+                left: '11px',
+                color: 'var(--text-tertiary)',
+                pointerEvents: 'none'
+              }}
+            />
+            <input
+              type="text"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="Tìm trong tài liệu đã lưu..."
+              style={{
+                height: '36px',
+                padding: '0 12px 0 32px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-surface)',
+                color: 'var(--text-primary)',
+                fontSize: '13px',
+                minWidth: '240px'
+              }}
+            />
+          </div>
+
+          <span className="status-badge blue">
+            <Bookmark size={13} /> {savedDocs.length} học liệu
+          </span>
+        </div>
+      </div>
+
+      {filteredDocs.length === 0 ? (
+        <div className="empty-state-box">
+          <Bookmark size={38} style={{ color: 'var(--text-tertiary)', marginBottom: '10px' }} />
+          <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', fontWeight: 700 }}>
+            {savedDocs.length === 0
+              ? 'Tủ tài liệu cá nhân của bạn đang trống'
+              : 'Không tìm thấy tài liệu phù hợp với từ khóa'}
+          </h3>
+          <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Nhấn vào biểu tượng Đánh dấu trên bất kỳ thẻ học liệu nào để lưu vào tủ cá nhân và ghi chú số trang.
+          </p>
+          {onNavigateDiscovery && (
+            <button
+              type="button"
+              className="btn-solid-primary"
+              onClick={onNavigateDiscovery}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Compass size={15} />
+              <span>Khám phá kho học liệu ngay</span>
+            </button>
+          )}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((doc) => (
-            <article
-              key={doc.id}
-              className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-            >
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <div className="flex h-12 w-10 shrink-0 items-center justify-center rounded-md bg-red-50 text-xs font-bold text-red-600">
-                  PDF
-                </div>
-                <button
-                  onClick={() => removeItem(doc.id)}
-                  title="Bỏ lưu"
-                  className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                >
-                  ✕ Bỏ lưu
-                </button>
-              </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+            gap: '16px'
+          }}
+        >
+          {filteredDocs.map((doc) => {
+            const notes = pageNotesByDoc[doc.id] || []
+            const isAddingNote = addingNoteDocId === doc.id
 
-              <h3 className="font-semibold leading-snug text-slate-800">{doc.title}</h3>
-              <p className="mt-1 text-xs text-slate-500">
-                {doc.course} • Lưu ngày {doc.savedAt}
-              </p>
-
-              <div className="mt-3 flex-1">
-                <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Trang đã đánh dấu
-                </p>
-                {doc.bookmarks.length === 0 ? (
-                  <p className="text-sm text-slate-400">Chưa có đánh dấu trang.</p>
-                ) : (
-                  <ul className="space-y-1.5">
-                    {doc.bookmarks.map((b) => (
-                      <li
-                        key={b.page}
-                        className="flex items-center gap-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-sm"
+            return (
+              <div
+                key={doc.id}
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: '18px 20px',
+                  boxShadow: 'var(--shadow-sm)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '14px'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '46px',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--blue-1, #f0f7ff)',
+                          border: '1px solid var(--blue-3, #d2e7ff)',
+                          color: 'var(--blue-9, #0090ff)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '10px',
+                          fontWeight: 800,
+                          flexShrink: 0,
+                          gap: '2px'
+                        }}
                       >
-                        <span className="rounded bg-amber-200 px-1.5 text-xs font-semibold text-amber-800">
-                          Tr.{b.page}
-                        </span>
-                        <span className="truncate text-slate-700">{b.note || 'Không có ghi chú'}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                        <FileText size={14} />
+                        <span>{(doc.format || 'PDF').toUpperCase()}</span>
+                      </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <button className="rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700">
-                  Đọc tiếp
-                </button>
-                <button className="rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                  Tải PDF gốc
-                </button>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                          <span className="status-badge blue">{doc.courseCode}</span>
+                          <span className="status-badge slate">{doc.docType}</span>
+                        </div>
+                        <h3
+                          style={{
+                            margin: 0,
+                            fontSize: '15px',
+                            fontWeight: 700,
+                            color: 'var(--text-primary)',
+                            lineHeight: 1.4,
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => onSelectDoc && onSelectDoc(doc)}
+                        >
+                          {doc.title}
+                        </h3>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          {doc.courseName} • Tác giả: {doc.uploaderName}
+                        </p>
+                      </div>
+                    </div>
+
+                    {onToggleBookmark && (
+                      <button
+                        type="button"
+                        onClick={() => onToggleBookmark(doc.id)}
+                        title="Bỏ lưu khỏi tủ cá nhân"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-tertiary)',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          flexShrink: 0,
+                          padding: '4px'
+                        }}
+                      >
+                        <Trash2 size={14} />
+                        <span>Bỏ lưu</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Danh sách trang đã đánh dấu (Page Bookmarks - UC12) */}
+                  <div
+                    style={{
+                      marginTop: '14px',
+                      padding: '12px',
+                      borderRadius: '10px',
+                      backgroundColor: 'var(--bg-muted)',
+                      border: '1px solid var(--border-subtle)'
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        color: 'var(--text-secondary)',
+                        marginBottom: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <span>Đánh dấu trang ({notes.length})</span>
+                    </div>
+
+                    {notes.length === 0 ? (
+                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                        Chưa có trang nào được đánh dấu riêng trong học liệu này.
+                      </p>
+                    ) : (
+                      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {notes.map((b) => (
+                          <li
+                            key={b.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '8px',
+                              fontSize: '12px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                              <span
+                                style={{
+                                  padding: '2px 7px',
+                                  borderRadius: '5px',
+                                  backgroundColor: 'var(--amber-2)',
+                                  color: 'var(--amber-11)',
+                                  fontWeight: 700,
+                                  fontSize: '11px',
+                                  flexShrink: 0
+                                }}
+                              >
+                                Tr. {b.page}
+                              </span>
+                              <span
+                                style={{
+                                  color: 'var(--text-primary)',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {b.note || 'Chưa có ghi chú'}
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePageNote(doc.id, b.id)}
+                              title="Xóa đánh dấu trang này"
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-tertiary)',
+                                cursor: 'pointer',
+                                padding: '2px',
+                                display: 'inline-flex'
+                              }}
+                            >
+                              <X size={13} />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {/* Form thêm đánh dấu trang mới */}
+                    {isAddingNote && (
+                      <form
+                        onSubmit={(e) => handleAddPageNote(e, doc.id)}
+                        style={{
+                          marginTop: '10px',
+                          paddingTop: '10px',
+                          borderTop: '1px solid var(--border-subtle)',
+                          display: 'flex',
+                          gap: '6px',
+                          flexWrap: 'wrap'
+                        }}
+                      >
+                        <input
+                          type="number"
+                          min="1"
+                          required
+                          placeholder="Trang"
+                          value={newPageNum}
+                          onChange={(e) => setNewPageNum(e.target.value)}
+                          style={{
+                            width: '68px',
+                            height: '32px',
+                            padding: '0 8px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-subtle)',
+                            backgroundColor: 'var(--bg-surface)',
+                            fontSize: '12px'
+                          }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Ghi chú nội dung trang..."
+                          value={newPageNote}
+                          onChange={(e) => setNewPageNote(e.target.value)}
+                          style={{
+                            flex: 1,
+                            minWidth: '140px',
+                            height: '32px',
+                            padding: '0 10px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-subtle)',
+                            backgroundColor: 'var(--bg-surface)',
+                            fontSize: '12px'
+                          }}
+                        />
+                        <button
+                          type="submit"
+                          className="btn-solid-primary"
+                          style={{ height: '32px', padding: '0 10px', fontSize: '12px' }}
+                        >
+                          Lưu
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-ghost"
+                          onClick={() => setAddingNoteDocId(null)}
+                          style={{ height: '32px', padding: '0 8px', fontSize: '12px' }}
+                        >
+                          Hủy
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer hành động */}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn-solid-primary"
+                    onClick={() => onSelectDoc && onSelectDoc(doc)}
+                    style={{
+                      flex: 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <BookOpen size={14} />
+                    <span>Đọc tiếp</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => {
+                      setAddingNoteDocId(isAddingNote ? null : doc.id)
+                      setNewPageNum('')
+                      setNewPageNote('')
+                    }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <Plus size={14} />
+                    <span>Thêm đánh dấu trang</span>
+                  </button>
+                </div>
               </div>
-            </article>
-          ))}
+            )
+          })}
         </div>
       )}
-    </section>
-  );
+    </div>
+  )
 }

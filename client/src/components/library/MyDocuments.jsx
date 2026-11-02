@@ -1,213 +1,368 @@
-import { useState } from 'react';
+import { useState } from 'react'
+import {
+  CheckCircle2,
+  Clock,
+  XCircle,
+  EyeOff,
+  Eye,
+  Download,
+  Upload,
+  FolderOpen,
+  Hash,
+  FileText,
+  RotateCcw
+} from 'lucide-react'
 
-// ====== DỮ LIỆU MẪU (chưa gắn API) ======
-const SAMPLE_DOCUMENTS = [
-  {
-    id: 1,
-    title: 'Giáo trình Cấu trúc dữ liệu và Giải thuật',
-    course: 'Cấu trúc dữ liệu',
-    uploadedAt: '28/10/2026',
-    size: '4.2 MB',
-    pages: 186,
-    sha256: 'a3f9c1…7be2',
-    status: 'pending',
-  },
-  {
-    id: 2,
-    title: 'Bài giảng Lập trình hướng đối tượng với Java',
-    course: 'Lập trình hướng đối tượng',
-    uploadedAt: '30/10/2026',
-    size: '2.8 MB',
-    pages: 94,
-    sha256: '5d20be…19ac',
-    status: 'pending',
-  },
-  {
-    id: 3,
-    title: 'Slide Cơ sở dữ liệu - Chương 3: SQL nâng cao',
-    course: 'Cơ sở dữ liệu',
-    uploadedAt: '15/10/2026',
-    size: '1.6 MB',
-    pages: 52,
-    sha256: 'c81e72…40fd',
-    status: 'approved',
-    approvedAt: '17/10/2026',
-    views: 342,
-    downloads: 87,
-    feedback: 'Tài liệu đạt đủ 8 tiêu chí kiểm duyệt, nội dung rõ ràng và đã được phát hành.',
-  },
-  {
-    id: 4,
-    title: 'Đề cương ôn tập Phương pháp dạy học Tin học',
-    course: 'PPDH Tin học',
-    uploadedAt: '02/10/2026',
-    size: '980 KB',
-    pages: 24,
-    sha256: 'e4da3b…aa01',
-    status: 'approved',
-    approvedAt: '04/10/2026',
-    views: 215,
-    downloads: 61,
-    feedback: 'Đề cương đầy đủ, bám sát chương trình đào tạo. Cảm ơn bạn đã chia sẻ.',
-  },
-  {
-    id: 5,
-    title: 'Tổng hợp công thức Toán rời rạc',
-    course: 'Toán rời rạc',
-    uploadedAt: '20/10/2026',
-    size: '3.1 MB',
-    pages: 40,
-    sha256: '1679091…3c9d',
-    status: 'rejected',
-    rejectedAt: '22/10/2026',
-    reason: 'Tài liệu có nội dung bị trùng với bản đã đăng, chất lượng ảnh scan thấp.',
-  },
-];
-
+// UC11 - Quản lý Tài liệu của tôi theo các tab trạng thái kiểm duyệt (Đã kết nối dữ liệu hệ thống)
 const TABS = [
-  { key: 'pending', label: 'Chờ duyệt', color: 'amber' },
-  { key: 'approved', label: 'Đã duyệt', color: 'emerald' },
-  { key: 'rejected', label: 'Bị từ chối', color: 'rose' },
-];
+  { id: 'ALL', label: 'Tất cả' },
+  { id: 'PENDING', label: 'Chờ duyệt' },
+  { id: 'APPROVED', label: 'Đã duyệt' },
+  { id: 'REJECTED', label: 'Bị từ chối' }
+]
 
-const BADGE = {
-  pending: 'bg-amber-100 text-amber-700 ring-amber-200',
-  approved: 'bg-emerald-100 text-emerald-700 ring-emerald-200',
-  rejected: 'bg-rose-100 text-rose-700 ring-rose-200',
-};
+export default function MyDocuments({
+  documents = [],
+  currentUser,
+  onSelectDoc,
+  onOpenUpload
+}) {
+  const [statusFilter, setStatusFilter] = useState('ALL')
+  const [withdrawnIds, setWithdrawnIds] = useState([])
+  const [noticeText, setNoticeText] = useState('')
 
-const STATUS_LABEL = {
-  pending: 'Chờ duyệt',
-  approved: 'Đã duyệt',
-  rejected: 'Bị từ chối',
-};
+  const myDocs = documents.filter((doc) => {
+    if (doc.status === 'DELETED' || withdrawnIds.includes(doc.id)) return false
+    if (!currentUser) return true
+    return (
+      doc.uploaderId === currentUser.id ||
+      (doc.uploaderName &&
+        currentUser.fullName &&
+        doc.uploaderName.includes(currentUser.fullName))
+    )
+  })
 
-export default function MyDocuments() {
-  const [activeTab, setActiveTab] = useState('pending');
+  const filtered = myDocs.filter((doc) => {
+    if (statusFilter === 'ALL') return true
+    return doc.status === statusFilter
+  })
 
-  const countOf = (status) => SAMPLE_DOCUMENTS.filter((d) => d.status === status).length;
-  const list = SAMPLE_DOCUMENTS.filter((d) => d.status === activeTab);
+  const countByStatus = (st) =>
+    st === 'ALL' ? myDocs.length : myDocs.filter((d) => d.status === st).length
+
+  const handleWithdrawPending = (doc) => {
+    setWithdrawnIds((prev) => [...prev, doc.id])
+    setNoticeText(`Đã thu hồi yêu cầu kiểm duyệt đối với tài liệu "${doc.title}".`)
+    setTimeout(() => setNoticeText(''), 4000)
+  }
 
   return (
-    <section className="mx-auto max-w-5xl p-6">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '20px'
+        }}
+      >
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Tài liệu của tôi</h1>
-          <p className="text-sm text-slate-500">
-            Theo dõi trạng thái kiểm duyệt các tài liệu bạn đã tải lên.
+          <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
+            Tài liệu của tôi – Theo dõi tiến trình kiểm duyệt
+          </h2>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Theo dõi trạng thái thẩm định 8 tiêu chí học thuật của các tài liệu bạn đã tải lên ({currentUser?.fullName || 'Thành viên 5Share'}).
           </p>
         </div>
-        <button className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700">
-          + Tải tài liệu lên
-        </button>
-      </header>
 
-      {/* 3 tab trạng thái */}
-      <div className="mb-5 flex gap-2 border-b border-slate-200">
+        <button
+          type="button"
+          className="btn-solid-primary"
+          onClick={onOpenUpload}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+        >
+          <Upload size={15} />
+          <span>+ Tải tài liệu lên</span>
+        </button>
+      </div>
+
+      {noticeText && (
+        <div
+          style={{
+            marginBottom: '16px',
+            padding: '10px 14px',
+            borderRadius: '8px',
+            backgroundColor: 'var(--amber-1)',
+            border: '1px solid var(--amber-3)',
+            color: 'var(--amber-11)',
+            fontSize: '13px',
+            fontWeight: 600
+          }}
+        >
+          {noticeText}
+        </div>
+      )}
+
+      {/* Thanh Tab trạng thái kèm bộ đếm */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
         {TABS.map((tab) => {
-          const active = activeTab === tab.key;
+          const active = statusFilter === tab.id
           return (
             <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition ${
-                active
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
+              key={tab.id}
+              type="button"
+              onClick={() => setStatusFilter(tab.id)}
+              className={active ? 'btn-solid-primary' : 'btn-ghost'}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              {tab.label}
+              <span>{tab.label}</span>
               <span
-                className={`rounded-full px-2 py-0.5 text-xs ${
-                  active ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
-                }`}
+                style={{
+                  padding: '1px 7px',
+                  borderRadius: '999px',
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  backgroundColor: active ? 'rgba(255,255,255,0.22)' : 'var(--bg-muted)',
+                  color: active ? '#ffffff' : 'var(--text-secondary)'
+                }}
               >
-                {countOf(tab.key)}
+                {countByStatus(tab.id)}
               </span>
             </button>
-          );
+          )
         })}
       </div>
 
-      {/* Danh sách */}
-      {list.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-slate-500">
-          Chưa có tài liệu nào ở trạng thái này.
+      {/* Danh sách tài liệu */}
+      {filtered.length === 0 ? (
+        <div className="empty-state-box">
+          <FolderOpen size={38} style={{ color: 'var(--text-tertiary)', marginBottom: '10px' }} />
+          <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', fontWeight: 700 }}>
+            Chưa có tài liệu nào ở trạng thái này
+          </h3>
+          <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Hãy chia sẻ Kế hoạch bài dạy Công văn 5512, Đề thi hoặc Slide chuyên đề để nhận +20 điểm thưởng sau khi được duyệt.
+          </p>
+          <button type="button" className="btn-solid-primary" onClick={onOpenUpload}>
+            Đóng góp học liệu ngay
+          </button>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {list.map((doc) => (
-            <li
-              key={doc.id}
-              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex h-14 w-12 shrink-0 items-center justify-center rounded-md bg-red-50 text-xs font-bold text-red-600">
-                  PDF
-                </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {filtered.map((doc) => {
+            const shortHash = doc.fileHash
+              ? `${doc.fileHash.slice(0, 8)}…${doc.fileHash.slice(-6)}`
+              : 'a3f9c1…7be2'
+            const pageCount = doc.pageCount || doc.pages || 24
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="truncate font-semibold text-slate-800">{doc.title}</h3>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${BADGE[doc.status]}`}
-                    >
-                      {STATUS_LABEL[doc.status]}
-                    </span>
+            return (
+              <div
+                key={doc.id}
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  border:
+                    doc.status === 'REJECTED' || doc.status === 'HIDDEN'
+                      ? '1.5px solid var(--red-2)'
+                      : doc.status === 'PENDING'
+                      ? '1.5px solid var(--amber-2)'
+                      : '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: '18px 20px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '16px',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: '260px' }}>
+                  {/* Nhãn định dạng tệp */}
+                  <div
+                    style={{
+                      width: '46px',
+                      height: '54px',
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--red-1, #fff0f0)',
+                      border: '1px solid var(--red-3, #ffd1d1)',
+                      color: 'var(--red-9, #e5484d)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      flexShrink: 0,
+                      gap: '2px'
+                    }}
+                  >
+                    <FileText size={15} />
+                    <span>{(doc.format || 'PDF').toUpperCase()}</span>
                   </div>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {doc.course} • {doc.pages} trang • {doc.size} • Tải lên {doc.uploadedAt}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    SHA-256: <span className="font-mono">{doc.sha256}</span>
-                  </p>
 
-                  {doc.status === 'pending' && (
-                    <div className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
-                      <strong>Phản hồi:</strong> Tài liệu đang chờ quản trị viên kiểm duyệt. Thông tin phản hồi sẽ hiển thị tại đây.
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '6px' }}>
+                      {doc.status === 'APPROVED' && (
+                        <span className="status-badge green">
+                          <CheckCircle2 size={13} /> Đã duyệt (+20 điểm)
+                        </span>
+                      )}
+                      {doc.status === 'PENDING' && (
+                        <span className="status-badge amber">
+                          <Clock size={13} /> Chờ duyệt (8 tiêu chí)
+                        </span>
+                      )}
+                      {doc.status === 'REJECTED' && (
+                        <span className="status-badge red">
+                          <XCircle size={13} /> Bị từ chối
+                        </span>
+                      )}
+                      {doc.status === 'HIDDEN' && (
+                        <span className="status-badge red">
+                          <EyeOff size={13} /> Đã tạm ẩn
+                        </span>
+                      )}
+                      <span className="status-badge blue">{doc.courseCode}</span>
+                      <span className="status-badge slate">{doc.docType}</span>
                     </div>
-                  )}
 
-                  {doc.status === 'approved' && (
-                    <>
-                      <p className="mt-2 text-sm text-emerald-700">
-                        Duyệt ngày {doc.approvedAt} • {doc.views} lượt xem • {doc.downloads} lượt tải
-                      </p>
-                      <div className="mt-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
-                        <strong>Phản hồi từ quản trị viên:</strong> {doc.feedback}
+                    <h3
+                      style={{
+                        margin: '0 0 6px 0',
+                        fontSize: '15.5px',
+                        fontWeight: 700,
+                        color: 'var(--text-primary)',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => onSelectDoc && onSelectDoc(doc)}
+                    >
+                      {doc.title}
+                    </h3>
+
+                    <div style={{ display: 'flex', gap: '14px', fontSize: '12px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+                      <span>{doc.courseName || doc.courseCode}</span>
+                      <span>• {pageCount} trang</span>
+                      <span>• {doc.fileSizeMb} MB</span>
+                      <span>• Tải lên: {doc.createdAt}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Eye size={13} /> {doc.viewCount || 0} lượt xem
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Download size={13} /> {doc.downloadCount || 0} lượt tải
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: '5px',
+                        fontSize: '11.5px',
+                        color: 'var(--text-tertiary)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Hash size={11} />
+                      <span>SHA-256:</span>
+                      <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+                        {shortHash}
+                      </code>
+                    </div>
+
+                    {doc.status === 'PENDING' && (
+                      <div
+                        style={{
+                          marginTop: '10px',
+                          padding: '9px 13px',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--amber-1)',
+                          color: 'var(--amber-11)',
+                          fontSize: '12.5px'
+                        }}
+                      >
+                        <strong>Phản hồi hệ thống:</strong> Tài liệu đã vượt qua bước đối chiếu chống trùng SHA-256 và đang chờ Quản trị viên thẩm định 8 tiêu chí học thuật.
                       </div>
-                    </>
-                  )}
+                    )}
 
-                  {doc.status === 'rejected' && (
-                    <div className="mt-2 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
-                      <strong>Lý do từ chối ({doc.rejectedAt}):</strong> {doc.reason}
-                    </div>
-                  )}
+                    {doc.status === 'APPROVED' && (
+                      <div
+                        style={{
+                          marginTop: '10px',
+                          padding: '9px 13px',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--green-1)',
+                          color: 'var(--green-11)',
+                          fontSize: '12.5px'
+                        }}
+                      >
+                        <strong>Phản hồi từ Quản trị viên:</strong> Tài liệu đạt đủ 8/8 tiêu chí kiểm duyệt học thuật, nội dung rõ ràng và đã được phát hành công khai.
+                      </div>
+                    )}
+
+                    {doc.status === 'REJECTED' && (
+                      <div
+                        style={{
+                          marginTop: '10px',
+                          padding: '9px 13px',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--red-1)',
+                          color: 'var(--red-6)',
+                          fontSize: '12.5px',
+                          fontWeight: 600
+                        }}
+                      >
+                        Lý do từ chối: &ldquo;{doc.rejectReason || 'Tài liệu chưa đạt đủ 8 tiêu chí học thuật Khoa CNTT.'}&rdquo;
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex shrink-0 flex-col gap-2">
-                  {doc.status === 'approved' && (
-                    <button className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">
-                      Xem
+                {/* Cột nút thao tác theo từng trạng thái */}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => onSelectDoc && onSelectDoc(doc)}
+                  >
+                    Xem chi tiết
+                  </button>
+
+                  {doc.status === 'PENDING' && (
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={() => handleWithdrawPending(doc)}
+                      style={{
+                        color: 'var(--amber-11)',
+                        borderColor: 'var(--amber-4)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <RotateCcw size={13} />
+                      <span>Thu hồi</span>
                     </button>
                   )}
-                  {doc.status === 'pending' && (
-                    <button className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">
-                      Thu hồi
-                    </button>
-                  )}
-                  {doc.status === 'rejected' && (
-                    <button className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm text-white hover:bg-indigo-700">
-                      Tải lại
+
+                  {doc.status === 'REJECTED' && (
+                    <button
+                      type="button"
+                      className="btn-solid-primary"
+                      onClick={onOpenUpload}
+                    >
+                      Tải lại bản mới
                     </button>
                   )}
                 </div>
               </div>
-            </li>
-          ))}
-        </ul>
+            )
+          })}
+        </div>
       )}
-    </section>
-  );
+    </div>
+  )
 }
