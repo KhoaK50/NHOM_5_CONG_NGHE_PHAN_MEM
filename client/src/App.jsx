@@ -51,7 +51,7 @@ export default function App() {
   const [activeView, setActiveView] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
-      if (params.get('verify_token') || params.get('reset_token')) {
+      if (params.get('reset_token')) {
         return 'auth'
       }
     }
@@ -374,6 +374,20 @@ export default function App() {
       prev.map((u) => (u.id === mergedUser.id ? { ...u, ...mergedUser } : u))
     )
     showNotice(data.message || 'Đã cập nhật thông tin hồ sơ cá nhân thành công!')
+  }
+
+  const handleAvatarUploaded = (updatedUser, uploadedUrl) => {
+    const mergedUser = {
+      ...userSession,
+      ...updatedUser,
+      avatar_url: uploadedUrl,
+      avatarUrl: uploadedUrl
+    }
+    setUserSession(mergedUser)
+    setUsers((prev) =>
+      prev.map((u) => (u.id === mergedUser.id ? { ...u, ...mergedUser } : u))
+    )
+    showNotice('Đã tải ảnh đại diện lên Cloudinary và đồng bộ hồ sơ thành công!')
   }
 
   const handleChangePassword = async ({ oldPassword, newPassword, confirmPassword }) => {
@@ -1148,6 +1162,7 @@ export default function App() {
               onToggleBookmark={handleToggleBookmark}
               onOpenUpload={handleOpenUpload}
               onUpdateProfile={handleUpdateProfile}
+              onAvatarUploaded={handleAvatarUploaded}
               onChangePassword={handleChangePassword}
               onNavigateDiscovery={() => setActiveView('discovery')}
             />

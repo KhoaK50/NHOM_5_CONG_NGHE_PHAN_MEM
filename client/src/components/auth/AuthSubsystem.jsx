@@ -32,7 +32,7 @@ export default function AuthSubsystem({
   const initialResetEmail = initialUrlParams?.get('email') || ''
   const initialEmergency = initialUrlParams?.get('emergency') === '1'
 
-  // Navigation views: 'auth' (tabs: login/register) | 'forgot' | 'reset' | 'verify_email'
+  // Navigation views: 'auth' (tabs: login/register) | 'forgot' | 'reset'
   const [currentView, setCurrentView] = useState(initialResetToken ? 'reset' : 'auth')
   const [activeTab, setActiveTab] = useState(initialTab) // 'login' | 'register'
   const [activeToast, setActiveToast] = useState(null)
@@ -60,7 +60,7 @@ export default function AuthSubsystem({
   const [rememberMe, setRememberMe] = useState(true)
   const [loginLoading, setLoginLoading] = useState(false)
 
-  // Register form state (tối giản chuẩn Vectoria: Họ tên, Email, Mật khẩu)
+  // Register form state (Họ tên, Email, Mật khẩu)
   const [regName, setRegName] = useState('')
   const [regEmail, setRegEmail] = useState('')
   const [registerPassword, setRegisterPassword] = useState('')
@@ -83,12 +83,6 @@ export default function AuthSubsystem({
   const [resetConfirmPass, setResetConfirmPass] = useState('')
   const [resetShowPass, setResetShowPass] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
-
-  // OTP Email Verification state
-  const [otp, setOtp] = useState(['', '', '', '', '', ''])
-  const [sandboxOtp, setSandboxOtp] = useState('')
-  const [otpCooldown, setOtpCooldown] = useState(60)
-  const [otpLoading, setOtpLoading] = useState(false)
 
   // Toast notification
   const triggerToast = (message, isSuccess = true, title = 'Thông báo') => {
@@ -129,52 +123,16 @@ export default function AuthSubsystem({
   const confirmMismatch = registerPasswordConfirm.length > 0 && registerPasswordConfirm !== registerPassword
   const confirmMatch = registerPasswordConfirm.length > 0 && registerPasswordConfirm === registerPassword
 
-  // Tự động phát hiện ?verify_token=... từ liên kết trong Email (Chuẩn Vectoria)
+  // Tự động làm sạch tham số ?reset_token=... trên thanh địa chỉ sau khi đọc
   useEffect(() => {
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
-    const urlVerifyToken = params.get('verify_token')
     const urlResetToken = params.get('reset_token')
 
     if (urlResetToken) {
       window.history.replaceState({}, document.title, window.location.pathname)
     }
-
-    if (urlVerifyToken) {
-      window.history.replaceState({}, document.title, window.location.pathname)
-      fetch(`${getApiBaseUrl()}/api/auth/verify?token=${encodeURIComponent(urlVerifyToken)}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.status === 'success') {
-            triggerToast(data.message, true, 'Kích hoạt hoàn tất')
-            if (data.token && data.user) {
-              AuthGuard.saveAuthSession(data.token, data.user, true)
-              setTimeout(() => onLoginSuccess && onLoginSuccess(data.user), 800)
-            }
-          } else {
-            triggerToast(
-              data.message || 'Liên kết kích hoạt không hợp lệ hoặc đã hết hạn.',
-              false,
-              'Lỗi xác thực'
-            )
-          }
-        })
-        .catch(() => {
-          triggerToast('Không thể kết nối máy chủ xác thực.', false, 'Lỗi kết nối')
-        })
-    }
-  }, [onLoginSuccess])
-
-  // Handle OTP countdown
-  useEffect(() => {
-    let timer = null
-    if (currentView === 'verify_email' && otpCooldown > 0) {
-      timer = setInterval(() => {
-        setOtpCooldown((prev) => prev - 1)
-      }, 1000)
-    }
-    return () => clearInterval(timer)
-  }, [currentView, otpCooldown])
+  }, [])
 
   // 1. Login Submit Handler (Kết nối thật tới Supabase qua /api/auth/login)
   const handleLoginSubmit = async (e) => {
@@ -206,16 +164,6 @@ export default function AuthSubsystem({
       })
       const data = await res.json()
       setLoginLoading(false)
-
-      if (data.status === 'pending_verification') {
-        setRegEmail(cleanEmail)
-        if (data.dev_otp) setSandboxOtp(data.dev_otp)
-        setOtp(['', '', '', '', '', ''])
-        setOtpCooldown(60)
-        triggerToast(data.message, false, 'Chưa kích hoạt tài khoản')
-        navigateToView('verify_email', 'forward')
-        return
-      }
 
       if (!res.ok || data.status !== 'success') {
         triggerToast(
@@ -250,7 +198,7 @@ export default function AuthSubsystem({
     }
   }
 
-  // 2. Register Submit Handler (Kết nối thật tới bảng public.users & public.account_activation)
+  // 2. Register Submit Handler (UC02: Tạo tài khoản active và tự động đăng nhập ngay)
   const handleRegisterSubmit = async (e) => {
     e.preventDefault()
     if (!regName.trim()) {
@@ -305,22 +253,25 @@ export default function AuthSubsystem({
         return
       }
 
-      if (data.dev_otp) {
-        setSandboxOtp(data.dev_otp)
-      } else {
-        setSandboxOtp('')
+      const registeredUser = data.user
+      if (data.token && registeredUser) {
+        AuthGuard.saveAuthSession(data.token, registeredUser, true)
       }
-      setOtp(['', '', '', '', '', ''])
-      setOtpCooldown(60)
-      triggerToast(data.message, true, 'Tạo tài khoản thành công')
-      navigateToView('verify_email', 'forward')
+      triggerToast(
+        data.message || `Đăng ký tài khoản thành công! Chào mừng ${registeredUser?.fullName || regName.trim()}.`,
+        true,
+        'Tạo tài khoản thành công'
+      )
+      if (registeredUser) {
+        setTimeout(() => onLoginSuccess && onLoginSuccess(registeredUser), 500)
+      }
     } catch {
       setRegLoading(false)
       triggerToast('Không thể kết nối đến máy chủ xác thực.', false, 'Lỗi kết nối')
     }
   }
 
-  // 3. Google OAuth 2.0 Login Handler (Hỗ trợ Google Identity Services GSI thật chuẩn Vectoria)
+  // 3. Google OAuth 2.0 Login Handler (Hỗ trợ Google Identity Services GSI thật)
   const completeGoogleBackendLogin = async (payload) => {
     setLoginLoading(true)
     try {
@@ -482,113 +433,6 @@ export default function AuthSubsystem({
     }
   }
 
-  // 6. OTP Input & Paste Handlers
-  const handleOtpChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return
-    const newOtp = [...otp]
-    newOtp[index] = value.slice(-1)
-    setOtp(newOtp)
-
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-input-${index + 1}`)
-      if (nextInput) nextInput.focus()
-    }
-  }
-
-  const handleOtpKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-input-${index - 1}`)
-      if (prevInput) prevInput.focus()
-    }
-  }
-
-  const handleOtpPaste = (e) => {
-    const pasted = (e.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6)
-    if (pasted.length > 0) {
-      e.preventDefault()
-      const nextOtp = ['', '', '', '', '', '']
-      for (let i = 0; i < 6; i++) {
-        nextOtp[i] = pasted[i] || ''
-      }
-      setOtp(nextOtp)
-    }
-  }
-
-  const handleFillSandboxOtp = () => {
-    if (!sandboxOtp) return
-    const digits = String(sandboxOtp).slice(0, 6).split('')
-    setOtp([
-      digits[0] || '',
-      digits[1] || '',
-      digits[2] || '',
-      digits[3] || '',
-      digits[4] || '',
-      digits[5] || ''
-    ])
-  }
-
-  // 7. OTP Verification Submit Handler (Xác thực thật với bảng public.account_activation)
-  const handleOtpSubmit = async (e) => {
-    e.preventDefault()
-    const enteredOtp = otp.join('')
-    if (enteredOtp.length < 6) {
-      triggerToast('Vui lòng nhập đủ 6 chữ số mã xác thực.', false, 'Mã không hợp lệ')
-      return
-    }
-
-    setOtpLoading(true)
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: regEmail || loginEmail,
-          otpCode: enteredOtp
-        })
-      })
-      const data = await res.json()
-      setOtpLoading(false)
-
-      if (!res.ok || data.status !== 'success') {
-        triggerToast(
-          data.message || 'Mã xác thực OTP không chính xác hoặc đã hết hạn.',
-          false,
-          'Lỗi kích hoạt'
-        )
-        return
-      }
-
-      AuthGuard.saveAuthSession(data.token, data.user, true)
-      triggerToast(data.message, true, 'Kích hoạt hoàn tất')
-      setTimeout(() => onLoginSuccess && onLoginSuccess(data.user), 600)
-    } catch {
-      setOtpLoading(false)
-      triggerToast('Không thể kết nối đến máy chủ xác thực.', false, 'Lỗi kết nối')
-    }
-  }
-
-  // 8. Resend Activation OTP Handler
-  const handleResendOtp = async () => {
-    if (otpCooldown > 0) return
-    setOtpCooldown(60)
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/auth/resend-activation`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: regEmail || loginEmail })
-      })
-      const data = await res.json()
-      if (data.dev_otp) setSandboxOtp(data.dev_otp)
-      triggerToast(
-        data.message || 'Đã gửi lại mã xác thực mới vào email.',
-        true,
-        'Đã cấp mã mới'
-      )
-    } catch {
-      triggerToast('Đã gửi lại mã xác thực vào email.', true, 'Đã gửi lại mã')
-    }
-  }
-
   return (
     <>
       {/* Toast Notification */}
@@ -635,11 +479,9 @@ export default function AuthSubsystem({
                   : 'Tạo tài khoản mới'
                 : currentView === 'forgot'
                 ? 'Khôi phục mật khẩu'
-                : currentView === 'reset'
-                ? isEmergencyReset
-                  ? 'Khóa phiên & Đổi mật khẩu khẩn cấp'
-                  : 'Đặt lại mật khẩu'
-                : 'Xác thực tài khoản'}
+                : isEmergencyReset
+                ? 'Khóa phiên & Đổi mật khẩu khẩn cấp'
+                : 'Đặt lại mật khẩu'}
             </h2>
             <p className="form-subtitle">
               {currentView === 'auth'
@@ -648,9 +490,7 @@ export default function AuthSubsystem({
                   : 'Khởi tạo định danh sinh viên và đồng bộ tủ học liệu cá nhân'
                 : currentView === 'forgot'
                 ? 'Nhập email tài khoản để nhận mã khôi phục bảo mật (15 phút)'
-                : currentView === 'reset'
-                ? 'Thiết lập mật khẩu mới và thu hồi toàn bộ các phiên đăng nhập cũ'
-                : `Nhập mã 6 chữ số gửi tới ${regEmail || loginEmail || 'email của bạn'}`}
+                : 'Thiết lập mật khẩu mới và thu hồi toàn bộ các phiên đăng nhập cũ'}
             </p>
           </div>
 
@@ -1359,108 +1199,6 @@ export default function AuthSubsystem({
               </button>
 
               <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                <button
-                  type="button"
-                  className="btn-link"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                  onClick={() => {
-                    navigateToView('auth', 'backward', () => setActiveTab('login'))
-                  }}
-                >
-                  <ArrowLeft size={14} />
-                  <span>Quay lại đăng nhập</span>
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* VIEW: VERIFY EMAIL OTP */}
-          {currentView === 'verify_email' && (
-            <form onSubmit={handleOtpSubmit}>
-              {sandboxOtp && (
-                <div
-                  style={{
-                    backgroundColor: 'var(--slate-2, #f9f9fb)',
-                    border: '1px dashed var(--blue-9, #0090ff)',
-                    borderRadius: '8px',
-                    padding: '9px 12px',
-                    marginBottom: '10px',
-                    fontSize: '12px',
-                    color: 'var(--slate-12)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '8px'
-                  }}
-                >
-                  <span>
-                    Mã OTP từ Supabase: <strong style={{ color: '#0077e6', letterSpacing: '1px' }}>{sandboxOtp}</strong>
-                  </span>
-                  <button
-                    type="button"
-                    className="btn-link"
-                    style={{ fontSize: '12px' }}
-                    onClick={handleFillSandboxOtp}
-                  >
-                    Điền nhanh
-                  </button>
-                </div>
-              )}
-
-              <div className="otp-container" onPaste={handleOtpPaste}>
-                {otp.map((digit, idx) => (
-                  <input
-                    key={idx}
-                    id={`otp-input-${idx}`}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    className="otp-cell"
-                    value={digit}
-                    onChange={(e) => handleOtpChange(idx, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                    disabled={otpLoading}
-                    autoFocus={idx === 0}
-                  />
-                ))}
-              </div>
-
-              <button
-                type="submit"
-                className="btn-primary-action"
-                disabled={otpLoading}
-                style={{ marginTop: 14 }}
-              >
-                {otpLoading ? (
-                  <>
-                    <Loader2 size={16} className="spin-loader" />
-                    <span>Đang xác thực mã...</span>
-                  </>
-                ) : (
-                  <span>Kích hoạt tài khoản</span>
-                )}
-              </button>
-
-              <div
-                style={{
-                  textAlign: 'center',
-                  marginTop: '20px',
-                  fontSize: '13px',
-                  color: 'var(--slate-11)'
-                }}
-              >
-                <span>Chưa nhận được mã? </span>
-                <button
-                  type="button"
-                  className="btn-link"
-                  disabled={otpCooldown > 0}
-                  onClick={handleResendOtp}
-                >
-                  {otpCooldown > 0 ? `Gửi lại sau ${otpCooldown}s` : 'Gửi lại mã ngay'}
-                </button>
-              </div>
-
-              <div style={{ textAlign: 'center', marginTop: '16px' }}>
                 <button
                   type="button"
                   className="btn-link"

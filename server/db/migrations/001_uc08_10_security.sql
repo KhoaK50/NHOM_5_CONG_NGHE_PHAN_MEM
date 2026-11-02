@@ -8,6 +8,11 @@
 
 BEGIN;
 
+-- Dọn bỏ 2 bảng ngoài thiết kế 14 thực thể (account_activation & comment_upvotes)
+DROP TABLE IF EXISTS public.account_activation CASCADE;
+DROP TABLE IF EXISTS public.comment_upvotes CASCADE;
+UPDATE public.users SET status = 'active' WHERE status = 'pending';
+
 ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS contribution_score INT NOT NULL DEFAULT 0;
 
