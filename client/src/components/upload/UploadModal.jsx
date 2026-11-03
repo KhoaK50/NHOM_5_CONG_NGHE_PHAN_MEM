@@ -392,9 +392,9 @@ export default function UploadModal({
             <div className="vec-upload-card-head">
               <h2 className="vec-upload-card-title">
                 <span className="vec-step-num">1</span>
-                <span>Tệp học liệu đính kèm (.PDF, .DOCX, .PPTX ≤ 25MB)</span>
+                <span>Tệp học liệu đính kèm (Định dạng PDF ≤ 25MB)</span>
               </h2>
-              <span className="vec-form-hint">Tự động nhận diện mã học phần từ tên tệp</span>
+              <span className="vec-form-hint">Hệ thống tự động kiểm tra Magic Bytes %PDF- & mã băm SHA-256 chống trùng</span>
             </div>
 
             <div
@@ -415,7 +415,7 @@ export default function UploadModal({
                     Kéo thả tệp học liệu vào đây hoặc chọn từ máy tính
                   </strong>
                   <span className="vec-dropzone-sub">
-                    Hỗ trợ Adobe PDF (.pdf), Microsoft Word (.docx) và PowerPoint (.pptx).
+                    Chỉ chấp nhận tệp PDF chuẩn (Magic Bytes %PDF-), dung lượng tối đa 25MB.
                   </span>
                 </div>
               </div>
