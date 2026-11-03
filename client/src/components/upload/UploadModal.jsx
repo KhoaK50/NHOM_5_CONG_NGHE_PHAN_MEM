@@ -62,6 +62,7 @@ export default function UploadModal({
   const [verificationResult, setVerificationResult] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const [formError, setFormError] = useState('')
+  const [selectedRawFile, setSelectedRawFile] = useState(null)
 
   useEffect(() => {
     let mounted = true
@@ -129,6 +130,7 @@ export default function UploadModal({
 
   const processIncomingFile = async (file) => {
     if (!file) return
+    setSelectedRawFile(file)
     setFormError('')
     setActiveScenario('CUSTOM_FILE')
     inferMetadataFromFilename(file.name)
@@ -149,6 +151,7 @@ export default function UploadModal({
   }
 
   const handleSelectPresetScenario = async (scenario) => {
+    setSelectedRawFile(null)
     setFormError('')
     setActiveScenario(scenario)
 
@@ -333,9 +336,20 @@ export default function UploadModal({
     }
 
     const selectedCourse = courses.find((c) => c.code === courseCode) || activeCourses[0]
+
+    let finalFile = selectedRawFile
+    if (!finalFile && verificationResult) {
+      const dummyPdfContent = `%PDF-1.4\n%âãÏÓ\n1 0 obj\n<< /Title (${title}) /Author (5Share User) >>\nendobj\n2 0 obj\n<< /Type /Catalog /Pages 3 0 R >>\nendobj\n3 0 obj\n<< /Type /Pages /Kids [4 0 R] /Count 1 >>\nendobj\n4 0 obj\n<< /Type /Page /Parent 3 0 R /MediaBox [0 0 595 842] >>\nendobj\nxref\n0 5\n0000000000 65535 f \n0000000015 00000 n \n0000000085 00000 n \n0000000135 00000 n \n0000000195 00000 n \ntrailer\n<< /Size 5 /Root 2 0 R >>\nstartxref\n275\n%%EOF`
+      finalFile = new File([dummyPdfContent], verificationResult.fileName || 'document.pdf', {
+        type: 'application/pdf'
+      })
+    }
+
     onSubmitNewDocument({
+      file: finalFile,
       title: title.trim(),
       courseCode: selectedCourse?.code || courseCode,
+      courseId: selectedCourse?.id,
       courseName: selectedCourse?.name || 'Phương pháp dạy học môn Tin học',
       knowledgeBlock: selectedCourse?.knowledgeBlock || 'Nghiệp vụ Sư phạm',
       semester: selectedCourse?.semester || 'Học kỳ 5',

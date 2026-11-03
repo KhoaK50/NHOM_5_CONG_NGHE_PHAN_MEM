@@ -278,11 +278,62 @@ async function deleteCourse(db, id) {
   await db.query('DELETE FROM public.courses WHERE id = $1', [id]);
 }
 
+async function findCourseByCode(courseCode) {
+  const res = await query(
+    `SELECT id, course_code as "courseCode", course_name as "courseName", is_active as "isActive"
+     FROM public.courses
+     WHERE UPPER(course_code) = UPPER($1)
+     LIMIT 1`,
+    [courseCode]
+  );
+  return res.rows[0] || null;
+}
+
+async function insertDocument({
+  courseId,
+  uploaderId,
+  title,
+  description,
+  docType,
+  fileName,
+  fileUrl,
+  previewUrl,
+  fileSizeBytes,
+  pageCount,
+  fileHash
+}) {
+  const res = await query(
+    `INSERT INTO public.documents (
+       course_id, uploader_id, title, description, doc_type,
+       file_name, file_url, preview_url, file_size_bytes,
+       page_count, file_hash, status, created_at, updated_at
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'PENDING', NOW(), NOW())
+     RETURNING id, title, status, doc_type as "docType", file_name as "fileName", file_url as "fileUrl", preview_url as "previewUrl", file_size_bytes as "fileSizeBytes", page_count as "pageCount", file_hash as "fileHash", created_at as "createdAt"`,
+    [
+      courseId,
+      uploaderId,
+      title,
+      description,
+      docType,
+      fileName,
+      fileUrl,
+      previewUrl,
+      fileSizeBytes,
+      pageCount,
+      fileHash
+    ]
+  );
+  return res.rows[0];
+}
+
 module.exports = {
   withTransaction,
   hashExists,
   listDocuments,
   findDocumentById,
+  insertDocument,
+  findCourseByCode,
   lockDocument,
   updateDocumentReview,
   setDocumentStatus,

@@ -20,6 +20,15 @@ async function handleCheckHash(req, res) {
   return res.status(200).json({ success: true, data });
 }
 
+async function handleUploadDocument(req, res) {
+  const data = await service.uploadDocument(req.file, req.body, req.user);
+  return res.status(201).json({
+    success: true,
+    message: 'Tải học liệu lên thành công. Tài liệu đang ở trạng thái chờ Admin phê duyệt.',
+    data
+  });
+}
+
 async function handleListDocuments(req, res) {
   return res.status(200).json({ success: true, ...(await service.listAdminDocuments(req.query)) });
 }
@@ -71,6 +80,7 @@ async function handleDeleteCourse(req, res) {
 
 module.exports = {
   handleCheckHash,
+  handleUploadDocument,
   handleListDocuments,
   handleGetAdminDocument,
   handleGetVisibleDocument,

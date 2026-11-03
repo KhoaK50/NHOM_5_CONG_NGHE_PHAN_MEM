@@ -27,7 +27,6 @@ import UserProfile from './components/profile/UserProfile'
 import BountyBoard from './components/bounty/BountyBoard'
 import { AuthGuard, getApiBaseUrl } from './utils/authGuard'
 import {
-  INITIAL_COURSES,
   INITIAL_NOTIFICATIONS,
   INITIAL_REPORTS,
   INITIAL_BOUNTIES,
@@ -35,7 +34,7 @@ import {
   INITIAL_USERS,
   INITIAL_FEEDBACKS
 } from './data/mockData'
-import { listModerationDocuments, listReports } from './utils/documentCourseApi'
+import { listPublicCourses, listModerationDocuments, listReports, uploadDocument } from './utils/documentCourseApi'
 import {
   addBookmark,
   downloadDocument,
@@ -67,7 +66,7 @@ export default function App() {
   const [adminSubTab, setAdminSubTab] = useState('dashboard') // 'dashboard' | 'moderation' | 'courses' | 'users'
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
-  const [courses] = useState(INITIAL_COURSES)
+  const [courses, setCourses] = useState([])
   const [documents, setDocuments] = useState([])
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
   const [reports, setReports] = useState(INITIAL_REPORTS)
@@ -91,6 +90,18 @@ export default function App() {
   const showNotice = useCallback((text) => {
     setBannerNotice(text)
     setTimeout(() => setBannerNotice(null), 4500)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    listPublicCourses({ limit: 50 })
+      .then((res) => {
+        if (!cancelled && Array.isArray(res?.data)) {
+          setCourses(res.data)
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -528,15 +539,37 @@ export default function App() {
     showNotice('Đã gửi báo cáo chất lượng học liệu về Ban quản trị Khoa CNTT.')
   }
 
-  const handleSubmitNewDocument = (newDocPayload) => {
+  const handleSubmitNewDocument = async (newDocPayload) => {
     if (isCurrentUserLocked) {
       showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể thực hiện đóng góp học liệu.')
       return
     }
-    // UC07 upload API/storage is not part of this integration. Never show a
-    // successful submission or add a local-only document that is absent from PostgreSQL.
-    void newDocPayload
-    showNotice('Chức năng tải học liệu chưa được kết nối backend nên chưa lưu tài liệu. Các màn hình tài liệu của tôi chỉ hiển thị dữ liệu đã có trong cơ sở dữ liệu.')
+    if (actorRole === 'GUEST' || !userSession?.id) {
+      showNotice('Vui lòng đăng nhập tài khoản sinh viên hoặc giảng viên để tải học liệu lên hệ thống.')
+      handleOpenAuth('login')
+      return
+    }
+
+    try {
+      showNotice('Đang tải tệp lên Cloudinary và lưu vào cơ sở dữ liệu...')
+      const res = await uploadDocument({
+        title: newDocPayload.title,
+        courseCode: newDocPayload.courseCode,
+        courseId: newDocPayload.courseId,
+        docType: newDocPayload.docType,
+        description: newDocPayload.description,
+        file: newDocPayload.file
+      })
+
+      if (res?.success) {
+        showNotice(res.message || 'Tải học liệu lên thành công! Tài liệu đang ở hàng đợi chờ Admin phê duyệt.')
+        setActiveView('my-docs')
+      } else {
+        showNotice(res?.message || 'Không thể tải tài liệu lên. Vui lòng thử lại.')
+      }
+    } catch (err) {
+      showNotice(`Lỗi tải học liệu: ${err.message || 'Không thể kết nối máy chủ'}`)
+    }
   }
 
   const handleToggleUserStatus = async (userId, lockReason = null) => {
