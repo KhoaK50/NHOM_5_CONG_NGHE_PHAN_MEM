@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   CheckCircle2,
   ShieldAlert,
@@ -25,11 +25,9 @@ import MyDocuments from './components/library/MyDocuments'
 import SavedBookmarks from './components/library/SavedBookmarks'
 import UserProfile from './components/profile/UserProfile'
 import BountyBoard from './components/bounty/BountyBoard'
-import { getGuestDownloadStats, recordGuestDownload } from './utils/downloadTracker'
 import { AuthGuard, getApiBaseUrl } from './utils/authGuard'
 import {
   INITIAL_COURSES,
-  INITIAL_DOCUMENTS,
   INITIAL_NOTIFICATIONS,
   INITIAL_REPORTS,
   INITIAL_BOUNTIES,
@@ -38,6 +36,14 @@ import {
   INITIAL_FEEDBACKS
 } from './data/mockData'
 import { listModerationDocuments, listReports } from './utils/documentCourseApi'
+import {
+  addBookmark,
+  downloadDocument,
+  listBookmarks,
+  listPublicDocuments,
+  recordDocumentView,
+  removeBookmark
+} from './utils/interactionApi'
 
 export default function App() {
   const [actorRole, setActorRole] = useState(() => {
@@ -62,24 +68,18 @@ export default function App() {
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
   const [courses, setCourses] = useState(INITIAL_COURSES)
-  const [documents, setDocuments] = useState(INITIAL_DOCUMENTS)
+  const [documents, setDocuments] = useState([])
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
   const [reports, setReports] = useState(INITIAL_REPORTS)
   const [users, setUsers] = useState(INITIAL_USERS)
   const [feedbacks, setFeedbacks] = useState(INITIAL_FEEDBACKS)
   const [bounties, setBounties] = useState(INITIAL_BOUNTIES)
   const [downloadHistory, setDownloadHistory] = useState(INITIAL_DOWNLOAD_HISTORY)
-  const [bookmarkedIds, setBookmarkedIds] = useState(['doc-1', 'doc-2', 'doc-4'])
+  const [bookmarkedIds, setBookmarkedIds] = useState([])
   const [selectedDocId, setSelectedDocId] = useState('doc-1')
   const [bannerNotice, setBannerNotice] = useState(null)
   const [adminPendingCount, setAdminPendingCount] = useState(0)
   const [studentPoints, setStudentPoints] = useState(140)
-  const [userRatingsByDoc, setUserRatingsByDoc] = useState({
-    'doc-1:dat': 5,
-    'doc-1:danh': 5,
-    'doc-2:tram': 5
-  })
-
   const [userSession, setUserSession] = useState(() => {
     const saved = AuthGuard.getSavedUserProfile()
     if (saved && AuthGuard.getAuthToken()) {
@@ -88,14 +88,37 @@ export default function App() {
     return null
   })
 
-  const showNotice = (text) => {
+  const showNotice = useCallback((text) => {
     setBannerNotice(text)
-    setTimeout(() => {
-      setBannerNotice(null)
-    }, 4500)
-  }
+    setTimeout(() => setBannerNotice(null), 4500)
+  }, [])
 
-  const fetchAdminUsersList = (authToken) => {
+  useEffect(() => {
+    let cancelled = false
+    listPublicDocuments({ page: 1, limit: 100 })
+      .then((items) => { if (!cancelled) setDocuments(items || []) })
+      .catch((error) => {
+        if (!cancelled) {
+          setDocuments([])
+          showNotice(`Không tải được danh sách tài liệu từ máy chủ: ${error.message}`)
+        }
+      })
+    return () => { cancelled = true }
+  }, [showNotice])
+
+  useEffect(() => {
+    if (actorRole === 'GUEST' || !userSession?.id) {
+      setBookmarkedIds([])
+      return undefined
+    }
+    let cancelled = false
+    listBookmarks()
+      .then((items) => { if (!cancelled) setBookmarkedIds(items.map((item) => item.id)) })
+      .catch((error) => { if (!cancelled) showNotice(`Không tải được tủ tài liệu: ${error.message}`) })
+    return () => { cancelled = true }
+  }, [actorRole, userSession?.id, showNotice])
+
+  const fetchAdminUsersList = useCallback((authToken) => {
     const tokenToUse = authToken || AuthGuard.getAuthToken()
     if (!tokenToUse) return
     fetch(`${getApiBaseUrl()}/api/auth/users`, {
@@ -108,7 +131,7 @@ export default function App() {
         }
       })
       .catch(() => {})
-  }
+  }, [])
 
   // Đối chiếu phiên JWT (token_version) trực tiếp với bảng public.users trên Supabase
   useEffect(() => {
@@ -149,7 +172,7 @@ export default function App() {
       .catch(() => {
         // Giữ phiên hiện tại nếu mạng tạm thời gián đoạn
       })
-  }, [])
+  }, [showNotice, fetchAdminUsersList])
 
   const isCurrentUserLocked = Boolean(
     userSession &&
@@ -297,46 +320,27 @@ export default function App() {
 
   const handleSelectDocument = (doc) => {
     setSelectedDocId(doc.id)
-    setDocuments((prev) =>
-      prev.map((d) => (d.id === doc.id ? { ...d, viewCount: d.viewCount + 1 } : d))
-    )
+    setDocuments((previous) => previous.some((item) => item.id === doc.id) ? previous : [doc, ...previous])
     setActiveView('detail')
+    recordDocumentView(doc.id)
+      .then(() => setDocuments((previous) => previous.map((item) => item.id === doc.id ? { ...item, viewCount: (item.viewCount || 0) + 1 } : item)))
+      .catch(() => {})
   }
 
-  const handleDownloadDocument = (doc) => {
+  const handleDownloadDocument = async (doc) => {
     if (actorRole === 'GUEST') {
-      const stats = getGuestDownloadStats()
-      if (stats.isExhausted) {
-        showNotice('Khách vãng lai đã dùng hết 3 lượt tải trong ngày. Vui lòng đăng nhập để tải không giới hạn!')
-        handleOpenAuth('login')
-        return
-      }
-      recordGuestDownload()
-      const nextStats = getGuestDownloadStats()
-      setDocuments((prev) =>
-        prev.map((d) => (d.id === doc.id ? { ...d, downloadCount: d.downloadCount + 1 } : d))
-      )
-      showNotice(
-        `Đang tải tệp "${doc.fileName}". Khách vãng lai: còn lại ${nextStats.remaining}/3 lượt tải hôm nay.`
-      )
+      handleOpenAuth('login')
       return
     }
-
-    setDocuments((prev) =>
-      prev.map((d) => (d.id === doc.id ? { ...d, downloadCount: d.downloadCount + 1 } : d))
-    )
-
-    const newRecord = {
-      id: `dl-${Date.now()}`,
-      docId: doc.id,
-      title: doc.title,
-      fileName: doc.fileName,
-      fileSize: doc.fileSize,
-      format: doc.format || 'pdf',
-      downloadedAt: 'Vừa xong'
+    try {
+      await downloadDocument(doc.id, doc.fileName)
+      setDocuments((prev) => prev.map((item) => item.id === doc.id ? { ...item, downloadCount: (item.downloadCount || 0) + 1 } : item))
+      setDownloadHistory((prev) => [{ id: `dl-${Date.now()}`, docId: doc.id, title: doc.title, fileName: doc.fileName, format: 'PDF', downloadedAt: new Date().toISOString() }, ...prev])
+      showNotice(`Đã tải tệp gốc "${doc.fileName}" từ máy chủ.`)
+    } catch (error) {
+      showNotice(error.message)
+      if (error.status === 401 || error.status === 403) handleOpenAuth('login')
     }
-    setDownloadHistory((prev) => [newRecord, ...prev])
-    showNotice(`Đang tải tệp gốc "${doc.fileName}". Đã cập nhật số lượt tải của học liệu.`)
   }
 
   const handleUpdateProfile = async (updatedFields) => {
@@ -489,131 +493,26 @@ export default function App() {
     )
   }
 
-  const handleToggleBookmark = (docId) => {
+  const handleToggleBookmark = async (docId) => {
     if (actorRole === 'GUEST') {
       handleOpenAuth('login')
       return
     }
-    setBookmarkedIds((prev) => {
-      const exists = prev.includes(docId)
-      showNotice(
-        exists
-          ? 'Đã gỡ học liệu khỏi Tủ tài liệu cá nhân.'
-          : 'Đã lưu học liệu vào Tủ tài liệu cá nhân.'
-      )
-      return exists ? prev.filter((id) => id !== docId) : [...prev, docId]
-    })
-  }
-
-  const handleAddRatingComment = (docId, stars, commentContent) => {
-    if (isCurrentUserLocked) {
-      showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể gửi đánh giá hoặc bình luận.')
-      return
+    const exists = bookmarkedIds.includes(docId)
+    try {
+      if (exists) {
+        await removeBookmark(docId)
+        setBookmarkedIds((previous) => previous.filter((id) => id !== docId))
+        showNotice('Đã gỡ học liệu khỏi tủ tài liệu cá nhân.')
+      } else {
+        await addBookmark(docId)
+        setBookmarkedIds((previous) => previous.includes(docId) ? previous : [...previous, docId])
+        showNotice('Đã lưu học liệu vào tủ tài liệu cá nhân.')
+      }
+    } catch (error) {
+      showNotice(error.message)
+      throw error
     }
-    const currentUserId = userSession?.id || 'vi'
-    const currentUserName = userSession?.fullName || 'Phan Triệu Vĩ'
-    const ratingKey = `${docId}:${currentUserId}`
-    const previousStar = userRatingsByDoc[ratingKey]
-    const trimmedComment = (commentContent || '').trim()
-
-    setUserRatingsByDoc((prev) => ({
-      ...prev,
-      [ratingKey]: stars
-    }))
-
-    const targetDoc = documents.find((d) => d.id === docId)
-
-    setDocuments((prev) =>
-      prev.map((doc) => {
-        if (doc.id !== docId) return doc
-
-        let nextCount = doc.ratingCount
-        let nextAvg
-        if (typeof previousStar === 'number' && doc.ratingCount > 0) {
-          const totalScore = doc.ratingAvg * doc.ratingCount - previousStar + stars
-          nextAvg = Number((totalScore / doc.ratingCount).toFixed(1))
-        } else {
-          nextCount = doc.ratingCount + 1
-          nextAvg = Number(
-            ((doc.ratingAvg * doc.ratingCount + stars) / nextCount).toFixed(1)
-          )
-        }
-
-        let updatedComments = (doc.comments || []).map((c) =>
-          c.authorId === currentUserId ? { ...c, rating: stars } : c
-        )
-
-        if (trimmedComment) {
-          const newComment = {
-            id: `cmt-${Date.now()}`,
-            authorName: `${currentUserName} (K50 SPTH)`,
-            authorId: currentUserId,
-            rating: stars,
-            createdAt: 'Vừa xong',
-            content: trimmedComment
-          }
-          updatedComments = [newComment, ...updatedComments]
-        }
-
-        return {
-          ...doc,
-          ratingCount: nextCount,
-          ratingAvg: nextAvg,
-          comments: updatedComments
-        }
-      })
-    )
-
-    if (targetDoc) {
-      setNotifications((prev) => [
-        {
-          id: `notif-${Date.now()}`,
-          type: 'COMMENT',
-          title: 'Đánh giá & Bình luận học thuật mới',
-          message: trimmedComment
-            ? `${currentUserName} vừa chấm ${stars}★ và bình luận tại "${targetDoc.title}".`
-            : `${currentUserName} vừa chấm ${stars}★ cho học liệu "${targetDoc.title}".`,
-          createdAt: 'Vừa xong',
-          isRead: false,
-          targetDocId: targetDoc.id,
-          targetScreen: 'detail'
-        },
-        ...prev
-      ])
-    }
-
-    showNotice(
-      typeof previousStar === 'number'
-        ? `Đã cập nhật mức đánh giá từ ${previousStar}★ thành ${stars}★.`
-        : `Đã ghi nhận đánh giá ${stars}★ và gửi thông báo tới tác giả.`
-    )
-  }
-
-  const handleEditComment = (docId, commentId, newContent) => {
-    setDocuments((prev) =>
-      prev.map((doc) =>
-        doc.id === docId
-          ? {
-              ...doc,
-              comments: (doc.comments || []).map((c) =>
-                c.id === commentId ? { ...c, content: newContent, createdAt: 'Đã chỉnh sửa' } : c
-              )
-            }
-          : doc
-      )
-    )
-    showNotice('Đã cập nhật nội dung bình luận của bạn.')
-  }
-
-  const handleDeleteComment = (docId, commentId) => {
-    setDocuments((prev) =>
-      prev.map((doc) =>
-        doc.id === docId
-          ? { ...doc, comments: (doc.comments || []).filter((c) => c.id !== commentId) }
-          : doc
-      )
-    )
-    showNotice('Đã xóa bình luận của bạn.')
   }
 
   const handleSubmitReport = (reportPayload) => {
@@ -633,32 +532,10 @@ export default function App() {
       showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể thực hiện đóng góp học liệu.')
       return
     }
-    const createdDoc = {
-      id: `doc-${Date.now()}`,
-      ...newDocPayload,
-      uploaderName: userSession?.fullName || 'Phan Triệu Vĩ',
-      uploaderId: userSession?.id || 'vi',
-      createdAt: '2026-03-20',
-      pageCount: 16,
-      status: 'PENDING',
-      rejectReason: null,
-      viewCount: 0,
-      downloadCount: 0,
-      ratingAvg: 0,
-      ratingCount: 0,
-      pages: INITIAL_DOCUMENTS[0].pages,
-      comments: []
-    }
-    setDocuments((prev) => [createdDoc, ...prev])
-    setCourses((prev) =>
-      prev.map((c) =>
-        c.code === createdDoc.courseCode
-          ? { ...c, documentCount: (c.documentCount || 0) + 1 }
-          : c
-      )
-    )
-    setActiveView('my-docs')
-    showNotice('Đóng góp thành công! Học liệu đã vượt qua kiểm tra SHA-256 và đang chờ Quản trị viên thẩm định.')
+    // UC07 upload API/storage is not part of this integration. Never show a
+    // successful submission or add a local-only document that is absent from PostgreSQL.
+    void newDocPayload
+    showNotice('Chức năng tải học liệu chưa được kết nối backend nên chưa lưu tài liệu. Các màn hình tài liệu của tôi chỉ hiển thị dữ liệu đã có trong cơ sở dữ liệu.')
   }
 
   const handleToggleUserStatus = async (userId, lockReason = null) => {
@@ -1115,9 +992,6 @@ export default function App() {
               onBackToDiscovery={() => setActiveView('discovery')}
               onDownload={handleDownloadDocument}
               onToggleBookmark={handleToggleBookmark}
-              onAddRatingComment={handleAddRatingComment}
-              onEditComment={handleEditComment}
-              onDeleteComment={handleDeleteComment}
               onSubmitReport={handleSubmitReport}
               onRequireLogin={() => handleOpenAuth('login')}
             />

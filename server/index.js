@@ -7,6 +7,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { query } = require('./db/pool');
 const authRoutes = require('./routes/authRoutes');
 const documentCourseRoutes = require('./routes/documentCourseRoutes');
+const interactionRoutes = require('./routes/interactionRoutes');
 
 // Không chạy production với JWT_SECRET mặc định trong mã nguồn: ai đọc repo cũng ký được token Admin
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
@@ -42,6 +43,9 @@ app.use(express.json());
 // Mount Auth Subsystem Routes (/api/auth/* và alias /api/* tương thích Vectoria)
 app.use('/api/auth', authRoutes);
 app.use('/api', authRoutes);
+
+// Cụm UC11–UC13: dashboard, tài liệu cá nhân, tải xuống, bookmark, đánh giá và bình luận
+app.use('/api', interactionRoutes);
 
 // Mount cụm UC08–UC10: /api/documents/* và /api/admin/*
 app.use('/api', documentCourseRoutes);

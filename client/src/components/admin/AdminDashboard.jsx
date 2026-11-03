@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   FileCheck2,
   Download,
@@ -9,71 +9,50 @@ import {
   Award,
   Sparkles
 } from 'lucide-react'
+import { getDashboardStats } from '../../utils/interactionApi'
 
 export default function AdminDashboard({
-  documents = [],
-  courses = [],
-  users = [],
-  reports = [],
-  downloadHistory = [],
   onSelectDoc,
   onNavigateTab
 }) {
-  const [timeRange, setTimeRange] = useState('week') // 'week' | 'month' | 'semester'
   const [hoveredCourseIndex, setHoveredCourseIndex] = useState(null)
   const [hoveredPointIndex, setHoveredPointIndex] = useState(null)
+  const [dashboardData, setDashboardData] = useState(null)
+  const [dashboardError, setDashboardError] = useState('')
 
-  // 1. KPI 1: Tổng số học liệu
-  const totalDocs = documents.length
-  const approvedDocsCount = documents.filter((d) => d.status === 'APPROVED').length
-  const pendingDocsCount = documents.filter((d) => d.status === 'PENDING').length
-  const rejectedDocsCount = documents.filter((d) => d.status === 'REJECTED').length
+  useEffect(() => {
+    let cancelled = false
+    getDashboardStats()
+      .then((data) => { if (!cancelled) setDashboardData(data) })
+      .catch((error) => { if (!cancelled) setDashboardError(error.message) })
+    return () => { cancelled = true }
+  }, [])
 
-  // 2. KPI 2: Lượt tải về trong tuần
-  const BASE_DAILY_DOWNLOADS = [
-    { day: 'T2', fullDay: 'Thứ Hai', date: '14/03', downloads: 68, views: 180 },
-    { day: 'T3', fullDay: 'Thứ Ba', date: '15/03', downloads: 92, views: 240 },
-    { day: 'T4', fullDay: 'Thứ Tư', date: '16/03', downloads: 115, views: 310 },
-    { day: 'T5', fullDay: 'Thứ Năm', date: '17/03', downloads: 84, views: 220 },
-    { day: 'T6', fullDay: 'Thứ Sáu', date: '18/03', downloads: 138, views: 390 },
-    { day: 'T7', fullDay: 'Thứ Bảy', date: '19/03', downloads: 105, views: 280 },
-    { day: 'CN', fullDay: 'Chủ Nhật', date: '20/03', downloads: 72, views: 190 }
-  ]
-  const totalDownloadsAll = documents.reduce((acc, d) => acc + (d.downloadCount || 0), 0)
-  const weeklyDownloadsSum =
-    BASE_DAILY_DOWNLOADS.reduce((acc, curr) => acc + curr.downloads, 0) + (downloadHistory?.length || 0)
-
-  // 3. KPI 3: Thành viên hoạt động
-  const totalUsersCount = users.length > 0 ? users.length : 12
-  const activeUsersCount = users.length > 0 ? users.filter((u) => u.isActive !== false).length : 11
-  const studentUsersCount = users.filter((u) => u.role !== 'ADMIN').length || 10
-  const adminUsersCount = users.filter((u) => u.role === 'ADMIN').length || 2
-
-  // 4. KPI 4: Yêu cầu chờ duyệt
-  const pendingReportsCount = reports.filter((r) => r.status === 'PENDING').length
+  const totalDocs = dashboardData?.totalDocuments ?? 0
+  const approvedDocsCount = dashboardData?.approved ?? 0
+  const pendingDocsCount = dashboardData?.pending ?? 0
+  const rejectedDocsCount = dashboardData?.rejected ?? 0
+  const totalDownloadsAll = dashboardData?.totalDownloads ?? 0
+  const weeklyDownloadsSum = dashboardData?.downloadsThisWeek ?? 0
+  const totalUsersCount = dashboardData?.totalUsers ?? 0
+  const activeUsersCount = dashboardData?.activeUsers ?? 0
+  const studentUsersCount = dashboardData?.students ?? 0
+  const adminUsersCount = dashboardData?.admins ?? 0
+  const pendingReportsCount = dashboardData?.pendingReports ?? 0
   const totalPendingRequests = pendingDocsCount + pendingReportsCount
-
-  // Dữ liệu Top 5 Học phần
-  const courseMap = {}
-  courses.forEach((c) => {
-    courseMap[c.code] = {
-      code: c.code,
-      name: c.name,
-      credits: c.credits || 3,
-      downloads: 0,
-      docCount: 0
-    }
-  })
-  documents.forEach((d) => {
-    if (d.status === 'APPROVED' && courseMap[d.courseCode]) {
-      courseMap[d.courseCode].downloads += d.downloadCount || 0
-      courseMap[d.courseCode].docCount += 1
-    }
-  })
-  const top5Courses = Object.values(courseMap)
-    .sort((a, b) => b.downloads - a.downloads || b.docCount - a.docCount)
-    .slice(0, 5)
+  const top5Courses = (dashboardData?.topCourses || []).map((course) => ({ ...course, docCount: course.documents }))
   const maxCourseDownloads = Math.max(...top5Courses.map((c) => c.downloads), 1)
+
+  const BASE_DAILY_DOWNLOADS = (dashboardData?.downloadsByDay || []).map((item) => {
+    const date = new Date(`${item.date}T00:00:00`)
+    return {
+      day: date.toLocaleDateString('vi-VN', { weekday: 'short' }),
+      fullDay: date.toLocaleDateString('vi-VN', { weekday: 'long' }),
+      date: date.toLocaleDateString('vi-VN'),
+      downloads: Number(item.downloads),
+      views: Number(item.views)
+    }
+  })
 
   // Tọa độ tính toán SVG Line Chart
   const chartWidth = 560
@@ -84,11 +63,11 @@ export default function AdminDashboard({
   const padBottom = 38
   const plotW = chartWidth - padLeft - padRight
   const plotH = chartHeight - padTop - padBottom
-  const maxDayDownloads = Math.max(...BASE_DAILY_DOWNLOADS.map((d) => d.downloads))
+  const maxDayDownloads = Math.max(...BASE_DAILY_DOWNLOADS.map((d) => d.downloads), 0)
   const yAxisMax = Math.ceil((maxDayDownloads * 1.15) / 20) * 20 || 160
 
   const points = BASE_DAILY_DOWNLOADS.map((d, idx) => {
-    const x = padLeft + (idx / (BASE_DAILY_DOWNLOADS.length - 1)) * plotW
+    const x = padLeft + (idx / Math.max(BASE_DAILY_DOWNLOADS.length - 1, 1)) * plotW
     const y = padTop + plotH - (d.downloads / yAxisMax) * plotH
     return { x, y, data: d }
   })
@@ -103,22 +82,18 @@ export default function AdminDashboard({
     return `${acc} C ${cpx1},${cpy1} ${cpx2},${cpy2} ${pt.x},${pt.y}`
   }, '')
 
-  const areaPath = `${linePath} L ${points[points.length - 1].x},${padTop + plotH} L ${points[0].x},${padTop + plotH} Z`
+  const areaPath = points.length ? `${linePath} L ${points[points.length - 1].x},${padTop + plotH} L ${points[0].x},${padTop + plotH} Z` : ''
 
   // 4 tài liệu được tải nhiều nhất cho danh sách phụ
-  const topDownloadedDocs = [...documents]
-    .filter((d) => d.status === 'APPROVED')
-    .sort((a, b) => (b.downloadCount || 0) - (a.downloadCount || 0))
-    .slice(0, 4)
+  const topDownloadedDocs = dashboardData?.topDocuments || []
 
   // Hàng chờ duyệt nhanh & Hoạt động gần đây (UC11)
-  const pendingDocsList = documents.filter((d) => d.status === 'PENDING').slice(0, 4)
-  const recentActivities = [
-    { text: 'Quản trị viên đã phê duyệt "Slide Cơ sở dữ liệu - Chương 3: SQL nâng cao"', time: '10 phút trước', color: 'var(--green-9)' },
-    { text: 'Quản trị viên đã từ chối "Tổng hợp công thức Toán rời rạc"', time: '1 giờ trước', color: 'var(--red-9)' },
-    { text: `Đang có ${pendingReportsCount} báo cáo vi phạm chờ xử lý tại hàng đợi`, time: '3 giờ trước', color: 'var(--amber-9)' },
-    { text: `Hệ thống ghi nhận ${activeUsersCount} tài khoản hoạt động ổn định`, time: 'Hôm nay', color: 'var(--blue-9)' }
-  ]
+  const pendingDocsList = dashboardData?.pendingQueue || []
+  const recentActivities = (dashboardData?.recentActivities || []).map((activity, index) => ({
+    ...activity,
+    color: ['var(--green-9)', 'var(--red-9)', 'var(--amber-9)', 'var(--blue-9)'][index % 4],
+    time: activity.time ? new Date(activity.time).toLocaleString('vi-VN') : ''
+  }))
 
   const radixBarColors = [
     'var(--blue-9, #0090ff)',
@@ -130,6 +105,10 @@ export default function AdminDashboard({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {dashboardError && (
+        <div role="alert" className="empty-state-box">Không tải được thống kê từ máy chủ: {dashboardError}</div>
+      )}
+      {!dashboardData && !dashboardError && <div role="status" style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Đang tải thống kê từ cơ sở dữ liệu…</div>}
       {/* Tiêu đề trang & Bộ lọc thời gian */}
       <div
         style={{
@@ -169,45 +148,11 @@ export default function AdminDashboard({
             Tổng quan Vận hành Hệ thống 5share (FR-13 / UC11)
           </h1>
           <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Theo dõi thời gian thực lưu lượng tải tài liệu, tiến độ kiểm duyệt và độ phân bổ học liệu Sư phạm Tin học.
+            Số liệu được tổng hợp từ hoạt động và dữ liệu đã lưu trong cơ sở dữ liệu.
           </p>
         </div>
 
-        <div
-          style={{
-            display: 'inline-flex',
-            backgroundColor: 'var(--slate-2)',
-            padding: '3px',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-subtle)'
-          }}
-        >
-          {[
-            { id: 'week', label: '7 ngày qua' },
-            { id: 'month', label: '30 ngày qua' },
-            { id: 'semester', label: 'Cả học kỳ' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setTimeRange(tab.id)}
-              style={{
-                border: 'none',
-                background: timeRange === tab.id ? '#ffffff' : 'transparent',
-                color: timeRange === tab.id ? 'var(--blue-11)' : 'var(--text-secondary)',
-                fontWeight: timeRange === tab.id ? 700 : 500,
-                fontSize: '12.5px',
-                padding: '6px 14px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                boxShadow: timeRange === tab.id ? 'var(--shadow-sm)' : 'none',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <span className="status-badge blue">Số liệu 7 ngày gần nhất</span>
       </div>
 
       {/* 4 THẺ KPI METRIC CARDS ĐƯỢC TÍNH TOÁN TỰ ĐỘNG TỪ DỮ LIỆU SỐNG */}
@@ -468,7 +413,7 @@ export default function AdminDashboard({
               </h3>
             </div>
             <span style={{ fontSize: '11.5px', color: 'var(--green-11)', fontWeight: 600 }}>
-              +14.8% tăng trưởng
+              Từ nhật ký truy cập
             </span>
           </div>
 

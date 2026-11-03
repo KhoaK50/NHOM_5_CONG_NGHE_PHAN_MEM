@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Download, Bookmark, Check, Sparkles, AlertTriangle, LogIn } from 'lucide-react'
-import { getGuestDownloadStats, recordGuestDownload } from '../../utils/downloadTracker'
 
 export default function DownloadAction({
   documentItem,
@@ -10,45 +9,25 @@ export default function DownloadAction({
   onToggleBookmark,
   onRequireLogin
 }) {
-  const [guestStats, setGuestStats] = useState(() =>
-    !isAuthenticated ? getGuestDownloadStats() : { count: 0, remaining: 3, isExhausted: false, limit: 3 }
-  )
   const [showLimitModal, setShowLimitModal] = useState(false)
-
-  useEffect(() => {
-    const handleStorage = () => {
-      if (!isAuthenticated) {
-        setGuestStats(getGuestDownloadStats())
-      }
-    }
-    window.addEventListener('storage', handleStorage)
-    return () => window.removeEventListener('storage', handleStorage)
-  }, [isAuthenticated])
 
   if (!documentItem) return null
 
   const handleDownloadClick = () => {
     if (!isAuthenticated) {
-      const currentStats = getGuestDownloadStats()
-      if (currentStats.isExhausted) {
-        setShowLimitModal(true)
-        return
-      }
-      recordGuestDownload()
-      setGuestStats(getGuestDownloadStats())
-      if (onDownload) onDownload(documentItem)
+      setShowLimitModal(true)
       return
     }
 
     if (onDownload) onDownload(documentItem)
   }
 
-  const handleBookmarkClick = () => {
+  const handleBookmarkClick = async () => {
     if (!isAuthenticated) {
       if (onRequireLogin) onRequireLogin()
       return
     }
-    if (onToggleBookmark) onToggleBookmark(documentItem.id)
+    try { await onToggleBookmark?.(documentItem.id) } catch { /* The app displays the API error. */ }
   }
 
   const formatKey = (documentItem.format || documentItem.fileName?.split('.').pop() || 'pdf').toUpperCase()
@@ -61,24 +40,20 @@ export default function DownloadAction({
           style={{
             padding: '7px 10px',
             borderRadius: '6px',
-            backgroundColor: guestStats.isExhausted ? 'var(--red-1)' : 'var(--amber-1)',
-            border: `1px solid ${guestStats.isExhausted ? 'var(--red-2)' : 'var(--amber-2)'}`,
+            backgroundColor: 'var(--amber-1)',
+            border: '1px solid var(--amber-2)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             fontSize: '11.5px',
-            color: guestStats.isExhausted ? 'var(--red-6)' : 'var(--amber-7)'
+            color: 'var(--amber-7)'
           }}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-            <Download size={12} />
-            <span>Lượt tải hôm nay: <strong>{guestStats.count}/3</strong></span>
+            <LogIn size={12} />
+            <span>Đăng nhập để tải tệp PDF gốc</span>
           </span>
-          <span>
-            {guestStats.remaining > 0
-              ? `(còn ${guestStats.remaining} lượt)`
-              : 'Đã chạm giới hạn'}
-          </span>
+          <span>Miễn phí cho sinh viên</span>
         </div>
       ) : (
         <div
@@ -173,11 +148,11 @@ export default function DownloadAction({
             </div>
 
             <h3 style={{ margin: '0 0 8px 0', fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>
-              Bạn đã dùng hết 3 lượt tải miễn phí trong ngày
+              Cần đăng nhập để tải PDF gốc
             </h3>
 
             <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-              Để bảo vệ băng thông và khuyến khích chia sẻ học liệu có trách nhiệm, hệ thống giới hạn tối đa 3 lượt tải/ngày cho Khách vãng lai. Vui lòng đăng nhập tài khoản sinh viên HCMUE để tải không giới hạn.
+              Tệp gốc chỉ được cung cấp cho tài khoản sinh viên đã xác thực. Hãy đăng nhập để tải tài liệu và lưu lại lượt tải trong lịch sử của bạn.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

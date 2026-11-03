@@ -36,6 +36,7 @@ NHOM_5_CONG_NGHE_PHAN_MEM/
 * [Quy trình chuẩn hóa phát triển phần mềm (SDLC)](./docs/QUY_TRINH_CHUAN_HOA_SDLC.md)
 * [Lộ trình phân tích & Thiết kế hệ thống](./docs/lo-trinh-phan-tich-thiet-ke.md)
 * [Hướng dẫn trực quan các sơ đồ UML & ERD](./docs/huong-dan-truc-quan-san-pham-thiet-ke.md)
+* [Hướng dẫn kết nối API và PostgreSQL cho UC11–UC13](./docs/UC11_UC13_DATABASE_SETUP.md)
 
 ## 5. Giấy phép (License)
 Dự án được phát hành theo giấy phép [MIT License](./LICENSE).
