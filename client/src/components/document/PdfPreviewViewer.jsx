@@ -32,6 +32,12 @@ export default function PdfPreviewViewer({
   ).toLowerCase()
 
   const isOfficeDoc = fileExt === 'docx' || fileExt === 'pptx'
+  const previewUrl = (() => {
+    try {
+      const url = new URL(documentItem.previewUrl || '')
+      return url.protocol === 'https:' && url.hostname === 'res.cloudinary.com' ? url.href : null
+    } catch { return null }
+  })()
   const allPages = documentItem.pages || []
   const visiblePages = isAuthenticated ? allPages : allPages.slice(0, 3)
   const totalNavigable = isAuthenticated ? visiblePages.length : visiblePages.length + 1
@@ -104,7 +110,7 @@ export default function PdfPreviewViewer({
           {isAuthenticated ? (
             <span className="status-badge green">
               <Unlock size={12} />
-              <span>Toàn văn ({documentItem.pageCount} {fileExt === 'pptx' ? 'slide' : 'trang'})</span>
+              <span>PDF xem trước ({documentItem.pageCount} {fileExt === 'pptx' ? 'slide' : 'trang'})</span>
             </span>
           ) : (
             <span className="status-badge amber">
@@ -326,7 +332,17 @@ export default function PdfPreviewViewer({
             />
           </div>
         </div>
-      ) : (
+      ) : previewUrl ? (
+        <div className="pdf-canvas-stage" style={{ padding: 0 }}>
+          <iframe
+            src={`${previewUrl}#toolbar=1&navpanes=0`}
+            title={`Bản xem trước: ${documentItem.title}`}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            style={{ width: '100%', minHeight: '760px', border: 0, background: '#fff' }}
+          />
+        </div>
+      ) : allPages.length ? (
         <div className="pdf-canvas-stage">
           {visiblePages.map((page, idx) => (
             <div
@@ -476,6 +492,10 @@ export default function PdfPreviewViewer({
               </div>
             </div>
           )}
+        </div>
+      ) : (
+        <div className="empty-state-box" role="status">
+          Chưa có tệp PDF xem trước hợp lệ trên kho lưu trữ cho tài liệu này.
         </div>
       )}
     </div>
