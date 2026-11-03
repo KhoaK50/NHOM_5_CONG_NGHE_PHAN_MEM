@@ -32,7 +32,8 @@ import {
   INITIAL_BOUNTIES,
   INITIAL_DOWNLOAD_HISTORY,
   INITIAL_USERS,
-  INITIAL_FEEDBACKS
+  INITIAL_FEEDBACKS,
+  INITIAL_COURSES
 } from './data/mockData'
 import { listPublicCourses, listModerationDocuments, listReports, uploadDocument } from './utils/documentCourseApi'
 import {
@@ -43,6 +44,41 @@ import {
   recordDocumentView,
   removeBookmark
 } from './utils/interactionApi'
+
+const KNOWLEDGE_BLOCK_LABEL_MAP = {
+  DAI_CUONG: 'Đại cương',
+  CO_SO_NGANH: 'Cơ sở ngành',
+  CHUYEN_NGANH: 'Chuyên ngành',
+  NGHIEP_VU_SU_PHAM: 'Nghiệp vụ Sư phạm'
+};
+
+function normalizeCourse(apiCourse) {
+  const code = apiCourse.courseCode || apiCourse.code;
+  const meta = INITIAL_COURSES.find((c) => c.code === code) || {};
+  const semStr = typeof apiCourse.semester === 'number'
+    ? `Học kỳ ${apiCourse.semester}`
+    : (apiCourse.semester || meta.semester || 'Học kỳ 1');
+  const blockStr = KNOWLEDGE_BLOCK_LABEL_MAP[apiCourse.knowledgeBlock] || apiCourse.knowledgeBlock || meta.knowledgeBlock || 'Cơ sở ngành';
+
+  return {
+    ...meta,
+    ...apiCourse,
+    id: apiCourse.id || meta.id,
+    code,
+    courseCode: code,
+    name: apiCourse.courseName || apiCourse.name || meta.name || code,
+    courseName: apiCourse.courseName || apiCourse.name || meta.name || code,
+    semester: semStr,
+    knowledgeBlock: blockStr,
+    rawSemester: apiCourse.semester,
+    rawKnowledgeBlock: apiCourse.knowledgeBlock,
+    credits: apiCourse.credits ?? meta.credits ?? 3,
+    summary: apiCourse.summary || meta.summary || '',
+    isActive: apiCourse.isActive !== undefined ? apiCourse.isActive : true,
+    documentCount: apiCourse.documentCount ?? meta.documentCount ?? 0,
+    prerequisites: meta.prerequisites || []
+  };
+}
 
 export default function App() {
   const [actorRole, setActorRole] = useState(() => {
@@ -66,7 +102,7 @@ export default function App() {
   const [adminSubTab, setAdminSubTab] = useState('dashboard') // 'dashboard' | 'moderation' | 'courses' | 'users'
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
-  const [courses, setCourses] = useState([])
+  const [courses, setCourses] = useState(() => INITIAL_COURSES.map(normalizeCourse))
   const [documents, setDocuments] = useState([])
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
   const [reports, setReports] = useState(INITIAL_REPORTS)
@@ -94,11 +130,19 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false
-    listPublicCourses({ limit: 50 })
-      .then((res) => {
-        if (!cancelled && Array.isArray(res?.data)) {
-          setCourses(res.data)
-        }
+    Promise.all([
+      listPublicCourses({ page: 1, limit: 50 }),
+      listPublicCourses({ page: 2, limit: 50 })
+    ])
+      .then(([res1, res2]) => {
+        if (cancelled) return
+        const list1 = Array.isArray(res1?.data) ? res1.data : []
+        const list2 = Array.isArray(res2?.data) ? res2.data : []
+        const combined = [...list1, ...list2]
+        const apiCourses = combined.map(normalizeCourse)
+        const apiCodes = new Set(apiCourses.map((c) => c.code))
+        const fallbackCourses = INITIAL_COURSES.filter((c) => !apiCodes.has(c.code)).map(normalizeCourse)
+        setCourses([...apiCourses, ...fallbackCourses])
       })
       .catch(() => {})
     return () => { cancelled = true }

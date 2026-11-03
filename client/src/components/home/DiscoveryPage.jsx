@@ -262,6 +262,7 @@ export default function DiscoveryPage({
             setCurrentPage(1)
           }}
           onResetFilters={handleResetFilters}
+          onOpenUpload={onOpenUpload}
         />
 
         {/* 2. Vectoria Multi-Criteria Filter Panel (.pathfinding-panel -> .vec-filter-panel / FR-04 & UC05) */}
@@ -525,6 +526,8 @@ export default function DiscoveryPage({
         {/* 5. Lưới / Bảng Học liệu chuẩn Vectoria */}
         <DocumentGrid
           documents={paginatedDocs}
+          totalSystemDocs={documents.length}
+          hasActiveFilters={hasActiveFilters}
           bookmarkedIds={bookmarkedIds}
           viewMode={viewMode}
           pageOffset={(currentPage - 1) * PAGE_SIZE}
