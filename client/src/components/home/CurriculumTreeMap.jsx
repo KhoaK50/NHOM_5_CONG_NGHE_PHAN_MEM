@@ -91,8 +91,15 @@ export default function CurriculumTreeMap({
   const [zoom, setZoom] = useState(0.92)
   const [isDragging, setIsDragging] = useState(false)
   const [hoveredCode, setHoveredCode] = useState(null)
-  const [edges, setEdges] = useState([])
-  const [canvasSize, setCanvasSize] = useState({ width: 2020, height: 560 })
+  const [staticWires, setStaticWires] = useState([])
+
+  const canvasSize = useMemo(
+    () => ({
+      width: 2020,
+      height: isTallViewport ? 980 : 660
+    }),
+    [isTallViewport]
+  )
 
   const viewportRef = useRef(null)
   const boardRef = useRef(null)
@@ -197,17 +204,14 @@ export default function CurriculumTreeMap({
     }
   }, [focusCode, activeCourses])
 
-  // Tính toán tọa độ dây điện vuông góc trong hệ quy chiếu gốc của bảng mạch (không bị lệch khi zoom)
-  const recomputeEdges = useCallback(() => {
+  // 1. Tính toán tọa độ tĩnh của mạng lưới mạch nối (Orthogonal Routing)
+  // Chỉ chạy khi load dữ liệu, thay đổi zoom hoặc resize cửa sổ. HOÀN TOÀN TÁCH RỜI khỏi sự kiện hover/click để chống giật giật.
+  const computeStaticWires = useCallback(() => {
     const boardEl = boardRef.current
     if (!boardEl || !isExpanded) return
 
     const boardRect = boardEl.getBoundingClientRect()
     const scale = zoom || 1
-
-    const unscaledW = Math.round(boardEl.offsetWidth || boardRect.width / scale)
-    const unscaledH = Math.round(boardEl.offsetHeight || boardRect.height / scale)
-    setCanvasSize({ width: unscaledW, height: unscaledH })
 
     const semOrder = CURRICULUM_SEMESTERS_META.map((s) => s.id)
     const colIndexBySem = {}
@@ -225,14 +229,6 @@ export default function CurriculumTreeMap({
       }
     })
 
-    // Tâm rãnh dọc rộng 68px giữa cột c và c+1
-    const vChannelX = []
-    for (let c = 0; c < semOrder.length - 1; c++) {
-      if (colBounds[c] && colBounds[c + 1]) {
-        vChannelX[c] = (colBounds[c].right + colBounds[c + 1].left) / 2
-      }
-    }
-
     const nodeBoxByCode = {}
     const rowTops = {}
     const rowBottoms = {}
@@ -248,6 +244,7 @@ export default function CurriculumTreeMap({
           regularIdx += 1
         }
         if (!el) return
+
         const r = el.getBoundingClientRect()
         const left = (r.left - boardRect.left) / scale
         const right = (r.right - boardRect.left) / scale
@@ -259,6 +256,7 @@ export default function CurriculumTreeMap({
           right,
           top,
           bottom,
+          midX: (left + right) / 2,
           midY: (top + bottom) / 2,
           height: bottom - top,
           colIdx: colIndexBySem[semId],
@@ -272,18 +270,18 @@ export default function CurriculumTreeMap({
       })
     })
 
-    // Tâm rãnh bus ngang rộng 32px giữa hàng r và r+1
+    // Tâm rãnh bus ngang rộng 28px giữa các hàng học phần
     const hCorridorY = []
     const maxRow = Math.max(0, ...Object.keys(rowBottoms).map(Number))
     for (let r = 0; r <= maxRow; r++) {
       if (rowBottoms[r] !== undefined && rowTops[r + 1] !== undefined) {
         hCorridorY[r] = (rowBottoms[r] + rowTops[r + 1]) / 2
       } else if (rowBottoms[r] !== undefined) {
-        hCorridorY[r] = rowBottoms[r] + 16
+        hCorridorY[r] = rowBottoms[r] + 14
       }
     }
 
-    // Gom danh sách tất cả các cạnh (from -> to) và sắp xếp chân cực theo độ cao đích để dây không bắt chéo ngay tại chân cực
+    // Gom danh sách tất cả các liên kết tiên quyết
     const rawConnections = []
     const outgoingByCourse = {}
     const incomingByCourse = {}
@@ -313,14 +311,14 @@ export default function CurriculumTreeMap({
       }
     }
 
-    // Sắp xếp thứ tự chân cực ra / vào theo tọa độ Y của đầu bên kia (giúp các dây đi ra tách rộng 16px và không cắt nhau)
+    // Tách chân cực ra / vào theo tọa độ Y
     const outPortYByConnId = {}
     for (const code of Object.keys(outgoingByCourse)) {
       const list = outgoingByCourse[code]
       list.sort((a, b) => a.toBox.midY - b.toBox.midY)
       const n = list.length
       list.forEach((conn, idx) => {
-        const offset = (idx - (n - 1) / 2) * 16
+        const offset = (idx - (n - 1) / 2) * 12
         outPortYByConnId[conn.id] = conn.fromBox.midY + offset
       })
     }
@@ -331,16 +329,15 @@ export default function CurriculumTreeMap({
       list.sort((a, b) => a.fromBox.midY - b.fromBox.midY)
       const n = list.length
       list.forEach((conn, idx) => {
-        const offset = (idx - (n - 1) / 2) * 16
+        const offset = (idx - (n - 1) / 2) * 12
         inPortYByConnId[conn.id] = conn.toBox.midY + offset
       })
     }
 
-    // Phân làn rộng rãi trong rãnh dọc (12px mỗi làn) và rãnh ngang (7px mỗi làn)
     const vChannelUsage = {}
     const hCorridorUsage = {}
 
-    const allocateLane = (usageMap, key, step = 12) => {
+    const allocateLane = (usageMap, key, step = 8) => {
       const count = usageMap[key] || 0
       usageMap[key] = count + 1
       if (count === 0) return 0
@@ -349,46 +346,56 @@ export default function CurriculumTreeMap({
       return dir * mag * step
     }
 
-    const computed = []
+    const computedWires = []
     for (const conn of rawConnections) {
       const { id, from: preCode, to: targetCode, fromBox, toBox } = conn
-
-      // Phân loại mức độ liên kết khi người dùng đang chọn/hover 1 môn
-      let wireRole = 'idle'
-      if (focusCode) {
-        if (targetCode === focusCode && directUpCodes.has(preCode)) {
-          wireRole = 'direct-pre' // Môn tiên quyết trực tiếp dẫn vào môn đang chọn (Màu Vàng Hổ Phách đậm)
-        } else if (preCode === focusCode && directDownCodes.has(targetCode)) {
-          wireRole = 'direct-next' // Từ môn đang chọn dẫn trực tiếp sang môn kế tiếp (Màu Xanh Sapphire đậm)
-        } else if (
-          (upstreamCodes.has(preCode) && upstreamCodes.has(targetCode)) ||
-          (downstreamCodes.has(preCode) && downstreamCodes.has(targetCode))
-        ) {
-          wireRole = 'chain' // Chuỗi liên đới xa hơn (Nét đứt mảnh)
-        } else {
-          wireRole = 'dimmed'
-        }
-      }
-
-      const x1 = fromBox.right
-      const y1 = outPortYByConnId[id] ?? fromBox.midY
-      const x2 = toBox.left
-      const y2 = inPortYByConnId[id] ?? toBox.midY
-
       const c1 = fromBox.colIdx
       const c2 = toBox.colIdx
 
       let waypoints
-      if (c2 === c1 + 1) {
+
+      // TH1: Cùng học kỳ / cùng cột (như POLI2002 -> POLI2003 trong HK2)
+      // Chuẩn hóa: đi thẳng đứng từ đáy môn trên xuống đỉnh môn dưới (TUYỆT ĐỐI KHÔNG DÙNG ĐƯỜNG CHIM BAY)
+      if (c1 === c2) {
+        if (fromBox.bottom <= toBox.top) {
+          const mx = (fromBox.left + fromBox.right) / 2
+          waypoints = [
+            { x: mx, y: fromBox.bottom },
+            { x: mx, y: toBox.top }
+          ]
+        } else {
+          // Ngược chiều: vòng qua rãnh phải
+          const minChX = (colBounds[c1]?.right ?? fromBox.right) + 12
+          const maxChX = (colBounds[c1 + 1]?.left ?? (fromBox.right + 68)) - 12
+          const vx = Math.max(minChX, Math.min(maxChX, (minChX + maxChX) / 2))
+          waypoints = [
+            { x: fromBox.right, y: fromBox.midY },
+            { x: vx, y: fromBox.midY },
+            { x: vx, y: toBox.midY },
+            { x: toBox.right, y: toBox.midY }
+          ]
+        }
+      }
+      // TH2: Hai học kỳ liên tiếp (c2 === c1 + 1)
+      // Chuẩn hóa: vx BẮT BUỘC nằm trong khoảng an toàn giữa 2 cột, không chạm vào viền thẻ của cột đích
+      else if (c2 === c1 + 1) {
+        const x1 = fromBox.right
+        const y1 = outPortYByConnId[id] ?? fromBox.midY
+        const x2 = toBox.left
+        const y2 = inPortYByConnId[id] ?? toBox.midY
+
+        const minChX = (colBounds[c1]?.right ?? x1) + 12
+        const maxChX = (colBounds[c2]?.left ?? x2) - 12
+        const baseChX = (minChX + maxChX) / 2
+        const laneShift = allocateLane(vChannelUsage, `v_${c1}`, 8)
+        const vx = Math.max(minChX, Math.min(maxChX, baseChX + laneShift))
+
         if (Math.abs(y1 - y2) <= 3) {
           waypoints = [
             { x: x1, y: y1 },
             { x: x2, y: y1 }
           ]
         } else {
-          const baseChannelX = vChannelX[c1] !== undefined ? vChannelX[c1] : (x1 + x2) / 2
-          const laneShift = allocateLane(vChannelUsage, `v_${c1}`, 12)
-          const vx = baseChannelX + laneShift
           waypoints = [
             { x: x1, y: y1 },
             { x: vx, y: y1 },
@@ -396,23 +403,35 @@ export default function CurriculumTreeMap({
             { x: x2, y: y2 }
           ]
         }
-      } else if (c2 > c1 + 1) {
-        const baseVx1 = vChannelX[c1] !== undefined ? vChannelX[c1] : x1 + 24
-        const baseVx2 = vChannelX[c2 - 1] !== undefined ? vChannelX[c2 - 1] : x2 - 24
-        const vx1 = baseVx1 + allocateLane(vChannelUsage, `v_${c1}`, 12)
-        const vx2 = baseVx2 + allocateLane(vChannelUsage, `v_${c2 - 1}`, 12)
+      }
+      // TH3: Cách nhau nhiều học kỳ (c2 > c1 + 1)
+      // Chuẩn hóa: đi qua rãnh ngang bus giữa các hàng học phần, không đâm xuyên qua chữ của học phần trung gian
+      else if (c2 > c1 + 1) {
+        const x1 = fromBox.right
+        const y1 = outPortYByConnId[id] ?? fromBox.midY
+        const x2 = toBox.left
+        const y2 = inPortYByConnId[id] ?? toBox.midY
+
+        const minChX1 = (colBounds[c1]?.right ?? x1) + 12
+        const maxChX1 = (colBounds[c1 + 1]?.left ?? (x1 + 68)) - 12
+        const vx1 = Math.max(
+          minChX1,
+          Math.min(maxChX1, (minChX1 + maxChX1) / 2 + allocateLane(vChannelUsage, `v_${c1}`, 8))
+        )
+
+        const minChX2 = (colBounds[c2 - 1]?.right ?? (x2 - 68)) + 12
+        const maxChX2 = (colBounds[c2]?.left ?? x2) - 12
+        const vx2 = Math.max(
+          minChX2,
+          Math.min(maxChX2, (minChX2 + maxChX2) / 2 + allocateLane(vChannelUsage, `v_${c2 - 1}`, 8))
+        )
 
         const rawCorridorIdx = Math.min(
           hCorridorY.length - 1,
           Math.max(0, Math.min(fromBox.rowIdx, toBox.rowIdx))
         )
-        const targetCorridorIdx =
-          c1 === 0 && c2 >= 2 ? Math.min(4, rawCorridorIdx) : rawCorridorIdx
-        const baseBusY =
-          hCorridorY[targetCorridorIdx] !== undefined
-            ? hCorridorY[targetCorridorIdx]
-            : fromBox.bottom + 14
-        const busY = baseBusY + allocateLane(hCorridorUsage, `h_${targetCorridorIdx}`, 7)
+        const baseBusY = hCorridorY[rawCorridorIdx] ?? (fromBox.bottom + 14)
+        const busY = baseBusY + allocateLane(hCorridorUsage, `h_${rawCorridorIdx}`, 5)
 
         waypoints = [
           { x: x1, y: y1 },
@@ -422,11 +441,68 @@ export default function CurriculumTreeMap({
           { x: vx2, y: y2 },
           { x: x2, y: y2 }
         ]
-      } else {
+      }
+      // TH4: Dự phòng fallback vuông góc
+      else {
+        const x1 = fromBox.right
+        const y1 = fromBox.midY
+        const x2 = toBox.left
+        const y2 = toBox.midY
+        const midX = (x1 + x2) / 2
         waypoints = [
           { x: x1, y: y1 },
+          { x: midX, y: y1 },
+          { x: midX, y: y2 },
           { x: x2, y: y2 }
         ]
+      }
+
+      computedWires.push({
+        id,
+        from: preCode,
+        to: targetCode,
+        x1: waypoints[0].x,
+        y1: waypoints[0].y,
+        x2: waypoints[waypoints.length - 1].x,
+        y2: waypoints[waypoints.length - 1].y,
+        d: buildOrthogonalPath(waypoints, 6)
+      })
+    }
+
+    setStaticWires(computedWires)
+  }, [activeCourses, isExpanded, zoom])
+
+  // Chỉ kích hoạt đo đạc lại DOM khi kích thước layout thực sự thay đổi
+  useLayoutEffect(() => {
+    const timer = setTimeout(() => {
+      computeStaticWires()
+    }, 40)
+    const handleResize = () => computeStaticWires()
+    window.addEventListener('resize', handleResize)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [computeStaticWires])
+
+  // 2. Phân loại vai trò dây dẫn (Highlighting) tức thì trong bộ nhớ — KHÔNG ĐO DOM, KHÔNG GÂY GIẬT KHUNG HÌNH
+  const edges = useMemo(() => {
+    if (!staticWires.length) return []
+    const mapped = staticWires.map((wire) => {
+      let wireRole = 'idle'
+      if (focusCode) {
+        if (wire.to === focusCode && directUpCodes.has(wire.from)) {
+          wireRole = 'direct-pre' // Môn tiên quyết trực tiếp dẫn vào môn đang chọn (Vàng Hổ Phách đậm)
+        } else if (wire.from === focusCode && directDownCodes.has(wire.to)) {
+          wireRole = 'direct-next' // Từ môn đang chọn dẫn trực tiếp sang môn kế tiếp (Xanh Sapphire đậm)
+        } else if (
+          (upstreamCodes.has(wire.from) && upstreamCodes.has(wire.to)) ||
+          (downstreamCodes.has(wire.from) && downstreamCodes.has(wire.to))
+        ) {
+          wireRole = 'chain' // Chuỗi liên đới xa hơn (Nét đứt mảnh)
+        } else {
+          wireRole = 'dimmed'
+        }
       }
 
       const priority =
@@ -438,39 +514,22 @@ export default function CurriculumTreeMap({
               ? 1
               : 0
 
-      computed.push({
-        id,
-        from: preCode,
-        to: targetCode,
-        x1,
-        y1: waypoints[0].y,
-        x2,
-        y2: waypoints[waypoints.length - 1].y,
-        d: buildOrthogonalPath(waypoints, 6),
+      return {
+        ...wire,
         wireRole,
         priority
-      })
-    }
+      }
+    })
 
-    computed.sort((a, b) => a.priority - b.priority)
-    setEdges(computed)
+    return mapped.sort((a, b) => a.priority - b.priority)
   }, [
-    activeCourses,
-    isExpanded,
-    zoom,
+    staticWires,
     focusCode,
     directUpCodes,
     directDownCodes,
     upstreamCodes,
     downstreamCodes
   ])
-
-  useLayoutEffect(() => {
-    recomputeEdges()
-    const handleResize = () => recomputeEdges()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [recomputeEdges])
 
   // Xử lý Kéo chuột để di chuyển bản đồ (Drag-to-Pan)
   const handleMouseDown = (e) => {
