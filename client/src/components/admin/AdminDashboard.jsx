@@ -145,7 +145,7 @@ export default function AdminDashboard({
               letterSpacing: '-0.02em'
             }}
           >
-            Tổng quan Vận hành Hệ thống 5share (FR-13 / UC11)
+            Tổng quan hệ thống 5Share
           </h1>
           <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
             Số liệu được tổng hợp từ hoạt động và dữ liệu đã lưu trong cơ sở dữ liệu.

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   UploadCloud,
   FileCheck2,
@@ -13,30 +13,7 @@ import MetadataForm from './MetadataForm'
 import Sha256Verifier from './Sha256Verifier'
 import { EIGHT_MODERATION_CRITERIA } from '../../data/mockData'
 import { checkDocumentHash } from '../../utils/documentCourseApi'
-import { verifyFileAndHash, computeDeterministicHexHash } from '../../utils/fileHasher'
-
-function buildUniqueSampleHash(existingDocs = [], baseName = 'KHBD_TinHoc11_Bai9_TruyVanSQL_CV5512') {
-  const existingSet = new Set(
-    existingDocs.map((d) => (d.fileHash || '').toLowerCase()).filter(Boolean)
-  )
-  let attempt = existingDocs.length + 1
-  let candidate = computeDeterministicHexHash(`${baseName}_v${attempt}`)
-  while (existingSet.has(candidate.toLowerCase())) {
-    attempt += 1
-    candidate = computeDeterministicHexHash(`${baseName}_v${attempt}`)
-  }
-  return candidate
-}
-
-const SCENARIO_LIST = [
-  { id: 'PDF_VALID', label: 'PDF Chuẩn (.pdf)', danger: false },
-  { id: 'DOCX_VALID', label: 'Word Chuẩn (.docx)', danger: false },
-  { id: 'PPTX_VALID', label: 'Slide Chuẩn (.pptx)', danger: false },
-  { id: 'DUPLICATE_HASH', label: 'Trùng SHA-256', danger: true },
-  { id: 'FAKE_MAGIC_BYTES', label: 'Giả mạo đuôi (MZ .exe)', danger: true },
-  { id: 'EMPTY_FILE', label: 'Tệp rỗng (0 Byte)', danger: true },
-  { id: 'OVERSIZE', label: 'Quá tải (26.2 MB)', danger: true }
-]
+import { verifyFileAndHash } from '../../utils/fileHasher'
 
 export default function UploadModal({
   courses = [],
@@ -50,37 +27,14 @@ export default function UploadModal({
     activeCourses[0]?.code ||
     'COMP1044'
 
-  const [activeScenario, setActiveScenario] = useState('PDF_VALID')
-  const [title, setTitle] = useState(
-    'Kế hoạch bài dạy Tin học 11 - Bài 9: Truy vấn dữ liệu SQL nâng cao (Chuẩn CV 5512)'
-  )
+  const [title, setTitle] = useState('')
   const [courseCode, setCourseCode] = useState(defaultSqlCourse)
   const [docType, setDocType] = useState('KHBD Công văn 5512')
-  const [description, setDescription] = useState(
-    'Giáo án chi tiết 2 tiết thực hành phòng máy theo Công văn 5512, có đầy đủ 4 hoạt động dạy học và Rubric đánh giá năng lực giải quyết vấn đề NLc.'
-  )
+  const [description, setDescription] = useState('')
   const [verificationResult, setVerificationResult] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const [formError, setFormError] = useState('')
   const [selectedRawFile, setSelectedRawFile] = useState(null)
-
-  useEffect(() => {
-    let mounted = true
-    const uniqueHexHash = buildUniqueSampleHash(existingDocuments)
-    verifyFileAndHash(
-      {
-        name: 'COMP1018_KHBD_TinHoc11_Bai9_TruyVanSQL_CV5512.pdf',
-        size: 2.85 * 1024 * 1024,
-        presetHash: uniqueHexHash
-      },
-      existingDocuments
-    ).then((res) => {
-      if (mounted) setVerificationResult(res)
-    })
-    return () => {
-      mounted = false
-    }
-  }, [existingDocuments])
 
   // Tự động nhận diện Mã học phần & Loại tài liệu từ tên tệp tải lên
   const inferMetadataFromFilename = (fileName = '') => {
@@ -98,18 +52,18 @@ export default function UploadModal({
       setDocType('KHBD Công văn 5512')
     } else if (/DE\s*THI|DAP\s*AN|FINAL|MIDTERM/i.test(clean)) {
       setDocType('Đề thi & Đáp án')
-    } else if (/SLIDE|PPT|BAI\s*GIANG/i.test(clean)) {
+    } else if (/SLIDE|BAI\s*GIANG|PRESENTATION|POWERPOINT/i.test(clean)) {
       setDocType('Slide bài giảng')
-    } else if (/DE\s*CUONG|BAI\s*TAP|LAB|DO\s*AN/i.test(clean)) {
+    } else if (/BAI\s*TAP|DE\s*CUONG|THUC\s*HANH/i.test(clean)) {
       setDocType('Đề cương & Bài tập')
     }
 
-    if (clean.trim().length >= 10) {
-      setTitle(clean.trim())
+    if (!title.trim()) {
+      setTitle(clean.charAt(0).toUpperCase() + clean.slice(1))
     }
   }
 
-  // UC08: máy chủ đọc bytes gốc và đối chiếu kho thật; lỗi kết nối thì chặn thay vì cho qua
+  // Máy chủ kiểm tra bytes gốc và đối chiếu kho thật
   const confirmWithServer = async (file, clientResult) => {
     if (clientResult.format !== 'pdf') return clientResult
     try {
@@ -132,7 +86,6 @@ export default function UploadModal({
     if (!file) return
     setSelectedRawFile(file)
     setFormError('')
-    setActiveScenario('CUSTOM_FILE')
     inferMetadataFromFilename(file.name)
     const res = await verifyFileAndHash(file, existingDocuments)
     setVerificationResult(res.isValid ? await confirmWithServer(file, res) : res)
@@ -150,118 +103,6 @@ export default function UploadModal({
     await processIncomingFile(file)
   }
 
-  const handleSelectPresetScenario = async (scenario) => {
-    setSelectedRawFile(null)
-    setFormError('')
-    setActiveScenario(scenario)
-
-    if (scenario === 'UNIQUE_PASS' || scenario === 'PDF_VALID') {
-      const uniqueHexHash = buildUniqueSampleHash(
-        existingDocuments,
-        'COMP1018_KHBD_TinHoc11_Bai9_PDF'
-      )
-      setTitle(
-        'Kế hoạch bài dạy Tin học 11 - Bài 9: Truy vấn dữ liệu SQL nâng cao (Chuẩn CV 5512)'
-      )
-      if (activeCourses.some((c) => c.code === 'COMP1018')) {
-        setCourseCode('COMP1018')
-      }
-      setDocType('KHBD Công văn 5512')
-      const res = await verifyFileAndHash(
-        {
-          name: 'COMP1018_KHBD_TinHoc11_Bai9_TruyVanSQL_CV5512.pdf',
-          size: 2.85 * 1024 * 1024,
-          presetHash: uniqueHexHash
-        },
-        existingDocuments
-      )
-      setVerificationResult(res)
-    } else if (scenario === 'DOCX_VALID') {
-      const uniqueHexHash = buildUniqueSampleHash(
-        existingDocuments,
-        'COMP1818_GiaoAn_ChuyenDe_Python_DOCX'
-      )
-      setTitle(
-        'Kế hoạch bài dạy Chuyên đề Python & Thiết kế kế hoạch dạy học (Chuẩn CV 5512)'
-      )
-      if (activeCourses.some((c) => c.code === 'COMP1818')) {
-        setCourseCode('COMP1818')
-      }
-      setDocType('KHBD Công văn 5512')
-      const res = await verifyFileAndHash(
-        {
-          name: 'COMP1818_GiaoAn_ChuyenDe_Python_GDPT2018.docx',
-          size: 1.45 * 1024 * 1024,
-          presetHash: uniqueHexHash
-        },
-        existingDocuments
-      )
-      setVerificationResult(res)
-    } else if (scenario === 'PPTX_VALID') {
-      const uniqueHexHash = buildUniqueSampleHash(
-        existingDocuments,
-        'COMP1314_Slide_MangNoRon_CNN_PPTX'
-      )
-      setTitle(
-        'Slide bài giảng Chương 4: Mạng Nơ-ron Nhân tạo & Học sâu (Trí tuệ nhân tạo)'
-      )
-      if (activeCourses.some((c) => c.code === 'COMP1314')) {
-        setCourseCode('COMP1314')
-      }
-      setDocType('Slide bài giảng')
-      const res = await verifyFileAndHash(
-        {
-          name: 'COMP1314_Slide_MangNoRon_CNN_NhanDangAnh.pptx',
-          size: 5.82 * 1024 * 1024,
-          presetHash: uniqueHexHash
-        },
-        existingDocuments
-      )
-      setVerificationResult(res)
-    } else if (scenario === 'DUPLICATE_HASH') {
-      const existingHash =
-        existingDocuments[0]?.fileHash ||
-        'a94f8b2c71e09d34f5a811c63e9204d78b1a9f2304c812e3d90f12a4b6c8e019'
-      const res = await verifyFileAndHash(
-        {
-          name: 'BanSao_DoiTen_KHBD_TinHoc10_Bai12.pdf',
-          size: 2.42 * 1024 * 1024,
-          presetHash: existingHash
-        },
-        existingDocuments
-      )
-      setVerificationResult(res)
-    } else if (scenario === 'FAKE_MAGIC_BYTES') {
-      const res = await verifyFileAndHash(
-        {
-          name: 'DeThi_GiaMao_MaDoc.docx',
-          size: 1.2 * 1024 * 1024,
-          presetMagic: 'INVALID_EXE'
-        },
-        existingDocuments
-      )
-      setVerificationResult(res)
-    } else if (scenario === 'EMPTY_FILE') {
-      const res = await verifyFileAndHash(
-        {
-          name: 'tep_rong_0byte.pdf',
-          size: 0
-        },
-        existingDocuments
-      )
-      setVerificationResult(res)
-    } else if (scenario === 'OVERSIZE') {
-      const res = await verifyFileAndHash(
-        {
-          name: 'video_bai_giang_qua_tai.pptx',
-          size: Math.round(26.2 * 1024 * 1024)
-        },
-        existingDocuments
-      )
-      setVerificationResult(res)
-    }
-  }
-
   const isMetadataValid =
     title.trim().length >= 10 &&
     description.trim().length >= 15 &&
@@ -269,13 +110,13 @@ export default function UploadModal({
 
   const getCriterionStatus = (crit) => {
     if (!verificationResult) {
-      return { passed: false, statusText: 'Đang chờ tệp', isAuto: crit.type === 'AUTO' }
+      return { passed: false, statusText: 'Chờ tải tệp', isAuto: crit.type === 'AUTO' }
     }
     switch (crit.id) {
       case 1:
         return {
           passed: Boolean(verificationResult.extensionOk),
-          statusText: verificationResult.extensionOk ? 'Đạt (.pdf/.docx/.pptx)' : 'Sai đuôi tệp',
+          statusText: verificationResult.extensionOk ? 'Hợp lệ' : 'Sai định dạng',
           isAuto: true
         }
       case 2:
@@ -283,31 +124,31 @@ export default function UploadModal({
           passed: Boolean(verificationResult.sizeOk),
           statusText: verificationResult.sizeOk
             ? `Đạt (${verificationResult.sizeMb} MB)`
-            : 'Vi phạm dung lượng',
+            : 'Quá 25MB',
           isAuto: true
         }
       case 3:
         return {
           passed: Boolean(verificationResult.magicBytesOk),
-          statusText: verificationResult.magicBytesOk ? 'Đạt Magic Bytes' : 'Giả mạo chữ ký',
+          statusText: verificationResult.magicBytesOk ? 'Hợp lệ' : 'Tệp lỗi',
           isAuto: true
         }
       case 4:
         return {
           passed: Boolean(!verificationResult.isDuplicate && verificationResult.magicBytesOk && verificationResult.sizeOk),
-          statusText: verificationResult.isDuplicate ? 'Trùng SHA-256' : 'Duy nhất (0 trùng)',
+          statusText: verificationResult.isDuplicate ? 'Đã tồn tại' : 'Chưa có trên hệ thống',
           isAuto: true
         }
       case 5:
         return {
           passed: isMetadataValid,
-          statusText: isMetadataValid ? 'Đủ Metadata' : 'Thiếu thông tin',
+          statusText: isMetadataValid ? 'Đầy đủ' : 'Chưa đủ thông tin',
           isAuto: true
         }
       default:
         return {
           passed: true,
-          statusText: 'Hội đồng duyệt',
+          statusText: 'Ban kiểm duyệt',
           isAuto: false
         }
     }
@@ -319,18 +160,22 @@ export default function UploadModal({
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    if (!selectedRawFile && !verificationResult) {
+      setFormError('Vui lòng chọn tệp tài liệu cần tải lên từ thiết bị của bạn.')
+      return
+    }
     if (!title.trim() || title.trim().length < 10) {
-      setFormError('Tiêu đề học liệu bắt buộc tối thiểu 10 ký tự.')
+      setFormError('Tiêu đề tài liệu bắt buộc tối thiểu 10 ký tự.')
       return
     }
     if (!description.trim() || description.trim().length < 15) {
-      setFormError('Vui lòng nhập mô tả tóm tắt nội dung học liệu (tối thiểu 15 ký tự).')
+      setFormError('Vui lòng nhập mô tả tóm tắt nội dung tài liệu (tối thiểu 15 ký tự).')
       return
     }
     if (!verificationResult || !verificationResult.isValid) {
       setFormError(
         verificationResult?.errorMessage ||
-          'Tệp tin chưa vượt qua bước kiểm tra chữ ký nhị phân Magic Bytes và mã băm SHA-256 chống trùng.'
+          'Tệp tin chưa hợp lệ hoặc đã tồn tại trong hệ thống. Vui lòng kiểm tra lại.'
       )
       return
     }
@@ -363,38 +208,38 @@ export default function UploadModal({
   }
 
   return (
-    <section className="vec-upload-studio" aria-label="Không gian đóng góp và thẩm định kỹ thuật học liệu">
-      {/* Header học thuật kiểu Vectoria */}
+    <section className="vec-upload-studio" aria-label="Không gian đóng góp tài liệu">
+      {/* Header trang đóng góp */}
       <header className="vec-upload-header">
         <div>
-          <nav className="saas-breadcrumb" aria-label="Đường dẫn chức năng">
-            <span>Kho học liệu</span>
+          <nav className="saas-breadcrumb" aria-label="Đường dẫn">
+            <span>Kho tài liệu</span>
             <span className="saas-breadcrumb-sep">›</span>
-            <span className="saas-breadcrumb-current">Đóng góp & Kiểm định học liệu (UC07 • UC08)</span>
+            <span className="saas-breadcrumb-current">Đóng góp tài liệu</span>
           </nav>
-          <h1 className="vec-upload-title">Đóng góp Học liệu Số Sư phạm Tin học</h1>
+          <h1 className="vec-upload-title">Đóng góp tài liệu học tập</h1>
           <p className="vec-upload-subtitle">
-            Tệp tải lên được kiểm tra toàn vẹn nhị phân (Magic Bytes), đối sánh mã băm <code>SHA-256</code> chống trùng lặp và chuyển đến Hội đồng thẩm định theo 8 tiêu chí học thuật.
+            Tài liệu gửi lên sẽ được kiểm tra định dạng, kiểm tra trùng lặp và chuyển đến ban kiểm duyệt trước khi xuất bản.
           </p>
         </div>
 
         <div className="vec-upload-reward-pill">
           <Award size={15} style={{ color: 'var(--blue-9, #0090ff)' }} />
-          <span>Thưởng phê duyệt: <strong>+20 điểm cống hiến</strong></span>
+          <span>Điểm thưởng khi duyệt: <strong>+20 điểm</strong></span>
         </div>
       </header>
 
       <form onSubmit={handleSubmit} className="vec-upload-grid">
-        {/* CỘT TRÁI: NẠP TỆP & KHAI BÁO HỒ SƠ HỌC THUẬT */}
+        {/* CỘT TRÁI: CHỌN TỆP & NHẬP THÔNG TIN TÀI LIỆU */}
         <div className="vec-upload-col">
-          {/* Bước 1: Chọn tệp & Bộ kịch bản kiểm thử UC08 */}
+          {/* Bước 1: Chọn tệp tin từ thiết bị */}
           <div className="vec-upload-card">
             <div className="vec-upload-card-head">
               <h2 className="vec-upload-card-title">
                 <span className="vec-step-num">1</span>
-                <span>Tệp học liệu đính kèm (Định dạng PDF ≤ 25MB)</span>
+                <span>Tải tệp tài liệu lên</span>
               </h2>
-              <span className="vec-form-hint">Hệ thống tự động kiểm tra Magic Bytes %PDF- & mã băm SHA-256 chống trùng</span>
+              <span className="vec-form-hint">Hỗ trợ PDF, Word, PowerPoint tối đa 25MB</span>
             </div>
 
             <div
@@ -412,10 +257,10 @@ export default function UploadModal({
                 </div>
                 <div>
                   <strong className="vec-dropzone-title">
-                    Kéo thả tệp học liệu vào đây hoặc chọn từ máy tính
+                    Kéo thả tệp tài liệu vào đây hoặc chọn từ máy tính
                   </strong>
                   <span className="vec-dropzone-sub">
-                    Chỉ chấp nhận tệp PDF chuẩn (Magic Bytes %PDF-), dung lượng tối đa 25MB.
+                    Chấp nhận các định dạng .pdf, .docx, .pptx dung lượng tối đa 25MB.
                   </span>
                 </div>
               </div>
@@ -431,41 +276,16 @@ export default function UploadModal({
                 />
               </label>
             </div>
-
-            {/* Thanh chuyển nhanh 7 Kịch bản Kiểm thử Hộp mờ UC08 */}
-            <div className="vec-scenario-bar">
-              <span className="vec-scenario-label">
-                Bộ kịch bản mô phỏng kiểm định kỹ thuật (UC08 — 7 Trường hợp biên):
-              </span>
-              <div className="vec-scenario-pills">
-                {SCENARIO_LIST.map((sc) => (
-                  <button
-                    key={sc.id}
-                    type="button"
-                    className={[
-                      'vec-scenario-btn',
-                      sc.danger ? 'danger' : '',
-                      activeScenario === sc.id ? 'active' : ''
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    onClick={() => handleSelectPresetScenario(sc.id)}
-                  >
-                    {sc.label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
-          {/* Bước 2: Khai báo Metadata học thuật (FR-03 & FR-06) */}
+          {/* Bước 2: Khai báo thông tin tài liệu */}
           <div className="vec-upload-card">
             <div className="vec-upload-card-head">
               <h2 className="vec-upload-card-title">
                 <span className="vec-step-num">2</span>
-                <span>Hồ sơ Học thuật & Gắn mục Chương trình Đào tạo</span>
+                <span>Thông tin tài liệu</span>
               </h2>
-              <span className="vec-form-hint">Bắt buộc đầy đủ theo Tiêu chí 5</span>
+              <span className="vec-form-hint">Giúp người học dễ dàng tìm kiếm</span>
             </div>
 
             <MetadataForm
@@ -479,91 +299,57 @@ export default function UploadModal({
               onChangeDocType={setDocType}
               onChangeDescription={setDescription}
             />
+          </div>
 
-            {formError && (
-              <div
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: '6px',
-                  backgroundColor: 'var(--red-3, #ffefef)',
-                  border: '1px solid var(--red-7, #cd2b31)',
-                  color: 'var(--red-11, #cd2b31)',
-                  fontSize: '12.5px',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <AlertTriangle size={15} />
-                <span>{formError}</span>
-              </div>
-            )}
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-                paddingTop: '12px',
-                borderTop: '1px solid var(--slate-6, #e6e8eb)',
-                flexWrap: 'wrap'
-              }}
-            >
-              <span style={{ fontSize: '12px', color: 'var(--slate-11, #687076)' }}>
-                Trạng thái tự động: <strong>{autoCriteriaPassedCount}/5 tiêu chí kỹ thuật đạt</strong>
-              </span>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {onCancel && (
-                  <button
-                    type="button"
-                    className="saas-reset-btn"
-                    style={{ height: '36px', padding: '0 14px', fontSize: '12.5px' }}
-                    onClick={onCancel}
-                  >
-                    Hủy bỏ
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  className="saas-upload-action"
-                  disabled={!verificationResult || !verificationResult.isValid}
-                  style={{
-                    opacity: !verificationResult || !verificationResult.isValid ? 0.45 : 1,
-                    cursor: !verificationResult || !verificationResult.isValid ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <Send size={14} />
-                  <span>Gửi đóng góp học liệu</span>
-                </button>
-              </div>
+          {/* Thông báo lỗi nếu chưa đạt */}
+          {formError && (
+            <div className="vec-form-alert" role="alert">
+              <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+              <span>{formError}</span>
             </div>
+          )}
+
+          {/* Nút thao tác hoàn tất */}
+          <div className="vec-form-actions">
+            <button
+              type="button"
+              className="saas-page-btn"
+              onClick={onCancel}
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              className="saas-upload-action"
+              style={{ padding: '8px 18px', fontSize: '13px' }}
+            >
+              <Send size={14} />
+              <span>Gửi tài liệu kiểm duyệt</span>
+            </button>
           </div>
         </div>
 
-        {/* CỘT PHẢI: TRẠM KIỂM ĐỊNH KỸ THUẬT UC08 & ĐỐI CHIẾU 8 TIÊU CHÍ (BẢNG 1.2) */}
-        <aside className="vec-upload-col" aria-label="Trạm kiểm định kỹ thuật và 8 tiêu chí">
-          {/* Khung 1: Binary & SHA-256 Inspector */}
+        {/* CỘT PHẢI: TRẠNG THÁI KIỂM TRA TỆP & TIÊU CHUẨN KIỂM DUYỆT */}
+        <aside className="vec-upload-col" aria-label="Kiểm tra tệp tin và tiêu chuẩn kiểm duyệt">
+          {/* Khung 1: Trạng thái kiểm tra tệp */}
           <div className="vec-upload-card">
             <div className="vec-upload-card-head">
               <h2 className="vec-upload-card-title">
-                <span>Phân tích Nhị phân & Mã băm (UC08)</span>
+                <span>Kiểm tra tệp tin</span>
               </h2>
-              <span className="vec-form-hint">4 Tầng An ninh FR-06</span>
+              <span className="vec-form-hint">Tự động xác thực</span>
             </div>
 
             <Sha256Verifier verificationResult={verificationResult} />
           </div>
 
-          {/* Khung 2: Bảng đối chiếu trực tiếp 8 Tiêu chí Kiểm duyệt (Bảng 1.2 Chương 1) */}
+          {/* Khung 2: Tiêu chuẩn kiểm duyệt */}
           <div className="vec-upload-card">
             <div className="vec-upload-card-head">
               <h2 className="vec-upload-card-title">
-                <span>Đối chiếu 8 Tiêu chí Kiểm duyệt</span>
+                <span>Tiêu chuẩn kiểm duyệt</span>
               </h2>
-              <span className="vec-form-hint">Bảng 1.2 • SRS FR-07</span>
+              <span className="vec-form-hint">Đảm bảo chất lượng tài liệu</span>
             </div>
 
             <div className="vec-checklist">
@@ -620,6 +406,13 @@ export default function UploadModal({
                 )
               })}
             </div>
+
+            <footer className="vec-checklist-foot">
+              <span>Đạt tự động:</span>
+              <strong style={{ color: autoCriteriaPassedCount === 5 ? 'var(--green-11)' : 'var(--amber-11)' }}>
+                {autoCriteriaPassedCount} / 5 tiêu chí
+              </strong>
+            </footer>
           </div>
         </aside>
       </form>

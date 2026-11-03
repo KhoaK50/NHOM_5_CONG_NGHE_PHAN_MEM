@@ -33,7 +33,7 @@ export default function FilterSidebar({
     return approvedDocs.filter((d) => d.docType === type).length
   }
 
-  // Lọc danh sách Môn học (Cấp 2) theo Khối kiến thức (Cấp 1) và Học kỳ đang chọn
+  // Lọc danh sách Môn học theo Khối kiến thức và Học kỳ đang chọn
   const visibleCourses = activeCourses
     .filter((crs) => {
       if (selectedBlock !== KNOWLEDGE_BLOCKS[0] && crs.knowledgeBlock !== selectedBlock) {
@@ -51,11 +51,11 @@ export default function FilterSidebar({
     })
 
   return (
-    <aside className="saas-sidebar" aria-label="Danh mục học thuật 2 cấp Sư phạm Tin học">
+    <aside className="saas-sidebar" aria-label="Danh mục môn học">
       <header className="saas-sidebar-header">
         <div className="saas-sidebar-brand">
-          <h2 className="saas-sidebar-title">Danh mục Học thuật</h2>
-          <p className="saas-sidebar-subtitle">CTĐT Sư phạm Tin học • HCMUE</p>
+          <h2 className="saas-sidebar-title">Danh mục môn học</h2>
+          <p className="saas-sidebar-subtitle">ĐH Sư phạm TP.HCM</p>
         </div>
         <button
           type="button"
@@ -68,9 +68,9 @@ export default function FilterSidebar({
         </button>
       </header>
 
-      {/* CẤP 1 (FR-03): KHỐI KIẾN THỨC */}
-      <nav className="saas-nav-section" aria-label="Cấp 1: Khối kiến thức">
-        <h3 className="saas-nav-heading">1. Khối kiến thức (Cấp 1)</h3>
+      {/* KHỐI KIẾN THỨC */}
+      <nav className="saas-nav-section" aria-label="Khối kiến thức">
+        <h3 className="saas-nav-heading">Khối kiến thức</h3>
         {KNOWLEDGE_BLOCKS.map((block) => (
           <button
             key={block}
@@ -87,10 +87,10 @@ export default function FilterSidebar({
         ))}
       </nav>
 
-      {/* CẤP 2 (FR-03 & UC05 1a): MÔN HỌC SƯ PHẠM TIN HỌC */}
-      <nav className="saas-nav-section" aria-label="Cấp 2: Môn học Sư phạm Tin học">
+      {/* MÔN HỌC */}
+      <nav className="saas-nav-section" aria-label="Môn học">
         <h3 className="saas-nav-heading">
-          2. Môn học SPTH ({visibleCourses.length} học phần)
+          Môn học ({visibleCourses.length} môn)
         </h3>
         <div className="saas-course-list">
           <button
@@ -128,9 +128,9 @@ export default function FilterSidebar({
         </div>
       </nav>
 
-      {/* PHÂN LOẠI THEO LOẠI TÀI LIỆU (FR-03 & FR-04) */}
-      <nav className="saas-nav-section" aria-label="Phân loại theo loại tài liệu">
-        <h3 className="saas-nav-heading">3. Loại tài liệu</h3>
+      {/* LOẠI TÀI LIỆU */}
+      <nav className="saas-nav-section" aria-label="Loại tài liệu">
+        <h3 className="saas-nav-heading">Loại tài liệu</h3>
         {DOCUMENT_TYPES.map((type) => (
           <button
             key={type}

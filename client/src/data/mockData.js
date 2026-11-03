@@ -78,59 +78,59 @@ export const USE_CASE_MATRIX = [
 export const EIGHT_MODERATION_CRITERIA = [
   {
     id: 1,
-    title: 'Định dạng tệp chuẩn (.pdf, .docx, .pptx)',
+    title: 'Định dạng tệp hợp lệ',
     executor: 'Hệ thống tự động',
     type: 'AUTO',
-    rule: 'Bắt buộc phần mở rộng là .pdf, .docx hoặc .pptx với chữ ký Magic Bytes hợp lệ.'
+    rule: 'Chấp nhận các định dạng tệp .pdf, .docx hoặc .pptx nguyên bản.'
   },
   {
     id: 2,
-    title: 'Giới hạn dung lượng hợp lệ (≤ 25MB)',
+    title: 'Dung lượng trong giới hạn',
     executor: 'Hệ thống tự động',
     type: 'AUTO',
-    rule: 'Dung lượng tệp tin tối đa không vượt quá 25MB (26,214,400 bytes).'
+    rule: 'Dung lượng tệp tin tối đa không vượt quá 25MB.'
   },
   {
     id: 3,
-    title: 'Kiểm tra tính toàn vẹn nhị phân (Magic Bytes %PDF- / PK..)',
+    title: 'Tệp tin nguyên vẹn, không lỗi',
     executor: 'Hệ thống tự động',
     type: 'AUTO',
-    rule: 'Đọc Magic Bytes (%PDF- cho PDF hoặc 50 4B 03 04 cho DOCX/PPTX) ngăn tệp độc hại giả mạo đuôi.'
+    rule: 'Cấu trúc tệp nguyên bản, không bị hỏng hóc hay giả mạo định dạng.'
   },
   {
     id: 4,
-    title: 'Kiểm tra trùng lặp tệp tin (SHA-256)',
+    title: 'Không trùng lặp tài liệu',
     executor: 'Hệ thống tự động',
     type: 'AUTO',
-    rule: 'Tính toán mã băm SHA-256 (64 ký tự hex) của tệp tin. Nếu mã băm đã tồn tại trong CSDL thì từ chối tiếp nhận.'
+    rule: 'Tệp tin chưa từng được đăng tải trên hệ thống 5Share.'
   },
   {
     id: 5,
-    title: 'Tính đầy đủ của Metadata học thuật',
+    title: 'Thông tin tài liệu đầy đủ',
     executor: 'Hệ thống tự động',
     type: 'AUTO',
-    rule: 'Tiêu đề tối thiểu 10 ký tự, chọn học phần hợp lệ, phân loại tài liệu và mô tả học thuật rõ ràng.'
+    rule: 'Có đầy đủ tiêu đề, chọn đúng môn học, phân loại và mô tả tóm tắt nội dung.'
   },
   {
     id: 6,
-    title: 'Đúng môn học & Chuẩn học thuật (Công văn 5512)',
-    executor: 'Quản trị viên',
+    title: 'Phù hợp chương trình đào tạo',
+    executor: 'Ban kiểm duyệt',
     type: 'ADMIN',
-    rule: 'Thẩm định nội dung bám sát khung chương trình đào tạo Sư phạm Tin học và cấu trúc 4 hoạt động Công văn 5512.'
+    rule: 'Nội dung bám sát chương trình đào tạo ngành Sư phạm Tin học.'
   },
   {
     id: 7,
-    title: 'Tính pháp lý và bản quyền học liệu',
-    executor: 'Quản trị viên',
+    title: 'Bản quyền và tính hợp pháp',
+    executor: 'Ban kiểm duyệt',
     type: 'ADMIN',
-    rule: 'Không chấp nhận đề thi đang trong thời gian bảo mật, không phát tán ấn phẩm thương mại có bản quyền.'
+    rule: 'Tài liệu không vi phạm bản quyền và không chứa nội dung bị cấm.'
   },
   {
     id: 8,
-    title: 'Độ rõ nét & Bố cục trình bày Tiếng Việt',
-    executor: 'Quản trị viên',
+    title: 'Trình bày rõ ràng, dễ đọc',
+    executor: 'Ban kiểm duyệt',
     type: 'ADMIN',
-    rule: 'Văn bản và hình ảnh rõ nét, ngay ngắn, không mờ nhòe, không lỗi phông chữ Tiếng Việt.'
+    rule: 'Văn bản và hình ảnh rõ ràng, ngay ngắn, không bị mờ nhòe hay lỗi phông chữ.'
   }
 ]
 

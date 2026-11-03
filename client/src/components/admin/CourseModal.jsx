@@ -159,7 +159,7 @@ export default function CourseModal({ editingCourse = null, submitting = false, 
           </div>
 
           <div>
-            <label htmlFor="course-summary-input" style={labelStyle}>Mô tả ngắn (không bắt buộc)</label>
+            <label htmlFor="course-summary-input" style={labelStyle}>Mô tả tóm tắt học phần</label>
             <textarea
               id="course-summary-input"
               rows={2}

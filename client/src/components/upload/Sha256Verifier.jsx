@@ -7,14 +7,26 @@ import {
   Presentation,
   Hash,
   Copy,
-  Check
+  Check,
+  CheckCircle2,
+  XCircle,
+  FileUp
 } from 'lucide-react'
 import { MAX_FILE_SIZE_BYTES } from '../../utils/fileHasher'
 
 export default function Sha256Verifier({ verificationResult }) {
   const [hashCopied, setHashCopied] = useState(false)
 
-  if (!verificationResult) return null
+  if (!verificationResult) {
+    return (
+      <div className="vec-inspector-box" style={{ textAlign: 'center', padding: '24px 16px' }}>
+        <FileUp size={28} style={{ color: 'var(--text-tertiary)', margin: '0 auto 8px', display: 'block' }} />
+        <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+          Chưa chọn tệp tin. Vui lòng tải lên tài liệu để hệ thống kiểm tra định dạng và trùng lặp.
+        </p>
+      </div>
+    )
+  }
 
   const handleCopyHash = async () => {
     if (!verificationResult?.sha256Hash) return
@@ -53,17 +65,12 @@ export default function Sha256Verifier({ verificationResult }) {
   const sizeBytes = Number(verificationResult.sizeBytes) || 0
   const quotaPct = Math.min(100, Math.max(2, (sizeBytes / MAX_FILE_SIZE_BYTES) * 100))
 
-  // magicHeaderHex dạng `25 50 44 46 2D (%PDF-)`: tách phần bytes và phần diễn giải đọc từ tệp thật
-  const headerMatch = String(verificationResult.magicHeaderHex || '').match(/^([0-9A-F ]+?)\s*\((.*)\)$/i)
-  const displayHex = headerMatch ? headerMatch[1] : verificationResult.magicHeaderHex || 'N/A'
-  const displayAscii = headerMatch ? headerMatch[2] : ''
-
   return (
     <div
       className={`vec-inspector-box ${verificationResult.isValid ? 'valid' : 'invalid'}`}
-      aria-label="Kết quả phân tích chữ ký nhị phân và mã băm SHA-256"
+      aria-label="Kết quả kiểm tra tệp tin"
     >
-      {/* 1. Thông tin định danh tệp & Thanh hạn mức dung lượng */}
+      {/* 1. Tên tệp & Trạng thái hợp lệ */}
       <div className="vec-inspector-row">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
           <FileFormatIcon
@@ -100,16 +107,17 @@ export default function Sha256Verifier({ verificationResult }) {
           ) : (
             <>
               <ShieldAlert size={11} />
-              <span>TỪ CHỐI</span>
+              <span>CHƯA ĐẠT</span>
             </>
           )}
         </span>
       </div>
 
+      {/* 2. Dung lượng tệp */}
       <div>
-        <div className="vec-inspector-row" style={{ marginBottom: '5px', fontSize: '11px' }}>
+        <div className="vec-inspector-row" style={{ marginBottom: '5px', fontSize: '11.5px' }}>
           <span style={{ color: 'var(--slate-11, #687076)' }}>
-            Dung lượng tệp đính kèm
+            Dung lượng tệp
           </span>
           <span
             style={{
@@ -120,7 +128,7 @@ export default function Sha256Verifier({ verificationResult }) {
                 : 'var(--red-9, #e5484d)'
             }}
           >
-            {verificationResult.sizeMb} MB / 25.00 MB
+            {verificationResult.sizeMb} MB / 25 MB
           </span>
         </div>
         <div className="vec-quota-track">
@@ -131,37 +139,60 @@ export default function Sha256Verifier({ verificationResult }) {
         </div>
       </div>
 
-      {/* 2. Bảng giải mã Byte Offset 0x0000 (Magic Bytes Header) */}
-      <div>
-        <div className="vec-inspector-row" style={{ marginBottom: '4px', fontSize: '11px' }}>
-          <span style={{ color: 'var(--slate-11, #687076)' }}>
-            Chữ ký nhị phân (Magic Bytes • Offset 0x0000)
-          </span>
+      {/* 3. Kiểm tra tính toàn vẹn & cấu trúc tệp */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11.5px' }}>
+        <div className="vec-inspector-row">
+          <span style={{ color: 'var(--slate-11, #687076)' }}>Định dạng tệp:</span>
           <span
             style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '10.5px',
-              color: verificationResult.magicBytesOk
-                ? 'var(--green-11, #18794e)'
-                : 'var(--red-9, #e5484d)',
-              fontWeight: 600
+              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              color: verificationResult.magicBytesOk ? 'var(--green-11, #18794e)' : 'var(--red-9, #e5484d)'
             }}
           >
-            {verificationResult.magicBytesOk ? 'Khớp định dạng' : 'Giả mạo chữ ký'}
+            {verificationResult.magicBytesOk ? (
+              <>
+                <CheckCircle2 size={12} />
+                <span>Đúng chuẩn {formatMeta.label}</span>
+              </>
+            ) : (
+              <>
+                <XCircle size={12} />
+                <span>Sai cấu trúc tệp</span>
+              </>
+            )}
           </span>
         </div>
-        <div className="vec-hex-table">
-          <span className="vec-hex-offset">0x00000000</span>
-          <span className="vec-hex-bytes">{displayHex}</span>
+
+        <div className="vec-inspector-row">
+          <span style={{ color: 'var(--slate-11, #687076)' }}>Kiểm tra trùng lặp:</span>
           <span
-            className={`vec-hex-ascii ${verificationResult.magicBytesOk ? '' : 'danger'}`}
+            style={{
+              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              color: !verificationResult.isDuplicate ? 'var(--green-11, #18794e)' : 'var(--red-9, #e5484d)'
+            }}
           >
-            {displayAscii}
+            {!verificationResult.isDuplicate ? (
+              <>
+                <CheckCircle2 size={12} />
+                <span>Chưa có trên hệ thống</span>
+              </>
+            ) : (
+              <>
+                <XCircle size={12} />
+                <span>Tài liệu đã tồn tại</span>
+              </>
+            )}
           </span>
         </div>
       </div>
 
-      {/* 3. Mã băm toàn vẹn SHA-256 (64 ký tự Hex) & Đối sánh Kho lưu trữ */}
+      {/* 4. Mã xác thực SHA-256 */}
       {verificationResult.sha256Hash && (
         <div>
           <div className="vec-inspector-row" style={{ marginBottom: '4px', fontSize: '11px' }}>
@@ -174,7 +205,7 @@ export default function Sha256Verifier({ verificationResult }) {
               }}
             >
               <Hash size={11} />
-              <span>Mã băm SHA-256 (64-char Hex)</span>
+              <span>Mã xác thực SHA-256</span>
             </span>
             <button
               type="button"
@@ -184,7 +215,7 @@ export default function Sha256Verifier({ verificationResult }) {
             >
               {hashCopied ? <Check size={10} /> : <Copy size={10} />}
               <span style={{ marginLeft: '3px' }}>
-                {hashCopied ? 'Đã chép' : 'Sao chép'}
+                {hashCopied ? 'Đã sao chép' : 'Sao chép'}
               </span>
             </button>
           </div>
@@ -192,7 +223,7 @@ export default function Sha256Verifier({ verificationResult }) {
         </div>
       )}
 
-      {/* 4. Thông báo chi tiết nếu phát hiện trùng lặp hoặc lỗi kỹ thuật */}
+      {/* 5. Thông báo lỗi nếu chưa đạt */}
       {!verificationResult.isValid && (
         <div
           style={{
@@ -206,7 +237,7 @@ export default function Sha256Verifier({ verificationResult }) {
           }}
         >
           <strong style={{ display: 'block', marginBottom: '2px' }}>
-            {verificationResult.errorMessage}
+            {verificationResult.errorMessage || 'Tệp tin không đủ điều kiện tải lên.'}
           </strong>
         </div>
       )}
