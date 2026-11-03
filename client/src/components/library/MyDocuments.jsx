@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CheckCircle2, Clock, XCircle, EyeOff, Eye, Download, Upload, FolderOpen, Hash, FileText } from 'lucide-react'
 import { listMyUploads } from '../../utils/interactionApi'
 
@@ -22,29 +22,35 @@ export default function MyDocuments({ currentUser, onSelectDoc, onOpenUpload }) 
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
-  const loadDocuments = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const [countsResult, pageResult] = await Promise.all([
-        Promise.all(TABS.map(({ id }) => listMyUploads({ status: id, page: 1, limit: 1 }))),
-        listMyUploads({ status: statusFilter, page, limit: 10 })
-      ])
-      const countMap = Object.fromEntries(TABS.map(({ id }, index) => [id, countsResult[index].pagination.totalItems]))
-      setCounts(countMap)
-      setDocuments(pageResult.items)
-      setTotalPages(pageResult.pagination.totalPages)
-    } catch (requestError) {
-      setError(requestError.message)
-      setDocuments([])
-      setTotalPages(1)
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([
+      Promise.all(TABS.map(({ id }) => listMyUploads({ status: id, page: 1, limit: 1 }))),
+      listMyUploads({ status: statusFilter, page, limit: 10 })
+    ])
+      .then(([countsResult, pageResult]) => {
+        if (cancelled) return
+        const countMap = Object.fromEntries(TABS.map(({ id }, index) => [id, countsResult[index].pagination.totalItems]))
+        setCounts(countMap)
+        setDocuments(pageResult.items)
+        setTotalPages(pageResult.pagination.totalPages)
+        setError('')
+      })
+      .catch((requestError) => {
+        if (cancelled) return
+        setError(requestError.message)
+        setDocuments([])
+        setTotalPages(1)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
     }
-  }, [statusFilter, page])
-
-  useEffect(() => { loadDocuments() }, [loadDocuments, currentUser?.id])
+  }, [statusFilter, page, currentUser?.id, reloadKey])
 
   const filtered = documents.filter((doc) => doc.status === statusFilter)
   const tabStyle = (active) => ({
@@ -73,7 +79,7 @@ export default function MyDocuments({ currentUser, onSelectDoc, onOpenUpload }) 
         ))}
       </div>
 
-      {error && <div role="alert" className="empty-state-box" style={{ marginBottom: 12 }}>Không tải được tài liệu từ máy chủ: {error} <button type="button" className="btn-ghost" onClick={loadDocuments}>Thử lại</button></div>}
+      {error && <div role="alert" className="empty-state-box" style={{ marginBottom: 12 }}>Không tải được tài liệu từ máy chủ: {error} <button type="button" className="btn-ghost" onClick={() => setReloadKey((k) => k + 1)}>Thử lại</button></div>}
       {loading ? (
         <div className="empty-state-box" aria-live="polite">Đang tải danh sách từ cơ sở dữ liệu…</div>
       ) : filtered.length === 0 ? (

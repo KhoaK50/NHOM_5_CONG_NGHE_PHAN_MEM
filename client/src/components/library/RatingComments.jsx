@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Star, MessageSquarePlus, Trash2, AlertCircle, ThumbsUp, CornerDownRight } from 'lucide-react'
 import { addDocumentComment, deleteDocumentComment, getDocumentComments, rateDocument } from '../../utils/interactionApi'
 
@@ -20,24 +20,48 @@ export default function RatingComments({ documentItem, isAuthenticated = false, 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
-  const loadComments = useCallback(async (page = 1, append = false) => {
-    if (!documentItem?.id) return
+  const docId = documentItem?.id
+
+  useEffect(() => {
+    if (!docId) return undefined
+    let cancelled = false
+    getDocumentComments(docId, { page: 1, limit: 20 })
+      .then((data) => {
+        if (cancelled) return
+        setSummary(data.summary)
+        setSelectedStars(data.summary.myRating || 5)
+        setComments(data.items)
+        setPagination(data.pagination)
+        setError('')
+      })
+      .catch((requestError) => {
+        if (cancelled) return
+        setError(requestError.message)
+        setComments([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [docId, reloadKey])
+
+  const handleLoadMore = async () => {
+    if (!docId || loading) return
     setLoading(true)
     setError('')
     try {
-      const data = await getDocumentComments(documentItem.id, { page, limit: 20 })
-      setSummary(data.summary)
-      setSelectedStars(data.summary.myRating || 5)
-      setComments((previous) => append ? [...previous, ...data.items] : data.items)
+      const nextPage = pagination.page + 1
+      const data = await getDocumentComments(docId, { page: nextPage, limit: 20 })
+      setComments((prev) => [...prev, ...data.items])
       setPagination(data.pagination)
     } catch (requestError) {
       setError(requestError.message)
-      if (!append) setComments([])
-    } finally { setLoading(false) }
-  }, [documentItem?.id])
-
-  useEffect(() => { loadComments() }, [loadComments])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (!documentItem) return null
 
@@ -51,9 +75,9 @@ export default function RatingComments({ documentItem, isAuthenticated = false, 
     setError('')
     setNotice('')
     try {
-      if (parentCommentId === null) await rateDocument(documentItem.id, selectedStars)
-      if (content) await addDocumentComment(documentItem.id, content, parentCommentId)
-      await loadComments()
+      if (parentCommentId === null) await rateDocument(docId, selectedStars)
+      if (content) await addDocumentComment(docId, content, parentCommentId)
+      setReloadKey((k) => k + 1)
       setCommentText('')
       setReplyText('')
       setReplyingTo(null)
@@ -64,8 +88,11 @@ export default function RatingComments({ documentItem, isAuthenticated = false, 
 
   const handleDelete = async (commentId) => {
     setError('')
-    try { await deleteDocumentComment(documentItem.id, commentId); await loadComments(); setNotice('Đã xóa bình luận.') }
-    catch (requestError) { setError(requestError.message) }
+    try {
+      await deleteDocumentComment(docId, commentId)
+      setReloadKey((k) => k + 1)
+      setNotice('Đã xóa bình luận.')
+    } catch (requestError) { setError(requestError.message) }
   }
 
   const isOwner = (comment) => Boolean(currentUser && Number(comment.userId) === Number(currentUser.id))
@@ -117,7 +144,7 @@ export default function RatingComments({ documentItem, isAuthenticated = false, 
           </article>
         ))}
       </div>
-      {comments.length < pagination.totalItems && <button type="button" className="btn-ghost" disabled={loading} onClick={() => loadComments(pagination.page + 1, true)} style={{ marginTop: 10, width: '100%' }}>Tải thêm bình luận</button>}
+      {comments.length < pagination.totalItems && <button type="button" className="btn-ghost" disabled={loading} onClick={handleLoadMore} style={{ marginTop: 10, width: '100%' }}>Tải thêm bình luận</button>}
     </section>
   )
 }

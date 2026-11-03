@@ -67,7 +67,7 @@ export default function App() {
   const [adminSubTab, setAdminSubTab] = useState('dashboard') // 'dashboard' | 'moderation' | 'courses' | 'users'
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
-  const [courses, setCourses] = useState(INITIAL_COURSES)
+  const [courses] = useState(INITIAL_COURSES)
   const [documents, setDocuments] = useState([])
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
   const [reports, setReports] = useState(INITIAL_REPORTS)
@@ -108,7 +108,6 @@ export default function App() {
 
   useEffect(() => {
     if (actorRole === 'GUEST' || !userSession?.id) {
-      setBookmarkedIds([])
       return undefined
     }
     let cancelled = false
@@ -150,6 +149,7 @@ export default function App() {
           AuthGuard.clearAuthSession()
           setUserSession(null)
           setActorRole('GUEST')
+          setBookmarkedIds([])
           if (data.status === 'session_revoked') {
             setActiveView('auth')
             showNotice(
@@ -300,6 +300,7 @@ export default function App() {
     AuthGuard.clearAuthSession()
     setUserSession(null)
     setActorRole('GUEST')
+    setBookmarkedIds([])
     if (
       [
         'upload',

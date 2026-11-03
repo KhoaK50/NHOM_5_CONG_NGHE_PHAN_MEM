@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search, BookOpen, Download, Trash2, FolderOpen } from 'lucide-react'
 import { downloadDocument, listBookmarks } from '../../utils/interactionApi'
 
@@ -14,16 +14,30 @@ export default function SavedBookmarks({ onSelectDoc, onToggleBookmark, onNaviga
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [downloadingId, setDownloadingId] = useState(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
-  const loadItems = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try { setItems(await listBookmarks()) }
-    catch (requestError) { setItems([]); setError(requestError.message) }
-    finally { setLoading(false) }
-  }, [])
-
-  useEffect(() => { loadItems() }, [loadItems])
+  useEffect(() => {
+    let cancelled = false
+    listBookmarks()
+      .then((data) => {
+        if (!cancelled) {
+          setItems(data || [])
+          setError('')
+        }
+      })
+      .catch((requestError) => {
+        if (!cancelled) {
+          setItems([])
+          setError(requestError.message)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [reloadKey])
 
   const filtered = useMemo(() => {
     const q = keyword.trim().toLocaleLowerCase('vi')
@@ -59,7 +73,7 @@ export default function SavedBookmarks({ onSelectDoc, onToggleBookmark, onNaviga
         </div>
       </header>
 
-      {error && <div role="alert" className="empty-state-box" style={{ marginBottom: 12 }}>Có lỗi: {error} <button type="button" className="btn-ghost" onClick={loadItems}>Tải lại</button></div>}
+      {error && <div role="alert" className="empty-state-box" style={{ marginBottom: 12 }}>Có lỗi: {error} <button type="button" className="btn-ghost" onClick={() => setReloadKey((k) => k + 1)}>Tải lại</button></div>}
       {loading ? <div className="empty-state-box">Đang tải tủ tài liệu từ cơ sở dữ liệu…</div> : filtered.length === 0 ? (
         <div className="empty-state-box"><FolderOpen size={36} /><h3>{items.length ? 'Không tìm thấy tài liệu phù hợp' : 'Tủ tài liệu đang trống'}</h3><p>Lưu tài liệu đã phát hành để tìm lại và tải PDF gốc khi cần.</p>{!items.length && <button type="button" className="btn-solid-primary" onClick={onNavigateDiscovery}>Khám phá tài liệu</button>}</div>
       ) : (
