@@ -53,8 +53,20 @@ router.post(
   controller.handleCheckHash
 );
 
+// UC07: Tải học liệu lên (upload PDF, kiểm tra hash, upload Cloudinary p47plumd, lưu DB status=PENDING)
+router.post(
+  '/documents',
+  buildLimiter(30, 10),
+  requireMember,
+  acceptSinglePdf,
+  controller.handleUploadDocument
+);
+
 // Công khai: chỉ trả tài liệu APPROVED, trừ Admin và chủ tài liệu
 router.get('/documents/:id', buildLimiter(300, 15), attachOptionalUser, controller.handleGetVisibleDocument);
+
+// Công khai: danh mục môn học phục vụ bộ lọc tìm kiếm và tra cứu
+router.get('/courses', buildLimiter(300, 15), controller.handleListCourses);
 
 // Toàn bộ nhánh /admin chỉ dành cho ADMIN
 const admin = express.Router();

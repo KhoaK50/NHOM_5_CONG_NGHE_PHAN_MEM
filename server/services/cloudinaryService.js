@@ -130,8 +130,85 @@ async function uploadAvatarBufferToCloudinary(fileBuffer, userId) {
   };
 }
 
+const MAX_PDF_BYTES = 25 * 1024 * 1024; // 25 MB
+
+function isPdfBuffer(buffer) {
+  return Buffer.isBuffer(buffer) && buffer.length >= 8 && buffer.subarray(0, 5).toString('ascii') === '%PDF-';
+}
+
+function countPdfPages(buffer) {
+  if (!Buffer.isBuffer(buffer)) return 1;
+  const content = buffer.toString('latin1');
+  const matches = content.match(/\/Type\s*\/Page[^s]/g);
+  return matches ? Math.max(1, matches.length) : 1;
+}
+
+/**
+ * Tải tệp tài liệu PDF lên Cloudinary (thư mục 5share/documents)
+ */
+async function uploadPdfBufferToCloudinary(fileBuffer, originalName = 'document.pdf') {
+  if (!fileBuffer || fileBuffer.length === 0) {
+    return { ok: false, statusCode: 400, message: 'Vui lòng chọn tệp PDF để tải lên.' };
+  }
+  if (fileBuffer.length > MAX_PDF_BYTES) {
+    return { ok: false, statusCode: 413, message: 'Kích thước tệp vượt quá 25 MB.' };
+  }
+  if (!isPdfBuffer(fileBuffer)) {
+    return { ok: false, statusCode: 415, message: 'Tệp không đúng định dạng PDF hợp lệ (thiếu chữ ký %PDF-).' };
+  }
+
+  const cloudName = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
+  const apiKey = String(process.env.CLOUDINARY_API_KEY || '').trim();
+  const apiSecret = String(process.env.CLOUDINARY_API_SECRET || '').trim();
+
+  if (!cloudName || !apiKey || !apiSecret) {
+    return { ok: false, statusCode: 500, message: 'Máy chủ chưa được cấu hình thông số kết nối Cloudinary.' };
+  }
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const folder = '5share/documents';
+  const safeBase = originalName.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+  const publicId = `doc_${timestamp}_${safeBase}`;
+
+  const stringToSign = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
+  const signature = crypto.createHash('sha1').update(stringToSign).digest('hex');
+
+  const dataUri = `data:application/pdf;base64,${fileBuffer.toString('base64')}`;
+  const formBody = new URLSearchParams({
+    file: dataUri,
+    api_key: apiKey,
+    timestamp: String(timestamp),
+    folder,
+    public_id: publicId,
+    signature
+  });
+
+  const endpoint = `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/raw/upload`;
+  const resp = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: formBody.toString()
+  });
+
+  const payload = await resp.json().catch(() => ({}));
+  if (!resp.ok || !payload.secure_url) {
+    console.error('[CloudinaryService.uploadPdf]', payload?.error?.message || payload);
+    return { ok: false, statusCode: 502, message: 'Không thể lưu trữ tệp lên Cloudinary.' };
+  }
+
+  return {
+    ok: true,
+    secureUrl: payload.secure_url,
+    publicId: payload.public_id,
+    bytes: payload.bytes || fileBuffer.length,
+    pages: countPdfPages(fileBuffer)
+  };
+}
+
 module.exports = {
   MAX_AVATAR_BYTES,
+  MAX_PDF_BYTES,
   detectImageMimeType,
-  uploadAvatarBufferToCloudinary
+  uploadAvatarBufferToCloudinary,
+  uploadPdfBufferToCloudinary
 };

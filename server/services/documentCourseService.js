@@ -7,6 +7,7 @@
 
 const crypto = require('crypto');
 const repo = require('../repositories/documentCourseRepository');
+const { uploadPdfBufferToCloudinary } = require('./cloudinaryService');
 
 const MAX_PDF_BYTES = 26214400; // 25 MB
 const APPROVE_REWARD_POINTS = 20;
@@ -629,10 +630,106 @@ async function deleteCourse(rawId, admin, ipAddress) {
   }
 }
 
+const DOC_TYPE_MAP = {
+  GIAO_TRINH: 'GIAO_TRINH',
+  SLIDE_BAI_GIANG: 'SLIDE_BAI_GIANG',
+  DE_THI_DAP_AN: 'DE_THI_DAP_AN',
+  KHBD_5512: 'KHBD_5512',
+  DO_AN_MAU: 'DO_AN_MAU',
+  TAI_LIEU_THAM_KHAO: 'TAI_LIEU_THAM_KHAO',
+  'KHBD Công văn 5512': 'KHBD_5512',
+  'KHBD 5512': 'KHBD_5512',
+  'Slide bài giảng': 'SLIDE_BAI_GIANG',
+  'Đề thi & Đáp án': 'DE_THI_DAP_AN',
+  'Đề thi & đáp án': 'DE_THI_DAP_AN',
+  'Giáo trình': 'GIAO_TRINH',
+  'Đề cương & Bài tập': 'GIAO_TRINH',
+  'Đồ án mẫu': 'DO_AN_MAU',
+  'Tài liệu tham khảo': 'TAI_LIEU_THAM_KHAO',
+  'Tài liệu học tập': 'TAI_LIEU_THAM_KHAO'
+};
+
+function normalizeDocType(input) {
+  if (!input) return 'TAI_LIEU_THAM_KHAO';
+  const trimmed = String(input).trim();
+  if (DOC_TYPE_MAP[trimmed]) return DOC_TYPE_MAP[trimmed];
+  const upper = trimmed.toUpperCase().replace(/[\s-]+/g, '_');
+  if (DOC_TYPE_MAP[upper]) return DOC_TYPE_MAP[upper];
+  if (upper.includes('5512') || upper.includes('KHBD') || upper.includes('GIAO_AN')) return 'KHBD_5512';
+  if (upper.includes('SLIDE') || upper.includes('BAI_GIANG')) return 'SLIDE_BAI_GIANG';
+  if (upper.includes('THI') || upper.includes('DAP_AN')) return 'DE_THI_DAP_AN';
+  if (upper.includes('DO_AN')) return 'DO_AN_MAU';
+  if (upper.includes('GIAO_TRINH')) return 'GIAO_TRINH';
+  return 'TAI_LIEU_THAM_KHAO';
+}
+
+async function uploadDocument(file, body, user) {
+  if (!user || !user.id) {
+    throw new ApiError(401, 'UNAUTHORIZED', 'Bạn cần đăng nhập để tải học liệu lên hệ thống.');
+  }
+
+  if (!file || !file.buffer) {
+    throw new ApiError(400, 'FILE_REQUIRED', 'Vui lòng chọn tệp PDF để tải lên.');
+  }
+
+  const { title, courseCode, courseId, docType, description } = body || {};
+
+  if (!title || String(title).trim().length < 10) {
+    throw new ApiError(400, 'VALIDATION_ERROR', 'Tiêu đề học liệu phải từ 10 ký tự trở lên.');
+  }
+  if (!description || String(description).trim().length < 15) {
+    throw new ApiError(400, 'VALIDATION_ERROR', 'Mô tả học liệu phải từ 15 ký tự trở lên.');
+  }
+
+  // Xác định môn học
+  let resolvedCourseId = null;
+  if (courseId && !Number.isNaN(Number(courseId))) {
+    const course = await repo.findCourseById(Number(courseId));
+    if (course) resolvedCourseId = course.id;
+  } else if (courseCode) {
+    const course = await repo.findCourseByCode(String(courseCode).trim());
+    if (course) resolvedCourseId = course.id;
+  }
+
+  if (!resolvedCourseId) {
+    const allCourses = await repo.listCourses({ limit: 1 });
+    resolvedCourseId = allCourses.rows?.[0]?.id || 1;
+  }
+
+  // Băm SHA-256 đối chiếu trước khi tốn băng thông Cloudinary
+  const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
+  if (await repo.hashExists(fileHash)) {
+    throw new ApiError(409, 'DUPLICATE_FILE', 'Tệp tin này trùng mã băm SHA-256 với tài liệu đã có trong kho học liệu.');
+  }
+
+  // Tải file lên Cloudinary thật (p47plumd)
+  const uploadResult = await uploadPdfBufferToCloudinary(file.buffer, file.originalname);
+  if (!uploadResult.ok) {
+    throw new ApiError(uploadResult.statusCode || 502, 'CLOUDINARY_UPLOAD_FAILED', uploadResult.message);
+  }
+
+  const newDoc = await repo.insertDocument({
+    courseId: resolvedCourseId,
+    uploaderId: user.id,
+    title: String(title).trim(),
+    description: String(description).trim(),
+    docType: normalizeDocType(docType),
+    fileName: file.originalname || 'document.pdf',
+    fileUrl: uploadResult.secureUrl,
+    previewUrl: uploadResult.secureUrl,
+    fileSizeBytes: uploadResult.bytes,
+    pageCount: uploadResult.pages,
+    fileHash
+  });
+
+  return newDoc;
+}
+
 module.exports = {
   ApiError,
   MAX_PDF_BYTES,
   checkDuplicateHash,
+  uploadDocument,
   listAdminDocuments,
   getAdminDocument,
   getVisibleDocument,

@@ -47,6 +47,17 @@ function toQuery(params) {
   return text ? `?${text}` : ''
 }
 
+// UC07
+export function uploadDocument(payload) {
+  const formData = payload instanceof FormData ? payload : new FormData()
+  if (!(payload instanceof FormData)) {
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) formData.append(k, v)
+    })
+  }
+  return request('/api/documents', { method: 'POST', formData })
+}
+
 // UC08
 export function checkDocumentHash(file) {
   const formData = new FormData()
@@ -76,6 +87,10 @@ export function resolveReport(id, body) {
 }
 
 // UC10
+export function listPublicCourses(params) {
+  return request(`/api/courses${toQuery(params)}`)
+}
+
 export function listCourses(params) {
   return request(`/api/admin/courses${toQuery(params)}`)
 }
