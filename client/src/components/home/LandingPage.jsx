@@ -1177,10 +1177,10 @@ export default function LandingPage({
 
     // ==================== VÒNG LẶP DIỄN HOẠT ĐIỆN ẢNH 60FPS ====================
     let animId
-    const clock = new THREE.Clock()
+    const animStartTime = performance.now()
 
     const animate = () => {
-      const elapsed = clock.getElapsedTime()
+      const elapsed = (performance.now() - animStartTime) / 1000
 
       const targetP = targetProgressRef.current
       const currentP = currentProgressRef.current
