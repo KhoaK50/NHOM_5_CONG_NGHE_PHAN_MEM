@@ -3,13 +3,15 @@ import { FileText } from 'lucide-react'
 
 const DESCRIPTION_TEMPLATES = {
   'KHBD Công văn 5512':
-    'Kế hoạch bài dạy gồm: Mục tiêu bài học, tiến trình các hoạt động dạy học, phiếu học tập và tiêu chí đánh giá.',
-  'Đề thi & Đáp án':
-    'Bộ đề thi chính thức kèm ma trận đặc tả đề kiểm tra và hướng dẫn chấm chi tiết cho học phần.',
+    'Kế hoạch bài dạy gồm: Mục tiêu bài học, tiến trình các hoạt động dạy học, phiếu học tập và tiêu chí đánh giá theo chuẩn CV 5512.',
   'Slide bài giảng':
     'Bài trình chiếu bài giảng kết hợp sơ đồ trực quan, ví dụ minh họa và câu hỏi thảo luận tại lớp.',
-  'Đề cương & Bài tập':
-    'Tài liệu hướng dẫn học tập và hệ thống bài tập thực hành theo chủ đề học phần.'
+  'Đề thi & Đáp án':
+    'Bộ đề thi chính thức kèm ma trận đặc tả đề kiểm tra và hướng dẫn chấm chi tiết cho học phần.',
+  'Đồ án & Khóa luận':
+    'Báo cáo đồ án môn học / Khóa luận tốt nghiệp gồm: Đặt vấn đề, mô hình kiến trúc, thiết kế cơ sở dữ liệu và kết quả thực nghiệm.',
+  'Giáo trình & Sách học liệu':
+    'Giáo trình học phần, sách tài liệu tham khảo chính thức, tóm tắt lý thuyết trọng tâm và đề cương chi tiết môn học.'
 }
 
 export default function MetadataForm({

@@ -130,12 +130,12 @@ export const KNOWLEDGE_BLOCK_LABELS = {
 }
 
 export const DOC_TYPE_LABELS = {
-  GIAO_TRINH: 'Giáo trình',
+  KHBD_5512: 'KHBD Công văn 5512',
   SLIDE_BAI_GIANG: 'Slide bài giảng',
-  DE_THI_DAP_AN: 'Đề thi & đáp án',
-  KHBD_5512: 'KHBD 5512',
-  DO_AN_MAU: 'Đồ án mẫu',
-  TAI_LIEU_THAM_KHAO: 'Tài liệu tham khảo'
+  DE_THI_DAP_AN: 'Đề thi & Đáp án',
+  DO_AN_MAU: 'Đồ án & Khóa luận',
+  GIAO_TRINH: 'Giáo trình & Sách học liệu',
+  TAI_LIEU_THAM_KHAO: 'Giáo trình & Sách học liệu'
 }
 
 export const REPORT_REASON_LABELS = {

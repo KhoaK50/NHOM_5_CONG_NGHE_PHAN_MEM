@@ -631,26 +631,29 @@ async function deleteCourse(rawId, admin, ipAddress) {
 }
 
 const DOC_TYPE_MAP = {
-  GIAO_TRINH: 'GIAO_TRINH',
+  KHBD_5512: 'KHBD_5512',
   SLIDE_BAI_GIANG: 'SLIDE_BAI_GIANG',
   DE_THI_DAP_AN: 'DE_THI_DAP_AN',
-  KHBD_5512: 'KHBD_5512',
   DO_AN_MAU: 'DO_AN_MAU',
-  TAI_LIEU_THAM_KHAO: 'TAI_LIEU_THAM_KHAO',
+  GIAO_TRINH: 'GIAO_TRINH',
+  TAI_LIEU_THAM_KHAO: 'GIAO_TRINH',
   'KHBD Công văn 5512': 'KHBD_5512',
   'KHBD 5512': 'KHBD_5512',
   'Slide bài giảng': 'SLIDE_BAI_GIANG',
   'Đề thi & Đáp án': 'DE_THI_DAP_AN',
   'Đề thi & đáp án': 'DE_THI_DAP_AN',
+  'Đồ án & Khóa luận': 'DO_AN_MAU',
+  'Đồ án mẫu': 'DO_AN_MAU',
+  'Giáo trình & Sách học liệu': 'GIAO_TRINH',
   'Giáo trình': 'GIAO_TRINH',
   'Đề cương & Bài tập': 'GIAO_TRINH',
-  'Đồ án mẫu': 'DO_AN_MAU',
-  'Tài liệu tham khảo': 'TAI_LIEU_THAM_KHAO',
-  'Tài liệu học tập': 'TAI_LIEU_THAM_KHAO'
+  'Tài liệu tham khảo': 'GIAO_TRINH',
+  'Tài liệu học tập': 'GIAO_TRINH',
+  'Sách học liệu': 'GIAO_TRINH'
 };
 
 function normalizeDocType(input) {
-  if (!input) return 'TAI_LIEU_THAM_KHAO';
+  if (!input) return 'GIAO_TRINH';
   const trimmed = String(input).trim();
   if (DOC_TYPE_MAP[trimmed]) return DOC_TYPE_MAP[trimmed];
   const upper = trimmed.toUpperCase().replace(/[\s-]+/g, '_');
@@ -658,9 +661,9 @@ function normalizeDocType(input) {
   if (upper.includes('5512') || upper.includes('KHBD') || upper.includes('GIAO_AN')) return 'KHBD_5512';
   if (upper.includes('SLIDE') || upper.includes('BAI_GIANG')) return 'SLIDE_BAI_GIANG';
   if (upper.includes('THI') || upper.includes('DAP_AN')) return 'DE_THI_DAP_AN';
-  if (upper.includes('DO_AN')) return 'DO_AN_MAU';
-  if (upper.includes('GIAO_TRINH')) return 'GIAO_TRINH';
-  return 'TAI_LIEU_THAM_KHAO';
+  if (upper.includes('DO_AN') || upper.includes('KHOA_LUAN') || upper.includes('BTL')) return 'DO_AN_MAU';
+  if (upper.includes('GIAO_TRINH') || upper.includes('SACH') || upper.includes('THAM_KHAO')) return 'GIAO_TRINH';
+  return 'GIAO_TRINH';
 }
 
 async function uploadDocument(file, body, user) {

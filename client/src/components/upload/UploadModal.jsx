@@ -54,8 +54,10 @@ export default function UploadModal({
       setDocType('Đề thi & Đáp án')
     } else if (/SLIDE|BAI\s*GIANG|PRESENTATION|POWERPOINT/i.test(clean)) {
       setDocType('Slide bài giảng')
-    } else if (/BAI\s*TAP|DE\s*CUONG|THUC\s*HANH/i.test(clean)) {
-      setDocType('Đề cương & Bài tập')
+    } else if (/DO\s*AN|KHOA\s*LUAN|BTL|PROJECT|THESIS/i.test(clean)) {
+      setDocType('Đồ án & Khóa luận')
+    } else if (/GIAO\s*TRINH|SACH|EBOOK|DE\s*CUONG|BAI\s*TAP|TAI\s*LIEU/i.test(clean)) {
+      setDocType('Giáo trình & Sách học liệu')
     }
 
     if (!title.trim()) {

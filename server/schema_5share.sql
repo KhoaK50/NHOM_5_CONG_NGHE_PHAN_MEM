@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS public.documents (
     reviewed_by INT REFERENCES public.users(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
-    doc_type VARCHAR(40) NOT NULL CHECK (doc_type IN ('GIAO_TRINH', 'SLIDE_BAI_GIANG', 'DE_THI_DAP_AN', 'KHBD_5512', 'DO_AN_MAU', 'TAI_LIEU_THAM_KHAO')),
+    doc_type VARCHAR(40) NOT NULL CHECK (doc_type IN ('KHBD_5512', 'SLIDE_BAI_GIANG', 'DE_THI_DAP_AN', 'DO_AN_MAU', 'GIAO_TRINH')),
     academic_year VARCHAR(15) NOT NULL DEFAULT '2025-2026',
     lecturer_name VARCHAR(100),
     file_name VARCHAR(255) NOT NULL,

@@ -192,9 +192,10 @@ export const MANDATORY_GRADUATION_CONDITIONS = [
 export const DOCUMENT_TYPES = [
   'Tất cả loại học liệu',
   'KHBD Công văn 5512',
-  'Đề thi & Đáp án',
   'Slide bài giảng',
-  'Đề cương & Bài tập'
+  'Đề thi & Đáp án',
+  'Đồ án & Khóa luận',
+  'Giáo trình & Sách học liệu'
 ]
 
 export const REPORT_REASON_GROUPS = [
@@ -1231,7 +1232,7 @@ export const INITIAL_DOCUMENTS = [
     courseName: 'Phân tích và thiết kế giải thuật',
     knowledgeBlock: 'Cơ sở ngành',
     semester: 'Học kỳ 4',
-    docType: 'Đề cương & Bài tập',
+    docType: 'Giáo trình & Sách học liệu',
     format: 'pdf',
     description: 'Tài liệu hệ thống hóa các dạng bài toán Quy hoạch động, Chia để trị và Nhánh cận phục vụ học phần Phân tích và thiết kế giải thuật (COMP1401) cùng công tác bồi dưỡng học sinh giỏi Tin học THPT.',
     uploaderName: 'Trần Đức Đạt',
@@ -1309,7 +1310,7 @@ export const INITIAL_DOCUMENTS = [
     courseName: 'Cấu trúc dữ liệu',
     knowledgeBlock: 'Cơ sở ngành',
     semester: 'Học kỳ 3',
-    docType: 'Đề cương & Bài tập',
+    docType: 'Giáo trình & Sách học liệu',
     format: 'pdf',
     description: 'Hệ thống hóa cài đặt Danh sách liên kết, Ngăn xếp, Hàng đợi, Cây nhị phân cân bằng AVL và xử lý đụng độ trên Bảng băm bằng C++ kèm đánh giá độ phức tạp O(log n).',
     uploaderName: 'Nguyễn Trần Đăng Khoa',
@@ -1361,7 +1362,7 @@ export const INITIAL_DOCUMENTS = [
     courseName: 'Khóa luận tốt nghiệp',
     knowledgeBlock: 'Chuyên ngành',
     semester: 'Học kỳ 8',
-    docType: 'Đề cương & Bài tập',
+    docType: 'Đồ án & Khóa luận',
     format: 'pdf',
     description: 'Khóa luận tốt nghiệp đại học ngành Sư phạm Tin học trình bày phương pháp nghiên cứu thực nghiệm sư phạm kết hợp mô hình Random Forest đánh giá năng lực giải quyết vấn đề.',
     uploaderName: 'Trần Đức Đạt',
@@ -1439,7 +1440,7 @@ export const INITIAL_DOCUMENTS = [
     courseName: 'Nhập môn Công nghệ phần mềm',
     knowledgeBlock: 'Chuyên ngành',
     semester: 'Học kỳ 5',
-    docType: 'Đề cương & Bài tập',
+    docType: 'Đồ án & Khóa luận',
     format: 'pdf',
     description: 'Báo cáo hướng dẫn thiết kế kiến trúc phần mềm 3 tầng, sơ đồ ERD 9 bảng chuẩn hóa 3NF và quy trình phòng thủ tệp tin đa tầng (Magic Bytes + SHA-256).',
     uploaderName: 'Trần Đức Đạt',
@@ -1465,7 +1466,7 @@ export const INITIAL_DOCUMENTS = [
     courseName: 'Lập trình cơ bản',
     knowledgeBlock: 'Cơ sở ngành',
     semester: 'Học kỳ 1',
-    docType: 'Đề cương & Bài tập',
+    docType: 'Giáo trình & Sách học liệu',
     format: 'pdf',
     description: 'Tài liệu tổng hợp tập lệnh thanh ghi MIPS cơ bản.',
     uploaderName: 'Phan Triệu Vĩ',
@@ -1491,7 +1492,7 @@ export const INITIAL_DOCUMENTS = [
     courseName: 'Kiểm tra, đánh giá trong môn Tin học',
     knowledgeBlock: 'Nghiệp vụ Sư phạm',
     semester: 'Học kỳ 6',
-    docType: 'Đề cương & Bài tập',
+    docType: 'KHBD Công văn 5512',
     format: 'docx',
     description: 'Biểu mẫu Microsoft Word (.docx) chuẩn cấu trúc Công văn 5512/BGDĐT-GDTrH và Thông tư 22/2021 phục vụ xây dựng ma trận đặc tả đề kiểm tra định kỳ và rubric đánh giá thực hành.',
     uploaderName: 'Nguyễn Trần Đăng Khoa',
