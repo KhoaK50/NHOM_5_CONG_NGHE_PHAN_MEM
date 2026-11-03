@@ -147,14 +147,14 @@ export default function DocumentDetail({
 
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
                 <span style={{ color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                  <ShieldCheck size={13} /> Chuẩn kiểm định:
+                  <ShieldCheck size={13} /> Trạng thái kiểm duyệt:
                 </span>
-                <span style={{ color: 'var(--green-7)', fontWeight: 700 }}>Đạt 8/8 tiêu chí</span>
+                <span style={{ color: 'var(--green-7)', fontWeight: 700 }}>Đã kiểm duyệt</span>
               </div>
 
               <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '6px' }}>
                 <div style={{ color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', marginBottom: '2px' }}>
-                  <Hash size={11} /> Mã băm toàn vẹn SHA-256:
+                  <Hash size={11} /> Mã xác thực tệp (SHA-256):
                 </div>
                 <div
                   style={{

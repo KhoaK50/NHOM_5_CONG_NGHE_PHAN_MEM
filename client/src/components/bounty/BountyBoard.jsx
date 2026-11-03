@@ -805,7 +805,7 @@ export default function BountyBoard({
                   rows={3}
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
-                  placeholder="Ghi rõ yêu cầu cụ thể: đề thi có đáp án, giáo án theo mẫu CV 5512 hay slide có bài tập thực hành..."
+                  placeholder="Ghi rõ yêu cầu cụ thể: đề thi có đáp án, kế hoạch bài dạy hoặc tài liệu tham khảo..."
                   style={{
                     width: '100%',
                     padding: '8px 12px',
@@ -842,7 +842,7 @@ export default function BountyBoard({
                   Hủy
                 </button>
                 <button type="submit" className="btn-solid-primary" style={{ padding: '8px 20px' }}>
-                  <span>Treo thưởng ngay (-{newRewardPoints}đ)</span>
+                  <span>Đăng yêu cầu treo thưởng</span>
                 </button>
               </div>
             </form>

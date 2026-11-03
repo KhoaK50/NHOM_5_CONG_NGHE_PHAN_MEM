@@ -686,7 +686,7 @@ export default function UserProfile({
                   ) : (
                     <>
                       <Upload size={15} />
-                      <span>Tải ảnh từ thiết bị (.JPG, .PNG, .WEBP ≤ 5MB)</span>
+                      <span>Tải ảnh từ thiết bị</span>
                     </>
                   )}
                 </button>
@@ -844,7 +844,7 @@ export default function UserProfile({
                   type={showOldPass ? 'text' : 'password'}
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
-                  placeholder="Nhập mật khẩu hiện tại (Ví dụ: Student123@)"
+                  placeholder="Nhập mật khẩu hiện tại..."
                   style={{
                     width: '100%',
                     height: '40px',

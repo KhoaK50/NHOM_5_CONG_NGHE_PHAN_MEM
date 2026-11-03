@@ -3,13 +3,13 @@ import { FileText } from 'lucide-react'
 
 const DESCRIPTION_TEMPLATES = {
   'KHBD Công văn 5512':
-    'Kế hoạch bài dạy biên soạn chuẩn Công văn 5512/BGDĐT-GDTrH gồm: (1) Mục tiêu phát triển năng lực Tin học NLa, NLc; (2) Tiến trình 4 hoạt động: Khởi động, Hình thành kiến thức mới, Luyện tập và Vận dụng kèm phiếu học tập & Rubric đánh giá.',
+    'Kế hoạch bài dạy gồm: Mục tiêu bài học, tiến trình các hoạt động dạy học, phiếu học tập và tiêu chí đánh giá.',
   'Đề thi & Đáp án':
-    'Bộ đề thi chính thức kèm ma trận đặc tả mức độ nhận thức (Nhận biết, Thông hiểu, Vận dụng) và hướng dẫn chấm chi tiết từng bước cho học phần.',
+    'Bộ đề thi chính thức kèm ma trận đặc tả đề kiểm tra và hướng dẫn chấm chi tiết cho học phần.',
   'Slide bài giảng':
-    'Bài trình chiếu lý thuyết kết hợp sơ đồ trực quan, mã nguồn minh họa từng bước và bộ câu hỏi thảo luận tình huống sư phạm tại lớp.',
+    'Bài trình chiếu bài giảng kết hợp sơ đồ trực quan, ví dụ minh họa và câu hỏi thảo luận tại lớp.',
   'Đề cương & Bài tập':
-    'Hệ thống bài tập thực hành phòng máy phân theo chủ đề, kèm dữ liệu mẫu kiểm thử (test cases) và hướng dẫn giải thuật chi tiết.'
+    'Tài liệu hướng dẫn học tập và hệ thống bài tập thực hành theo chủ đề học phần.'
 }
 
 export default function MetadataForm({
@@ -36,11 +36,11 @@ export default function MetadataForm({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {/* 1. Tiêu đề học liệu */}
+      {/* 1. Tiêu đề tài liệu */}
       <div className="vec-form-field">
         <div className="vec-form-label-row">
           <label htmlFor="upload-doc-title" className="vec-form-label">
-            Tiêu đề học liệu
+            Tiêu đề tài liệu
           </label>
           <span className="vec-form-hint">
             {title.trim().length} / 10 ký tự tối thiểu
@@ -52,11 +52,11 @@ export default function MetadataForm({
           className="vec-form-input"
           value={title}
           onChange={(e) => onChangeTitle(e.target.value)}
-          placeholder="Ví dụ: Kế hoạch bài dạy Tin học 11 - Bài 9: Truy vấn dữ liệu SQL (Chuẩn CV 5512)"
+          placeholder="Ví dụ: Kế hoạch bài dạy Tin học 11 - Bài 9: Truy vấn dữ liệu SQL"
         />
       </div>
 
-      {/* 2. Học phần CTĐT & Phân loại học liệu (FR-03 2 cấp) */}
+      {/* 2. Môn học & Loại tài liệu */}
       <div
         style={{
           display: 'grid',
@@ -67,7 +67,7 @@ export default function MetadataForm({
         <div className="vec-form-field">
           <div className="vec-form-label-row">
             <label htmlFor="upload-course-select" className="vec-form-label">
-              Học phần Chương trình Đào tạo (Cấp 2)
+              Môn học
             </label>
             {selectedCourseObj && (
               <span className="vec-form-hint">
@@ -83,7 +83,7 @@ export default function MetadataForm({
           >
             {activeCourses.map((crs) => (
               <option key={crs.id} value={crs.code}>
-                {crs.code} – {crs.name} ({crs.semester} • {crs.credits} TC)
+                {crs.code} – {crs.name} ({crs.semester} • {crs.credits} tín chỉ)
               </option>
             ))}
           </select>
@@ -92,9 +92,8 @@ export default function MetadataForm({
         <div className="vec-form-field">
           <div className="vec-form-label-row">
             <label htmlFor="upload-doctype-select" className="vec-form-label">
-              Loại tài liệu học thuật
+              Loại tài liệu
             </label>
-            <span className="vec-form-hint">Chuẩn FR-03</span>
           </div>
           <select
             id="upload-doctype-select"
@@ -111,11 +110,11 @@ export default function MetadataForm({
         </div>
       </div>
 
-      {/* 3. Mô tả tóm tắt nội dung & nút chèn khung chuẩn */}
+      {/* 3. Mô tả tóm tắt nội dung */}
       <div className="vec-form-field">
         <div className="vec-form-label-row">
           <label htmlFor="upload-doc-desc" className="vec-form-label">
-            Tóm tắt nội dung & Mục tiêu học thuật
+            Mô tả tóm tắt nội dung
           </label>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <span className="vec-form-hint">
@@ -125,10 +124,10 @@ export default function MetadataForm({
               type="button"
               className="vec-template-btn"
               onClick={handleApplyTemplate}
-              title={`Chèn khung mô tả mẫu cho ${docType}`}
+              title={`Chèn mô tả gợi ý cho ${docType}`}
             >
               <FileText size={11} style={{ marginRight: '4px', verticalAlign: '-1px' }} />
-              Chèn khung mẫu {docType}
+              Chèn mô tả gợi ý
             </button>
           </div>
         </div>
@@ -138,7 +137,7 @@ export default function MetadataForm({
           className="vec-form-textarea"
           value={description}
           onChange={(e) => onChangeDescription(e.target.value)}
-          placeholder="Mô tả tóm tắt nội dung trọng tâm, cấu trúc bài học (4 hoạt động Công văn 5512) hoặc phạm vi kiến thức..."
+          placeholder="Mô tả tóm tắt nội dung trọng tâm, mục tiêu bài học hoặc phạm vi kiến thức..."
         />
       </div>
     </div>

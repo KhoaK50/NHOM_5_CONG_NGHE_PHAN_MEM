@@ -141,11 +141,11 @@ export default function DiscoveryPage({
       ? `Khối kiến thức: ${selectedBlock}`
       : activeSemMeta
         ? `${activeSemMeta.id} (${activeSemMeta.credits} Tín chỉ) — ${activeSemMeta.focus}`
-        : 'Kho Học Liệu Ngành Sư Phạm Tin Học'
+        : 'Kho Tài Liệu Sư Phạm Tin Học'
 
   const contextSubtitle = activeCourseObj
     ? `${activeCourseObj.knowledgeBlock} • ${activeCourseObj.semester} (${activeCourseObj.credits} tín chỉ) • Khoa Công nghệ Thông tin – ĐH Sư phạm TP.HCM`
-    : 'Hệ thống lưu trữ, thẩm định và phân loại học liệu theo Khối kiến thức, Môn học SPTH và Loại tài liệu chuẩn CTĐT ĐH Sư phạm TP.HCM (HCMUE).'
+    : 'Hệ thống lưu trữ và chia sẻ tài liệu học tập ngành Sư phạm Tin học – Trường Đại học Sư phạm TP.HCM.'
 
   const hasActiveFilters =
     selectedFormat !== 'ALL' ||
@@ -193,7 +193,7 @@ export default function DiscoveryPage({
                   if (e.key === 'Enter') handleResetFilters()
                 }}
               >
-                Kho học liệu
+                Kho tài liệu
               </span>
               <span className="saas-breadcrumb-sep">›</span>
               <span
@@ -238,7 +238,7 @@ export default function DiscoveryPage({
             onClick={onOpenUpload}
           >
             <Upload size={14} />
-            <span>Đóng góp học liệu</span>
+            <span>Đóng góp tài liệu</span>
           </button>
         </header>
 
@@ -266,12 +266,12 @@ export default function DiscoveryPage({
         />
 
         {/* 2. Vectoria Multi-Criteria Filter Panel (.pathfinding-panel -> .vec-filter-panel / FR-04 & UC05) */}
-        <div className="vec-filter-panel" role="region" aria-label="Bộ lọc đa tiêu chí FR-04">
+        <div className="vec-filter-panel" role="region" aria-label="Bộ lọc tài liệu">
           <div className="vec-filter-grid">
             {/* Cột 1: Từ khóa FTS */}
             <div className="vec-pf-group">
               <label className="vec-pf-label" htmlFor="filter-keyword-input">
-                Từ khóa tìm kiếm (FTS)
+                Từ khóa tìm kiếm
               </label>
               <div className="saas-search-box">
                 <Search size={14} className="saas-search-icon" />
@@ -284,8 +284,8 @@ export default function DiscoveryPage({
                     setSearchQuery(e.target.value)
                     setCurrentPage(1)
                   }}
-                  placeholder="Nhập mã môn (COMP1818, COMP1044), tên bài, chủ đề..."
-                  aria-label="Thanh tìm kiếm học liệu toàn văn"
+                  placeholder="Nhập mã môn, tên bài hoặc chủ đề cần tìm..."
+                  aria-label="Thanh tìm kiếm tài liệu"
                 />
                 {searchQuery && (
                   <button
@@ -306,7 +306,7 @@ export default function DiscoveryPage({
             {/* Cột 2: Lọc theo Môn học SPTH (FR-03 / FR-04) */}
             <div className="vec-pf-group">
               <label className="vec-pf-label" htmlFor="filter-course-select">
-                Môn học SPTH
+                Môn học
               </label>
               <select
                 id="filter-course-select"
@@ -317,7 +317,7 @@ export default function DiscoveryPage({
                   setCurrentPage(1)
                 }}
               >
-                <option value="ALL">Tất cả môn học ({activeCourses.length} HP)</option>
+                <option value="ALL">Tất cả môn học ({activeCourses.length} môn)</option>
                 {activeCourses.map((crs) => (
                   <option key={crs.id} value={crs.code}>
                     {crs.code} – {crs.name}
@@ -326,7 +326,7 @@ export default function DiscoveryPage({
               </select>
             </div>
 
-            {/* Cột 3: Lọc theo Học kỳ CTĐT (FR-04) */}
+            {/* Cột 3: Lọc theo Học kỳ (FR-04) */}
             <div className="vec-pf-group">
               <label className="vec-pf-label" htmlFor="filter-semester-select">
                 Học kỳ CTĐT
@@ -362,10 +362,10 @@ export default function DiscoveryPage({
                   setCurrentPage(1)
                 }}
               >
-                <option value="ALL">Tất cả (.pdf, .docx, .pptx)</option>
-                <option value="pdf">Tài liệu PDF (.pdf)</option>
-                <option value="docx">Văn bản Word (.docx)</option>
-                <option value="pptx">Bài trình chiếu (.pptx)</option>
+                <option value="ALL">Tất cả định dạng</option>
+                <option value="pdf">Tài liệu PDF</option>
+                <option value="docx">Văn bản Word</option>
+                <option value="pptx">Bài trình chiếu PowerPoint</option>
               </select>
             </div>
 
@@ -380,9 +380,9 @@ export default function DiscoveryPage({
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
               >
-                <option value="popular">Phổ biến nhất (Lượt tải)</option>
+                <option value="popular">Lượt tải nhiều nhất</option>
                 <option value="rating">Đánh giá cao nhất</option>
-                <option value="newest">Mới xuất bản</option>
+                <option value="newest">Mới nhất</option>
               </select>
             </div>
           </div>
@@ -435,7 +435,7 @@ export default function DiscoveryPage({
         {/* 4. Thanh trạng thái kết quả & thẻ lọc đang áp dụng */}
         <div className="saas-status-bar">
           <span className="saas-result-summary">
-            Hiển thị <strong>{filteredDocs.length}</strong> học liệu đã thẩm định
+            Hiển thị <strong>{filteredDocs.length}</strong> tài liệu
           </span>
 
           {hasActiveFilters && (

@@ -930,7 +930,7 @@ export default function CurriculumTreeMap({
                           <div
                             className="vec-tree-elective-stack"
                             role="group"
-                            aria-label="Khối học phần tự chọn Học kỳ 2 (Chọn 1 môn - 2 TC)"
+                            aria-label="Khối học phần tự chọn Học kỳ 2"
                           >
                             <div className="vec-tree-stack-header">
                               <span>Nhóm tự chọn HK2</span>

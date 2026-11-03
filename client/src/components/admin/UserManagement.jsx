@@ -126,7 +126,7 @@ export default function UserManagement({
       >
         <div>
           <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
-            Quản trị Người dùng & Phân quyền (FR-08 / UC10)
+            Quản lý người dùng
           </h2>
           <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
             Theo dõi danh sách sinh viên, quản lý quyền truy cập và thực thi chế tài Khóa / Mở khóa tài khoản vi phạm.
@@ -241,7 +241,7 @@ export default function UserManagement({
           }}
         >
           <div>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>ĐÃ KHÓA (CÁCH LY)</div>
+            <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>TÀI KHOẢN ĐÃ KHÓA</div>
             <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--red-9)' }}>{lockedCount}</div>
           </div>
           <UserX size={22} style={{ color: 'var(--red-9)' }} />
@@ -320,8 +320,8 @@ export default function UserManagement({
             }}
           >
             <option value="ALL">Tất cả vai trò</option>
-            <option value="STUDENT">Sinh viên (User)</option>
-            <option value="ADMIN">Quản trị viên (Admin)</option>
+            <option value="STUDENT">Sinh viên</option>
+            <option value="ADMIN">Quản trị viên</option>
           </select>
 
           <select
@@ -618,14 +618,14 @@ export default function UserManagement({
         <Info size={18} style={{ color: 'var(--blue-9)', flexShrink: 0, marginTop: '2px' }} />
         <div>
           <strong style={{ color: 'var(--blue-11)', display: 'block', marginBottom: '3px' }}>
-            Quy chuẩn Cưỡng chế Hệ thống đối với Tài khoản Đã khóa (System Enforcement)
+            Quy định đối với tài khoản bị khóa
           </strong>
-          Khi Quản trị viên chuyển trạng thái tài khoản sang <strong>&quot;Đã khóa&quot; (<code>isActive = false</code>)</strong>:
+          Khi tài khoản chuyển sang trạng thái <strong>&quot;Đã khóa&quot;</strong>:
           <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
-            <li><strong>Chặn đóng góp học liệu:</strong> Không thể tải lên tệp tin PDF/DOCX/PPTX mới (bị chặn ngay tại tầng kiểm định).</li>
-            <li><strong>Chặn bình luận &amp; đánh giá:</strong> Không thể chấm sao hay gửi nhận xét học thuật tại các trang học liệu.</li>
-            <li><strong>Phong tỏa Treo thưởng (Study Bounty):</strong> Không thể tạo yêu cầu treo thưởng mới hoặc nộp tài liệu để nhận điểm thưởng.</li>
-            <li><strong>Chặn đăng nhập phiên mới:</strong> Bị từ chối xác thực với thông báo vi phạm chuẩn mực học thuật.</li>
+            <li><strong>Chặn tải lên tài liệu:</strong> Không thể tải lên tài liệu mới vào hệ thống.</li>
+            <li><strong>Chặn bình luận &amp; đánh giá:</strong> Không thể đánh giá hay gửi nhận xét ở các trang tài liệu.</li>
+            <li><strong>Tạm khóa tính năng Treo thưởng:</strong> Không thể tạo yêu cầu treo thưởng mới hoặc nộp tài liệu nhận thưởng.</li>
+            <li><strong>Chặn đăng nhập phiên mới:</strong> Bị từ chối xác thực khi đăng nhập.</li>
           </ul>
         </div>
       </div>
