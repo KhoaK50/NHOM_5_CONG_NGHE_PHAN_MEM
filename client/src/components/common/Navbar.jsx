@@ -153,7 +153,7 @@ export default function Navbar({
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleTabClick('landing')
           }}
-          title="5share — Nền tảng Chia sẻ Tài liệu Học tập Sư phạm Tin học"
+          title="5Share - Nền tảng quản lý và chia sẻ tài liệu học tập dành cho ngành Sư phạm Tin học"
         >
           <BrandLogo variant={logoVariant} size={36} showWordmark={true} />
         </div>
