@@ -127,6 +127,22 @@ async function deleteComment(user, rawDocumentId, rawCommentId) {
   return { documentId, commentId, deleted: true };
 }
 
+async function preview(rawId, user) {
+  const documentId = parseId(rawId, 'documentId');
+  const document = await repo.findPreviewable(documentId, user);
+  if (!document) throw new ApiError(404, 'DOCUMENT_NOT_FOUND', 'Không tìm thấy tài liệu yêu cầu.');
+  let url;
+  try { url = new URL(document.file_url); } catch { throw new ApiError(404, 'FILE_NOT_FOUND', 'Không tìm thấy tệp lưu trữ.'); }
+  if (url.protocol !== 'https:' || url.hostname !== 'res.cloudinary.com' || url.username || url.password || (url.port && url.port !== '443')) {
+    throw new ApiError(502, 'FILE_STORAGE_UNAVAILABLE', 'Nguồn lưu trữ tài liệu không được hỗ trợ.');
+  }
+  const upstream = await fetch(url, { signal: AbortSignal.timeout(20000), redirect: 'error' }).catch(() => null);
+  if (!upstream?.ok || !upstream.body) throw new ApiError(502, 'FILE_STORAGE_UNAVAILABLE', 'Không thể tải tệp từ kho lưu trữ.');
+  let fileName = String(document.file_name || `document-${documentId}.pdf`).replace(/[\r\n"\\]/g, '_');
+  if (!fileName.toLowerCase().endsWith('.pdf')) fileName += '.pdf';
+  return { upstream, fileName };
+}
+
 async function download(rawId, user, ipAddress) {
   const documentId = parseId(rawId, 'documentId');
   const document = await repo.findDownloadable(documentId);
@@ -139,7 +155,9 @@ async function download(rawId, user, ipAddress) {
   const upstream = await fetch(url, { signal: AbortSignal.timeout(20000), redirect: 'error' }).catch(() => null);
   if (!upstream?.ok || !upstream.body) throw new ApiError(502, 'FILE_STORAGE_UNAVAILABLE', 'Không thể tải tệp từ kho lưu trữ.');
   await repo.recordDownload(documentId, user.id, ipAddress);
-  return { upstream, fileName: String(document.file_name || `document-${documentId}.pdf`).replace(/[\r\n"\\]/g, '_') };
+  let fileName = String(document.file_name || `document-${documentId}.pdf`).replace(/[\r\n"\\]/g, '_');
+  if (!fileName.toLowerCase().endsWith('.pdf')) fileName += '.pdf';
+  return { upstream, fileName };
 }
 
 async function recordView(rawId, user, ipAddress) {
@@ -151,4 +169,4 @@ async function recordView(rawId, user, ipAddress) {
   return { documentId, actionType };
 }
 
-module.exports = { ApiError, getDashboard, getMyUploads, listDocuments, listBookmarks, createBookmark, removeBookmark, comments, rate, addComment, deleteComment, download, recordView };
+module.exports = { ApiError, getDashboard, getMyUploads, listDocuments, listBookmarks, createBookmark, removeBookmark, comments, rate, addComment, deleteComment, preview, download, recordView };

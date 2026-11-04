@@ -10,13 +10,16 @@ import {
   Check,
   FileSpreadsheet,
   Presentation,
-  ExternalLink
+  ExternalLink,
+  Download
 } from 'lucide-react'
+import { getApiBaseUrl } from '../../utils/authGuard'
 
 export default function PdfPreviewViewer({
   documentItem,
   isAuthenticated = false,
-  onRequireLogin
+  onRequireLogin,
+  onDownload
 }) {
   const [zoomMode, setZoomMode] = useState('100') // 'fit' | '100' | '150'
   const [activePageIdx, setActivePageIdx] = useState(0)
@@ -32,12 +35,7 @@ export default function PdfPreviewViewer({
   ).toLowerCase()
 
   const isOfficeDoc = fileExt === 'docx' || fileExt === 'pptx'
-  const previewUrl = (() => {
-    try {
-      const url = new URL(documentItem.previewUrl || '')
-      return url.protocol === 'https:' && url.hostname === 'res.cloudinary.com' ? url.href : null
-    } catch { return null }
-  })()
+  const streamUrl = `${getApiBaseUrl()}/api/documents/${documentItem.id}/preview`
   const allPages = documentItem.pages || []
   const visiblePages = isAuthenticated ? allPages : allPages.slice(0, 3)
   const totalNavigable = isAuthenticated ? visiblePages.length : visiblePages.length + 1
@@ -72,23 +70,7 @@ export default function PdfPreviewViewer({
     }
   }
 
-  const lockedPreviewPage = allPages[3] || {
-    pageNumber: 4,
-    heading: 'TRANG 4: HOẠT ĐỘNG 3 (LUYỆN TẬP TẠI PHÒNG MÁY) & PHIẾU HỌC TẬP SỐ 2',
-    content: [
-      '3. HOẠT ĐỘNG 3: LUYỆN TẬP (12 phút):',
-      '• Bài tập thực hành 1: Viết hàm kiểm tra tính hợp lệ của dữ liệu đầu vào theo bộ kiểm thử chuẩn.',
-      '• Bài tập thực hành 2: Tổ chức thảo luận nhóm đôi tại phòng máy và đối chiếu bảng Rubric đánh giá.',
-      '• Bộ Test Case chấm điểm tự động và hướng dẫn giải chi tiết từng bước.'
-    ]
-  }
 
-  // Calculate zoom styles
-  const zoomStyles = {
-    fit: { maxWidth: '100%', fontSize: '13px' },
-    '100': { maxWidth: '780px', fontSize: '14px' },
-    '150': { maxWidth: '1040px', fontSize: '16.5px' }
-  }[zoomMode] || { maxWidth: '780px', fontSize: '14px' }
 
   return (
     <div className="pdf-sandbox-card">
@@ -141,6 +123,52 @@ export default function PdfPreviewViewer({
           >
             {copiedLink ? <Check size={13} /> : <Share2 size={13} />}
             <span>{copiedLink ? 'Đã chép link!' : 'Chia sẻ'}</span>
+          </button>
+
+          <a
+            href={streamUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-ghost"
+            title="Mở PDF toàn màn hình trong tab mới"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              fontSize: '12px',
+              padding: '5px 10px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-secondary)',
+              textDecoration: 'none'
+            }}
+          >
+            <ExternalLink size={13} />
+            <span>Toàn màn hình</span>
+          </a>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (isAuthenticated) {
+                if (onDownload) onDownload(documentItem)
+              } else {
+                if (onRequireLogin) onRequireLogin()
+              }
+            }}
+            className="btn-primary"
+            title="Tải tập tin PDF gốc về máy tính"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              padding: '5px 12px',
+              borderRadius: '6px'
+            }}
+          >
+            <Download size={13} />
+            <span>Tải về PDF</span>
           </button>
 
           {!isOfficeDoc && (
@@ -332,170 +360,82 @@ export default function PdfPreviewViewer({
             />
           </div>
         </div>
-      ) : previewUrl ? (
-        <div className="pdf-canvas-stage" style={{ padding: 0 }}>
-          <iframe
-            src={`${previewUrl}#toolbar=1&navpanes=0`}
-            title={`Bản xem trước: ${documentItem.title}`}
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            style={{ width: '100%', minHeight: '760px', border: 0, background: '#fff' }}
-          />
-        </div>
-      ) : allPages.length ? (
-        <div className="pdf-canvas-stage">
-          {visiblePages.map((page, idx) => (
-            <div
-              key={page.pageNumber}
-              ref={(el) => {
-                pageRefs.current[idx] = el
-              }}
-              className="pdf-page-sheet doc-body-preview"
-              style={{
-                maxWidth: zoomStyles.maxWidth,
-                fontSize: zoomStyles.fontSize,
-                fontFamily: "var(--font-academic, 'STIX Two Text', serif)"
-              }}
+      ) : (
+        <div className="pdf-canvas-stage" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: '#525659', borderRadius: '8px' }}>
+          <div style={{ position: 'relative', width: '100%', minHeight: '820px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 8px 30px rgba(0,0,0,0.3)', backgroundColor: '#525659' }}>
+            <object
+              data={`${streamUrl}#toolbar=1&navpanes=1`}
+              type="application/pdf"
+              style={{ width: '100%', height: '820px', border: 'none', display: 'block' }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  borderBottom: '1px solid var(--border-subtle)',
-                  paddingBottom: '12px',
-                  marginBottom: '14px',
-                  flexWrap: 'wrap',
-                  gap: '8px'
-                }}
-              >
-                <strong style={{ color: 'var(--primary-base)', fontSize: '12.5px', letterSpacing: '0.01em' }}>
-                  {page.heading}
-                </strong>
-                <span className="status-badge slate">
-                  Trang {page.pageNumber} / {documentItem.pageCount}
-                </span>
-              </div>
+              <iframe
+                src={`${streamUrl}#toolbar=1&navpanes=1`}
+                title={`Bản xem trước: ${documentItem.title}`}
+                loading="lazy"
+                style={{ width: '100%', height: '820px', border: 'none', display: 'block', backgroundColor: '#ffffff' }}
+              />
+            </object>
+          </div>
 
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  color: 'var(--text-primary)',
-                  fontFamily: "var(--font-academic, 'STIX Two Text', serif)"
-                }}
-              >
-                {page.content.map((line, lineIdx) => (
-                  <p key={lineIdx} style={{ margin: 0, lineHeight: 1.68 }}>
-                    {line}
-                  </p>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {/* Trang 4 phủ mờ tự nhiên kèm thẻ mở khóa cho Khách */}
           {!isAuthenticated && (
             <div
-              ref={(el) => {
-                pageRefs.current[visiblePages.length] = el
-              }}
-              className="pdf-blurred-page-container doc-body-preview"
               style={{
-                maxWidth: zoomStyles.maxWidth,
-                fontFamily: "var(--font-academic, 'STIX Two Text', serif)"
+                padding: '16px 20px',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-strong)',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: 'var(--shadow-card)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '14px'
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  borderBottom: '1px solid var(--border-subtle)',
-                  paddingBottom: '12px',
-                  marginBottom: '14px',
-                  flexWrap: 'wrap',
-                  gap: '8px'
-                }}
-              >
-                <strong style={{ color: 'var(--text-secondary)', fontSize: '12.5px' }}>
-                  {lockedPreviewPage.heading}
-                </strong>
-                <span className="status-badge amber">
-                  <Lock size={11} />
-                  <span>Trang 4–{documentItem.pageCount}</span>
-                </span>
-              </div>
-
-              <div
-                className="pdf-blurred-content"
-                aria-hidden="true"
-                style={{ fontFamily: "var(--font-academic, 'STIX Two Text', serif)" }}
-              >
-                {lockedPreviewPage.content.map((line, idx) => (
-                  <p key={idx} style={{ margin: '0 0 10px 0', lineHeight: 1.7 }}>
-                    {line}
-                  </p>
-                ))}
-                <p style={{ margin: '0 0 10px 0', lineHeight: 1.7 }}>
-                  4. HOẠT ĐỘNG 4: VẬN DỤNG THỰC TIỄN (8 phút) • Bảng tiêu chí đánh giá Rubric theo Thông tư 22/2021/TT-BGDĐT và hướng dẫn tổ chức kiểm tra tại phòng thực hành máy tính.
-                </p>
-                <p style={{ margin: 0, lineHeight: 1.7 }}>
-                  Phụ lục kèm theo: Đáp án chi tiết các câu hỏi phân hóa và mã nguồn mẫu kiểm thử tự động.
-                </p>
-              </div>
-
-              <div className="pdf-unlock-overlay">
-                <div className="pdf-unlock-card">
-                  <div
-                    style={{
-                      width: '42px',
-                      height: '42px',
-                      borderRadius: '12px',
-                      background: 'linear-gradient(135deg, var(--blue-10, #0588f0) 0%, var(--blue-8, #0090ff) 100%)',
-                      color: '#ffffff',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: '12px',
-                      boxShadow: '0 8px 18px rgba(0, 119, 230, 0.25)'
-                    }}
-                  >
-                    <Lock size={19} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--amber-3, #fef3c7)',
+                    color: 'var(--amber-9, #d97706)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}
+                >
+                  <Lock size={18} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '13.5px', color: 'var(--text-primary)', marginBottom: '2px' }}>
+                    Chế độ đọc thử giới hạn (UC06)
                   </div>
-
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    Mở khóa toàn văn {documentItem.pageCount} trang học liệu
-                  </h3>
-                  <p style={{ margin: '0 0 18px 0', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                    Bạn đang xem trước 3 trang đầu tiên. Đăng nhập tài khoản Sinh viên 5share để đọc tiếp nội dung Luyện tập, Vận dụng, bảng Rubric và tải tệp gốc.
-                  </p>
-
-                  <button
-                    type="button"
-                    className="btn-solid-primary"
-                    onClick={onRequireLogin}
-                    style={{
-                      width: '100%',
-                      height: '40px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px'
-                    }}
-                  >
-                    <LogIn size={15} />
-                    <span>Đăng nhập để đọc toàn văn</span>
-                  </button>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    Bạn đang xem trước học liệu trực tuyến. Đăng nhập tài khoản Sinh viên / Giảng viên HCMUE để tải về tệp tin gốc và truy cập toàn bộ tài liệu.
+                  </div>
                 </div>
               </div>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={onRequireLogin}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 16px',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <LogIn size={14} />
+                <span>Đăng nhập ngay</span>
+              </button>
             </div>
           )}
-        </div>
-      ) : (
-        <div className="empty-state-box" role="status">
-          Chưa có tệp PDF xem trước hợp lệ trên kho lưu trữ cho tài liệu này.
         </div>
       )}
     </div>

@@ -200,6 +200,24 @@ async function findDownloadable(documentId) {
   return result.rows[0] || null;
 }
 
+async function findPreviewable(documentId, user) {
+  const isAdmin = user && user.role === 'ADMIN';
+  let queryText;
+  let params;
+  if (isAdmin) {
+    queryText = 'SELECT id, title, file_name, file_url, status FROM public.documents WHERE id = $1';
+    params = [documentId];
+  } else if (user && user.id) {
+    queryText = "SELECT id, title, file_name, file_url, status FROM public.documents WHERE id = $1 AND (status = 'APPROVED' OR uploader_id = $2)";
+    params = [documentId, user.id];
+  } else {
+    queryText = "SELECT id, title, file_name, file_url, status FROM public.documents WHERE id = $1 AND status = 'APPROVED'";
+    params = [documentId];
+  }
+  const result = await query(queryText, params);
+  return result.rows[0] || null;
+}
+
 async function recordDownload(documentId, userId, ipAddress) {
   const client = await getClient();
   try {
@@ -242,4 +260,4 @@ async function findApprovedDocument(documentId) {
   return result.rowCount > 0;
 }
 
-module.exports = { getDashboard, listMyUploads, listPublicDocuments, listBookmarks, upsertBookmark, deleteBookmark, getComments, saveRating, addComment, hideComment, findDownloadable, recordDownload, recordView, findApprovedDocument };
+module.exports = { getDashboard, listMyUploads, listPublicDocuments, listBookmarks, upsertBookmark, deleteBookmark, getComments, saveRating, addComment, hideComment, findDownloadable, findPreviewable, recordDownload, recordView, findApprovedDocument };
