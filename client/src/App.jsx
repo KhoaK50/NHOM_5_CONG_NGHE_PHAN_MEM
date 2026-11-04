@@ -21,7 +21,6 @@ import CourseManagement from './components/admin/CourseManagement'
 import AdminDashboard from './components/admin/AdminDashboard'
 import UserManagement from './components/admin/UserManagement'
 import FeedbackModal from './components/document/FeedbackModal'
-import KiemThuTramHarness from './components/testing/KiemThuTramHarness'
 import { api, subscribeNotifications } from './api/notificationReportApi'
 import MyDocuments from './components/library/MyDocuments'
 import SavedBookmarks from './components/library/SavedBookmarks'
@@ -1082,11 +1081,6 @@ export default function App() {
             />
           )}
 
-          {activeView === 'test-tram' && (
-            <KiemThuTramHarness
-              onClose={() => setActiveView('discovery')}
-            />
-          )}
 
         </main>
       )}
@@ -1099,34 +1093,6 @@ export default function App() {
         onSubmitFeedback={handleSubmitFeedback}
       />
 
-      {/* NÚT MỞ NHANH BỘ KIỂM THỬ 4 TEST CASES CỦA TRÂM (TASK 5S-048) */}
-      <button
-        type="button"
-        onClick={() => setActiveView(activeView === 'test-tram' ? 'discovery' : 'test-tram')}
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '190px',
-          zIndex: 100,
-          backgroundColor: activeView === 'test-tram' ? 'var(--brand-primary, #007A5E)' : 'var(--bg-surface, #ffffff)',
-          color: activeView === 'test-tram' ? '#ffffff' : 'var(--text-primary)',
-          border: '1px solid var(--border-strong, #cbd5e1)',
-          borderRadius: '999px',
-          padding: '9px 16px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '12.5px',
-          fontWeight: 700,
-          boxShadow: 'var(--shadow-card)',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease'
-        }}
-        aria-label="Kiểm thử Cụm Use Case Trâm (UC02, UC03, UC04)"
-      >
-        <ShieldCheck size={16} style={{ color: activeView === 'test-tram' ? '#ffffff' : 'var(--brand-primary, #007A5E)' }} />
-        <span>Kiểm thử UC02–04 (Trâm)</span>
-      </button>
 
       {/* NÚT NỔI GÓP Ý HỆ THỐNG TẠI GÓC PHẢI MÀN HÌNH (FLOATING PILL) */}
       <button
