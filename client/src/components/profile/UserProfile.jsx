@@ -229,7 +229,6 @@ export default function UserProfile({
         <h1 className="page-title">Hồ sơ cá nhân</h1>
         <p className="page-sub">
           {currentUser?.email || 'Chưa cập nhật email'}
-          {currentUser?.role !== 'ADMIN' && ` · ${currentUser?.points ?? 0} điểm`}
         </p>
       </header>
 
@@ -572,7 +571,7 @@ export default function UserProfile({
               Bảo mật Tài khoản & Đổi Mật khẩu
             </h2>
             <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
-              Đảm bảo mật khẩu đáp ứng 6 tiêu chuẩn an toàn học thuật để bảo vệ tài khoản và điểm thưởng.
+              Đảm bảo mật khẩu đáp ứng 6 tiêu chuẩn an toàn học thuật để bảo vệ an toàn tài khoản học thuật.
             </p>
           </div>
 

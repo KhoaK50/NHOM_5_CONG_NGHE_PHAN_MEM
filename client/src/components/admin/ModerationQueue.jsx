@@ -203,7 +203,7 @@ export default function ModerationQueue({ onNotice, onPendingCountChange }) {
           notDuplicate: Boolean(autoChecks.notDuplicate)
         }
       })
-      onNotice?.('Đã phê duyệt và xuất bản tài liệu, tác giả được cộng +20 điểm.')
+      onNotice?.('Đã phê duyệt và xuất bản tài liệu thành công.')
       reload()
     } catch (err) {
       handleModerationError(err)
