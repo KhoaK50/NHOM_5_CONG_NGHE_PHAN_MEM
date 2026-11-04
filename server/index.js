@@ -8,6 +8,7 @@ const { query } = require('./db/pool');
 const authRoutes = require('./routes/authRoutes');
 const documentCourseRoutes = require('./routes/documentCourseRoutes');
 const interactionRoutes = require('./routes/interactionRoutes');
+const notificationReportRoutes = require('./routes/notificationReportRoutes');
 
 // Không chạy production với JWT_SECRET mặc định trong mã nguồn: ai đọc repo cũng ký được token Admin
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
@@ -49,6 +50,9 @@ app.use('/api', interactionRoutes);
 
 // Mount cụm UC08–UC10: /api/documents/* và /api/admin/*
 app.use('/api', documentCourseRoutes);
+
+// Cụm UC03 & UC04: Thông báo hệ thống và Báo cáo vi phạm (Trâm)
+app.use('/api', notificationReportRoutes);
 
 // Health check endpoint kèm kiểm tra kết nối PostgreSQL thực tế
 app.get('/api/health', async (req, res) => {

@@ -8,7 +8,8 @@
     "dev": "node index.js",
     "db:push": "node db/migrate_and_seed.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:uc08-10": "node --test tests/uc08_10.test.js"
+    "test:uc08-10": "node --test tests/uc08_10.test.js",
+    "test:uc02-04": "node --test tests/uc02_04.test.js"
   },
   "keywords": [],
   "author": "",

@@ -21,6 +21,8 @@ import CourseManagement from './components/admin/CourseManagement'
 import AdminDashboard from './components/admin/AdminDashboard'
 import UserManagement from './components/admin/UserManagement'
 import FeedbackModal from './components/document/FeedbackModal'
+import KiemThuTramHarness from './components/testing/KiemThuTramHarness'
+import { api, subscribeNotifications } from './api/notificationReportApi'
 import MyDocuments from './components/library/MyDocuments'
 import SavedBookmarks from './components/library/SavedBookmarks'
 import UserProfile from './components/profile/UserProfile'
@@ -105,6 +107,28 @@ export default function App() {
   const [courses, setCourses] = useState(() => INITIAL_COURSES.map(normalizeCourse))
   const [documents, setDocuments] = useState([])
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
+
+  useEffect(() => {
+    let isCancelled = false
+    if (userSession) {
+      api.getNotifications({ limit: 20 })
+        .then((res) => {
+          if (!isCancelled && res?.data?.items?.length) {
+            setNotifications(res.data.items)
+          }
+        })
+        .catch(() => {})
+    }
+    const unsub = subscribeNotifications((data) => {
+      if (data?.items) {
+        setNotifications(data.items)
+      }
+    })
+    return () => {
+      isCancelled = true
+      unsub()
+    }
+  }, [userSession])
   const [reports, setReports] = useState(INITIAL_REPORTS)
   const [users, setUsers] = useState(INITIAL_USERS)
   const [feedbacks, setFeedbacks] = useState(INITIAL_FEEDBACKS)
@@ -126,7 +150,7 @@ export default function App() {
   const showNotice = useCallback((text) => {
     setBannerNotice(text)
     setTimeout(() => setBannerNotice(null), 4500)
-  }, [])
+  }, [setBannerNotice])
 
   useEffect(() => {
     let cancelled = false
@@ -185,7 +209,7 @@ export default function App() {
         }
       })
       .catch(() => {})
-  }, [])
+  }, [setUsers])
 
   // Đối chiếu phiên JWT (token_version) trực tiếp với bảng public.users trên Supabase
   useEffect(() => {
@@ -571,7 +595,16 @@ export default function App() {
     }
   }
 
-  const handleSubmitReport = (reportPayload) => {
+  const handleSubmitReport = async (reportPayload) => {
+    try {
+      await api.submitReport({
+        documentId: reportPayload.docId || reportPayload.documentId || 11,
+        reason: reportPayload.reasonGroup || reportPayload.reason || 'Trùng lặp',
+        description: reportPayload.details || reportPayload.description || 'Báo cáo vi phạm từ người dùng'
+      })
+    } catch (e) {
+      console.warn('[Report] Backend response:', e.message)
+    }
     const newReport = {
       id: `rep-${Date.now()}`,
       ...reportPayload,
@@ -1120,6 +1153,12 @@ export default function App() {
             />
           )}
 
+          {activeView === 'test-tram' && (
+            <KiemThuTramHarness
+              onClose={() => setActiveView('discovery')}
+            />
+          )}
+
           {activeView === 'bounty' && (
             <BountyBoard
               currentUser={userSession}
@@ -1144,6 +1183,35 @@ export default function App() {
         currentUser={userSession}
         onSubmitFeedback={handleSubmitFeedback}
       />
+
+      {/* NÚT MỞ NHANH BỘ KIỂM THỬ 4 TEST CASES CỦA TRÂM (TASK 5S-048) */}
+      <button
+        type="button"
+        onClick={() => setActiveView(activeView === 'test-tram' ? 'discovery' : 'test-tram')}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '190px',
+          zIndex: 100,
+          backgroundColor: activeView === 'test-tram' ? 'var(--brand-primary, #007A5E)' : 'var(--bg-surface, #ffffff)',
+          color: activeView === 'test-tram' ? '#ffffff' : 'var(--text-primary)',
+          border: '1px solid var(--border-strong, #cbd5e1)',
+          borderRadius: '999px',
+          padding: '9px 16px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '12.5px',
+          fontWeight: 700,
+          boxShadow: 'var(--shadow-card)',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}
+        aria-label="Kiểm thử Cụm Use Case Trâm (UC02, UC03, UC04)"
+      >
+        <ShieldCheck size={16} style={{ color: activeView === 'test-tram' ? '#ffffff' : 'var(--brand-primary, #007A5E)' }} />
+        <span>Kiểm thử UC02–04 (Trâm)</span>
+      </button>
 
       {/* NÚT NỔI GÓP Ý HỆ THỐNG TẠI GÓC PHẢI MÀN HÌNH (FLOATING PILL) */}
       <button
