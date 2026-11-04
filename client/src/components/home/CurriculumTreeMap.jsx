@@ -490,6 +490,13 @@ export default function CurriculumTreeMap({
         ]
       }
 
+      if (!waypoints || waypoints.length < 2) {
+        waypoints = [
+          { x: fromBox.right, y: fromBox.midY },
+          { x: toBox.left, y: toBox.midY }
+        ]
+      }
+
       computedWires.push({
         id,
         from: preCode,
