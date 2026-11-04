@@ -2,20 +2,10 @@ import { useState } from 'react'
 import {
   Users,
   Search,
-  Lock,
-  Unlock,
-  ShieldCheck,
-  GraduationCap,
-  Award,
   CheckCircle2,
   XCircle,
   AlertTriangle,
   X,
-  Calendar,
-  Mail,
-  UserCheck,
-  UserX,
-  Info
 } from 'lucide-react'
 
 const QUICK_LOCK_REASONS = [
@@ -75,7 +65,7 @@ export default function UserManagement({
   const totalCount = users.length
   const activeCount = users.filter((u) => u.isActive).length
   const lockedCount = users.filter((u) => !u.isActive).length
-  const studentCount = users.filter((u) => u.role === 'STUDENT' || u.role === 'USER').length
+
 
   // Xử lý mở modal khóa
   const handleOpenLockModal = (user) => {
@@ -125,11 +115,9 @@ export default function UserManagement({
         }}
       >
         <div>
-          <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
-            Quản lý người dùng
-          </h2>
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Theo dõi danh sách sinh viên, quản lý quyền truy cập và thực thi chế tài Khóa / Mở khóa tài khoản vi phạm.
+          <h1 className="page-title">Người dùng</h1>
+          <p className="page-sub">
+            {totalCount} tài khoản · {activeCount} đang hoạt động · {lockedCount} đã khóa
           </p>
         </div>
       </div>
@@ -166,95 +154,9 @@ export default function UserManagement({
         </div>
       )}
 
-      {/* Thẻ thống kê 4 cột */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-          gap: '12px',
-          marginBottom: '16px'
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '10px',
-            padding: '12px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>TỔNG TÀI KHOẢN</div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{totalCount}</div>
-          </div>
-          <Users size={22} style={{ color: 'var(--primary-base)' }} />
-        </div>
-
-        <div
-          style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '10px',
-            padding: '12px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>SINH VIÊN SPTH</div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--blue-9)' }}>{studentCount}</div>
-          </div>
-          <GraduationCap size={22} style={{ color: 'var(--blue-9)' }} />
-        </div>
-
-        <div
-          style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '10px',
-            padding: '12px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>ĐANG HOẠT ĐỘNG</div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--green-9)' }}>{activeCount}</div>
-          </div>
-          <UserCheck size={22} style={{ color: 'var(--green-9)' }} />
-        </div>
-
-        <div
-          style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '10px',
-            padding: '12px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>TÀI KHOẢN ĐÃ KHÓA</div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--red-9)' }}>{lockedCount}</div>
-          </div>
-          <UserX size={22} style={{ color: 'var(--red-9)' }} />
-        </div>
-      </div>
-
       {/* Thanh tìm kiếm & Bộ lọc */}
       <div
         style={{
-          backgroundColor: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '12px',
-          padding: '14px 16px',
           marginBottom: '16px',
           display: 'flex',
           flexWrap: 'wrap',
@@ -269,10 +171,10 @@ export default function UserManagement({
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            backgroundColor: 'var(--bg-muted)',
+            backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-strong)',
             borderRadius: '8px',
-            padding: '6px 12px',
+            padding: '8px 12px',
             flex: '1 1 300px',
             minWidth: '240px'
           }}
@@ -282,7 +184,7 @@ export default function UserManagement({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm theo họ tên, email (@hcmue.edu.vn) hoặc MSSV..."
+            placeholder="Tìm theo họ tên, email hoặc MSSV"
             style={{
               border: 'none',
               background: 'transparent',
@@ -366,18 +268,16 @@ export default function UserManagement({
           <thead>
             <tr>
               <th>Người dùng</th>
-              <th style={{ width: '130px' }}>MSSV / Khóa</th>
-              <th style={{ width: '130px' }}>Vai trò</th>
-              <th style={{ width: '110px' }}>Điểm thưởng</th>
-              <th style={{ width: '120px' }}>Trạng thái</th>
-              <th style={{ width: '120px' }}>Ngày tham gia</th>
-              <th style={{ width: '140px' }}>Thao tác</th>
+              <th style={{ width: '190px' }}>MSSV · Khóa</th>
+              <th style={{ width: '120px' }}>Vai trò</th>
+              <th style={{ width: '100px' }}>Trạng thái</th>
+              <th style={{ width: '210px' }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-secondary)' }}>
+                <td colSpan={5} style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-secondary)' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                     <Users size={32} style={{ color: 'var(--text-tertiary)' }} />
                     <span style={{ fontSize: '14px', fontWeight: 600 }}>Không tìm thấy người dùng phù hợp</span>
@@ -398,103 +298,46 @@ export default function UserManagement({
                   <tr key={user.id}>
                     {/* Người dùng: Avatar + Tên + Email */}
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div
-                          style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '50%',
-                            backgroundColor: isAdmin ? 'var(--blue-9)' : 'var(--slate-8)',
-                            color: '#ffffff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            flexShrink: 0
-                          }}
-                        >
-                          {user.avatarInitials || user.fullName?.slice(0, 2).toUpperCase() || 'SV'}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                            {user.fullName}
-                            {isCurrent && (
-                              <span style={{ fontSize: '11px', color: 'var(--primary-base)', marginLeft: '6px' }}>
-                                • Phiên hiện tại
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Mail size={11} />
-                            <span>{user.email}</span>
-                          </div>
-                        </div>
+                      <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                        {user.fullName}
+                        {isCurrent && (
+                          <span style={{ fontSize: '12px', fontWeight: 400, color: 'var(--text-secondary)', marginLeft: '6px' }}>
+                            (bạn)
+                          </span>
+                        )}
                       </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{user.email}</div>
                     </td>
 
                     {/* MSSV / Khóa */}
                     <td>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {user.studentId || 'Chưa cập nhật'}
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                        {user.cohort || 'Sư phạm Tin'}
-                      </div>
+                      {user.studentId || 'Chưa cập nhật'} · {user.cohort || 'Sư phạm Tin'}
                     </td>
 
                     {/* Vai trò */}
                     <td>
-                      {isRoot ? (
-                        <span className="status-badge blue">
-                          <ShieldCheck size={12} /> Quản trị viên gốc
-                        </span>
-                      ) : isAdmin ? (
-                        <span className="status-badge blue">
-                          <ShieldCheck size={12} /> Quản trị viên
-                        </span>
-                      ) : (
-                        <span className="status-badge slate">
-                          <GraduationCap size={12} /> Sinh viên
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Điểm thưởng */}
-                    <td>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, color: 'var(--amber-11)' }}>
-                        <Award size={13} style={{ color: 'var(--amber-9)' }} />
-                        <span>{user.points || 0}</span>
-                      </div>
+                      {isRoot ? 'Quản trị viên gốc' : isAdmin ? 'Quản trị viên' : 'Sinh viên'}
                     </td>
 
                     {/* Trạng thái */}
                     <td>
                       {user.isActive ? (
                         <span className="status-badge green">
-                          <CheckCircle2 size={12} /> Hoạt động
+                          Hoạt động
                         </span>
                       ) : (
                         <span
                           className="status-badge red"
                           title={user.lockReason ? `Lý do: ${user.lockReason}` : 'Tài khoản đang bị khóa'}
                         >
-                          <Lock size={12} /> Đã khóa
+                          Đã khóa
                         </span>
                       )}
                     </td>
 
-                    {/* Ngày tạo */}
-                    <td>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Calendar size={12} />
-                        <span>{user.createdAt ? user.createdAt.split('T')[0] : '2026-02-01'}</span>
-                      </div>
-                    </td>
-
                     {/* Thao tác Phân quyền & Khóa / Mở khóa */}
                     <td>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap' }}>
                         {onToggleUserRole && (
                           <button
                             type="button"
@@ -517,23 +360,9 @@ export default function UserManagement({
                                 ? 'Hạ quyền xuống Sinh viên'
                                 : 'Thăng cấp thành Quản trị viên'
                             }
-                            style={{
-                              padding: '5px 10px',
-                              fontSize: '12px',
-                              borderRadius: '6px',
-                              border: '1px solid var(--blue-3)',
-                              backgroundColor: isProtected ? 'var(--bg-muted)' : 'var(--blue-1)',
-                              color: isProtected ? 'var(--text-tertiary)' : 'var(--blue-11)',
-                              fontWeight: 600,
-                              cursor: isProtected ? 'not-allowed' : 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              opacity: isProtected ? 0.6 : 1
-                            }}
+                            className="table-action"
                           >
-                            <ShieldCheck size={13} />
-                            <span>{isAdmin ? 'Hạ SV' : 'Cấp Admin'}</span>
+                            {isAdmin ? 'Hạ về Sinh viên' : 'Cấp quyền Admin'}
                           </button>
                         )}
 
@@ -549,44 +378,17 @@ export default function UserManagement({
                                 ? 'Không thể tự khóa tài khoản của bạn'
                                 : 'Khóa tài khoản sinh viên này'
                             }
-                            style={{
-                              padding: '5px 10px',
-                              fontSize: '12px',
-                              borderRadius: '6px',
-                              border: '1px solid var(--red-2)',
-                              backgroundColor: isProtected ? 'var(--bg-muted)' : 'var(--red-1)',
-                              color: isProtected ? 'var(--text-tertiary)' : 'var(--red-9)',
-                              fontWeight: 600,
-                              cursor: isProtected ? 'not-allowed' : 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              opacity: isProtected ? 0.6 : 1
-                            }}
+                            className="table-action danger"
                           >
-                            <Lock size={13} />
-                            <span>Khóa</span>
+                            Khóa
                           </button>
                         ) : (
                           <button
                             type="button"
                             onClick={() => setUnlockingUser(user)}
-                            style={{
-                              padding: '5px 10px',
-                              fontSize: '12px',
-                              borderRadius: '6px',
-                              border: '1px solid var(--green-2)',
-                              backgroundColor: 'var(--green-1)',
-                              color: 'var(--green-11)',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
+                            className="table-action"
                           >
-                            <Unlock size={13} />
-                            <span>Mở khóa</span>
+                            Mở khóa
                           </button>
                         )}
                       </div>
@@ -597,37 +399,6 @@ export default function UserManagement({
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Thông tin cưỡng chế hệ thống (System Enforcement Notice) */}
-      <div
-        style={{
-          marginTop: '20px',
-          padding: '14px 18px',
-          borderRadius: '10px',
-          backgroundColor: 'var(--blue-1)',
-          border: '1px solid var(--blue-3)',
-          color: 'var(--blue-12)',
-          fontSize: '12.5px',
-          lineHeight: 1.55,
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px'
-        }}
-      >
-        <Info size={18} style={{ color: 'var(--blue-9)', flexShrink: 0, marginTop: '2px' }} />
-        <div>
-          <strong style={{ color: 'var(--blue-11)', display: 'block', marginBottom: '3px' }}>
-            Quy định đối với tài khoản bị khóa
-          </strong>
-          Khi tài khoản chuyển sang trạng thái <strong>&quot;Đã khóa&quot;</strong>:
-          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
-            <li><strong>Chặn tải lên tài liệu:</strong> Không thể tải lên tài liệu mới vào hệ thống.</li>
-            <li><strong>Chặn bình luận &amp; đánh giá:</strong> Không thể đánh giá hay gửi nhận xét ở các trang tài liệu.</li>
-            <li><strong>Tạm khóa tính năng Treo thưởng:</strong> Không thể tạo yêu cầu treo thưởng mới hoặc nộp tài liệu nhận thưởng.</li>
-            <li><strong>Chặn đăng nhập phiên mới:</strong> Bị từ chối xác thực khi đăng nhập.</li>
-          </ul>
-        </div>
       </div>
 
       {/* Modal Xác nhận Khóa tài khoản */}

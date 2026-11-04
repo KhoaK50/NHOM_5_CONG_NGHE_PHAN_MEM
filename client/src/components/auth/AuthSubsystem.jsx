@@ -15,7 +15,6 @@ import {
   ShieldAlert,
   KeyRound
 } from 'lucide-react'
-import BrandLogo from '../common/BrandLogo'
 import { AuthGuard, getApiBaseUrl } from '../../utils/authGuard'
 
 const GOOGLE_CLIENT_ID =
@@ -24,7 +23,7 @@ const GOOGLE_CLIENT_ID =
 export default function AuthSubsystem({
   initialTab = 'login',
   onLoginSuccess,
-  logoVariant = 'loops-weave'
+
 }) {
   const initialUrlParams =
     typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
@@ -450,11 +449,6 @@ export default function AuthSubsystem({
 
       {/* CENTERED MINIMALIST PRECISION SAAS CARD */}
       <div className="auth-card-centered">
-        {/* Brand badge anchored at top */}
-        <div style={{ textAlign: 'center', marginBottom: '14px' }}>
-          <BrandLogo variant={logoVariant} size={44} />
-        </div>
-
         {/* Dynamic Directional Stage Wrapper */}
         <div
           className={`view-stage-wrapper ${
@@ -561,7 +555,7 @@ export default function AuthSubsystem({
                             id="login-pass"
                             type={loginShowPass ? 'text' : 'password'}
                             className="has-toggle"
-                            placeholder="Ví dụ: 5Share@2026"
+                            placeholder="Nhập mật khẩu"
                             value={loginPass}
                             onChange={(e) => setLoginPass(e.target.value)}
                             onKeyUp={(e) => {
@@ -1015,7 +1009,7 @@ export default function AuthSubsystem({
                         color: 'var(--slate-12)'
                       }}
                     >
-                      Mã khôi phục từ Supabase: <strong style={{ color: '#0077e6', letterSpacing: '1px' }}>{sandboxResetCode}</strong>
+                      Mã khôi phục: <strong style={{ color: '#0077e6', letterSpacing: '1px' }}>{sandboxResetCode}</strong>
                     </div>
                   )}
 

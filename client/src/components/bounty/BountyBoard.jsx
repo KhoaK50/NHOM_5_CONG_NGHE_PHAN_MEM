@@ -2,20 +2,13 @@ import { useState, useMemo } from 'react'
 import {
   Award,
   Coins,
-  Trophy,
-  Crown,
   Search,
-  Plus,
   Upload,
-  Eye,
   CheckCircle2,
-  Clock,
   AlertTriangle,
   X,
-  HelpCircle,
-  UserCheck
 } from 'lucide-react'
-import { INITIAL_TOP_CONTRIBUTORS } from '../../data/mockData'
+import { BACKEND_PENDING_MESSAGE } from '../../utils/documentCourseApi'
 
 export default function BountyBoard({
   currentUser,
@@ -23,8 +16,6 @@ export default function BountyBoard({
   courses = [],
   documents = [],
   bounties = [],
-  onCreateBounty,
-  onFulfillBounty,
   onSelectDoc,
   onOpenUpload,
   onRequireLogin
@@ -49,7 +40,7 @@ export default function BountyBoard({
   const [selectedDocId, setSelectedDocId] = useState('')
   const [fulfillError, setFulfillError] = useState('')
 
-  const userPoints = currentUser?.points ?? 140
+  const userPoints = currentUser?.points ?? 0
   const isGuest = actorRole === 'GUEST' || !currentUser
 
   // Filter bounties
@@ -78,15 +69,6 @@ export default function BountyBoard({
   const fulfilledCount = bounties.filter((b) => b.status === 'FULFILLED').length
   const myCount = currentUser
     ? bounties.filter((b) => b.creatorId === currentUser.id || b.creatorName === currentUser.fullName).length
-    : 0
-
-  // Contributor Leaderboard ranking
-  const leaderboard = useMemo(() => {
-    return [...INITIAL_TOP_CONTRIBUTORS].sort((a, b) => b.points - a.points).slice(0, 10)
-  }, [])
-
-  const userRank = currentUser
-    ? leaderboard.findIndex((entry) => entry.id === currentUser.id || entry.name.includes(currentUser.fullName)) + 1
     : 0
 
   const handleOpenCreateModal = () => {
@@ -132,19 +114,7 @@ export default function BountyBoard({
       return
     }
 
-    const matchedCourse = courses.find((c) => c.code === newCourseCode)
-
-    if (onCreateBounty) {
-      onCreateBounty({
-        title: trimmedTitle,
-        courseCode: newCourseCode,
-        courseName: matchedCourse?.name || 'Phương pháp dạy học môn Tin học',
-        rewardPoints: pointsNum,
-        description: newDescription.trim()
-      })
-    }
-
-    setIsCreateModalOpen(false)
+    setCreateError(BACKEND_PENDING_MESSAGE)
   }
 
   const handleFulfillSubmit = (e) => {
@@ -156,11 +126,7 @@ export default function BountyBoard({
       return
     }
 
-    if (onFulfillBounty && fulfillingBounty) {
-      onFulfillBounty(fulfillingBounty.id, selectedDocId)
-    }
-
-    setFulfillingBounty(null)
+    setFulfillError(BACKEND_PENDING_MESSAGE)
   }
 
   // Filter approved user docs for fulfilling
@@ -172,111 +138,44 @@ export default function BountyBoard({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-      {/* 1. Bounty Hero Header */}
-      <section
-        style={{
-          backgroundColor: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-xl)',
-          padding: '24px 28px',
-          boxShadow: 'var(--shadow-card)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '20px'
-        }}
-        aria-label="Sàn treo thưởng học liệu"
-      >
+      <header className="page-head">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span className="status-badge amber" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-              <Award size={13} />
-              <span>Kinh tế Tri thức Sư phạm</span>
-            </span>
-          </div>
-          <h1 style={{ margin: '0 0 6px 0', fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)' }}>
-            Sàn Treo Thưởng Học Liệu & Bảng Vàng Cống Hiến
-          </h1>
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '640px', lineHeight: 1.55 }}>
-            Treo thưởng điểm cống hiến để tìm kiếm đề thi hiếm, giáo án chuẩn Công văn 5512; giải thưởng yêu cầu để tích lũy điểm và ghi danh trên Bảng Vàng Sinh viên Sư phạm Tin học.
-          </p>
+          <h1 className="page-title">Treo thưởng</h1>
+          <p className="page-sub">Bạn đang có {userPoints} điểm</p>
         </div>
-
-        {/* User points & Action */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <div
-            style={{
-              padding: '10px 16px',
-              borderRadius: '10px',
-              backgroundColor: 'var(--amber-1, #fff9ed)',
-              border: '1.5px solid var(--amber-3, #ffe3a2)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
-            }}
-          >
-            <Coins size={18} style={{ color: 'var(--amber-11)' }} />
-            <div>
-              <span style={{ fontSize: '11px', color: 'var(--amber-11)', display: 'block', fontWeight: 600 }}>
-                Ví của bạn
-              </span>
-              <strong style={{ fontSize: '15px', color: 'var(--amber-12)', fontWeight: 800 }}>
-                {isGuest ? 'Chưa đăng nhập' : `${userPoints} điểm`}
-              </strong>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="btn-solid-primary"
-            onClick={handleOpenCreateModal}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '10px 18px', height: '42px' }}
-          >
-            <Plus size={16} />
-            <span>Treo thưởng học liệu</span>
-          </button>
-        </div>
-      </section>
+        <button type="button" className="btn-solid-primary" onClick={handleOpenCreateModal}>
+          Tạo yêu cầu
+        </button>
+      </header>
 
       {/* 2. Main 2-Column Grid (68% Left Feed / 32% Right Leaderboard) */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '24px'
+          gridTemplateColumns: 'minmax(0, 1fr) minmax(280px, 340px)',
+          gap: '20px',
+          alignItems: 'start'
         }}
         className="bounty-workspace-grid"
       >
         {/* Left Column (Feed) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: '2 1 540px' }}>
           {/* Toolbar & Filters */}
-          <div
-            style={{
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '14px 18px',
-              boxShadow: 'var(--shadow-sm)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}
-          >
-            {/* Status tabs */}
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="underline-tabs" role="tablist" aria-label="Lọc yêu cầu">
               {[
                 { id: 'ALL', label: `Tất cả (${bounties.length})` },
-                { id: 'OPEN', label: `Đang tìm kiếm (${openCount})` },
+                { id: 'OPEN', label: `Đang tìm (${openCount})` },
                 { id: 'FULFILLED', label: `Đã có lời giải (${fulfilledCount})` },
                 { id: 'MINE', label: `Của tôi (${myCount})` }
               ].map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
+                  role="tab"
+                  aria-selected={selectedStatusTab === tab.id}
+                  className={`underline-tab ${selectedStatusTab === tab.id ? 'active' : ''}`}
                   onClick={() => setSelectedStatusTab(tab.id)}
-                  className={selectedStatusTab === tab.id ? 'btn-solid-primary' : 'btn-ghost'}
-                  style={{ fontSize: '12px', padding: '6px 12px' }}
                 >
                   {tab.label}
                 </button>
@@ -291,7 +190,7 @@ export default function BountyBoard({
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm kiếm yêu cầu học liệu..."
+                  placeholder="Tìm yêu cầu"
                   style={{
                     width: '100%',
                     height: '36px',
@@ -336,14 +235,11 @@ export default function BountyBoard({
             <div className="empty-state-box">
               <Award size={36} style={{ color: 'var(--text-tertiary)', marginBottom: '8px' }} />
               <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 700 }}>
-                Không tìm thấy yêu cầu treo thưởng nào
+                Chưa có yêu cầu treo thưởng nào
               </h3>
               <p style={{ margin: '0 0 14px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                Bạn có thể tự tạo yêu cầu mới để kêu gọi bạn học chia sẻ tài liệu.
+                Yêu cầu sẽ hiện ở đây khi chức năng được kết nối máy chủ.
               </p>
-              <button type="button" className="btn-solid-primary" onClick={handleOpenCreateModal}>
-                Tạo yêu cầu ngay
-              </button>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -366,49 +262,20 @@ export default function BountyBoard({
                       gap: '12px'
                     }}
                   >
-                    {/* Card Top: Badges & Reward Points */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span className="status-badge blue">{bounty.courseCode}</span>
-                        {isOpen ? (
-                          <span className="status-badge green">
-                            <Clock size={12} /> Đang tìm kiếm
-                          </span>
-                        ) : (
-                          <span className="status-badge slate">
-                            <CheckCircle2 size={12} /> Đã có lời giải
-                          </span>
-                        )}
-                        {bounty.courseName && (
-                          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
-                            {bounty.courseName}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Reward points pill */}
-                      <span
-                        style={{
-                          backgroundColor: 'var(--amber-1, #fff9ed)',
-                          color: 'var(--amber-11, #ad5700)',
-                          border: '1px solid var(--amber-3, #ffe3a2)',
-                          padding: '4px 10px',
-                          borderRadius: '999px',
-                          fontWeight: 800,
-                          fontSize: '13px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px'
-                        }}
-                      >
-                        <Coins size={14} />
-                        <span>+{bounty.rewardPoints} điểm</span>
+                      <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                        {bounty.courseCode}
+                        {bounty.courseName ? ` · ${bounty.courseName}` : ''}
+                        {isOpen ? '' : ' · Đã có lời giải'}
+                      </span>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--status-amber)' }}>
+                        +{bounty.rewardPoints} điểm
                       </span>
                     </div>
 
                     {/* Title & Description */}
                     <div>
-                      <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                      <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4 }}>
                         {bounty.title}
                       </h3>
                       {bounty.description && (
@@ -453,60 +320,24 @@ export default function BountyBoard({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        borderTop: '1px solid var(--border-subtle)',
-                        paddingTop: '12px',
                         flexWrap: 'wrap',
                         gap: '10px'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        <div
-                          style={{
-                            width: '26px',
-                            height: '26px',
-                            borderRadius: '50%',
-                            backgroundColor: 'var(--blue-2)',
-                            color: 'var(--primary-base)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '11px',
-                            fontWeight: 700
-                          }}
-                        >
-                          {bounty.creatorName?.slice(0, 1) || 'S'}
-                        </div>
-                        <span>
-                          <strong>{bounty.creatorName}</strong> ({bounty.creatorCohort || 'K50 SPTH'})
-                        </span>
-                      </div>
+                      <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{bounty.creatorName}</span>
 
                       {/* Action CTA */}
                       <div>
                         {isOpen ? (
                           isCreator ? (
-                            <span
-                              style={{
-                                fontSize: '12px',
-                                color: 'var(--text-tertiary)',
-                                fontStyle: 'italic',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                              }}
-                            >
-                              <UserCheck size={13} />
-                              <span>Yêu cầu của bạn</span>
-                            </span>
+                            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Yêu cầu của bạn</span>
                           ) : (
                             <button
                               type="button"
-                              className="btn-solid-primary"
+                              className="btn-ghost"
                               onClick={() => handleOpenFulfillModal(bounty)}
-                              style={{ padding: '6px 14px', fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                             >
-                              <Upload size={13} />
-                              <span>Nộp tài liệu giải thưởng</span>
+                              <span>Nộp tài liệu</span>
                             </button>
                           )
                         ) : (
@@ -515,10 +346,8 @@ export default function BountyBoard({
                               type="button"
                               className="btn-ghost"
                               onClick={() => onSelectDoc(fulfilledDoc)}
-                              style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                             >
-                              <Eye size={13} />
-                              <span>Xem học liệu giải thưởng</span>
+                              <span>Xem tài liệu</span>
                             </button>
                           )
                         )}
@@ -533,148 +362,18 @@ export default function BountyBoard({
 
         {/* Right Column: Top 10 Contributor Leaderboard & Rules */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', flex: '1 1 300px' }}>
-          {/* Top 10 Leaderboard Card */}
-          <section
-            style={{
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-xl)',
-              padding: '20px',
-              boxShadow: 'var(--shadow-card)'
-            }}
-            aria-label="Bảng vàng top 10 cống hiến"
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <Trophy size={18} style={{ color: 'var(--amber-9, #ffb224)' }} />
-              <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                Bảng Vàng Top 10 Cống Hiến
-              </h2>
-            </div>
-            <p style={{ margin: '0 0 14px 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-              Vinh danh sinh viên Sư phạm Tin học tích cực chia sẻ học liệu và giải thưởng.
-            </p>
-
-            {/* List entries */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {leaderboard.map((item, index) => {
-                const rank = index + 1
-                const isTop1 = rank === 1
-                const isTop2 = rank === 2
-                const isTop3 = rank === 3
-
-                return (
-                  <div
-                    key={item.id}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      backgroundColor: isTop1 ? 'var(--amber-1, #fff9ed)' : 'var(--bg-muted)',
-                      border: isTop1 ? '1px solid var(--amber-3, #ffe3a2)' : '1px solid transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '10px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                      {/* Rank badge */}
-                      <div
-                        style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          backgroundColor: isTop1 ? '#ffd700' : isTop2 ? '#cbd5e1' : isTop3 ? '#f59e0b' : 'var(--slate-4)',
-                          color: isTop1 || isTop2 || isTop3 ? '#000000' : 'var(--text-primary)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          flexShrink: 0
-                        }}
-                      >
-                        {isTop1 ? <Crown size={13} style={{ color: '#854d0e' }} /> : rank}
-                      </div>
-
-                      <div style={{ minWidth: 0 }}>
-                        <strong style={{ fontSize: '12.5px', color: 'var(--text-primary)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {item.name}
-                        </strong>
-                        <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
-                          {item.cohort}
-                        </span>
-                      </div>
-                    </div>
-
-                    <span
-                      style={{
-                        fontSize: '12px',
-                        fontWeight: 800,
-                        color: isTop1 ? 'var(--amber-12)' : 'var(--text-primary)',
-                        fontFamily: 'var(--font-mono)'
-                      }}
-                    >
-                      {item.points} đ
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Current user position card */}
-            {!isGuest && (
-              <div
-                style={{
-                  marginTop: '14px',
-                  padding: '10px 14px',
-                  borderRadius: '10px',
-                  backgroundColor: 'var(--blue-1)',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: '12px',
-                  color: 'var(--text-primary)'
-                }}
-              >
-                <span>Vị trí của bạn: </span>
-                <strong style={{ color: 'var(--primary-base)' }}>
-                  {userRank > 0 ? `Hạng ${userRank}` : 'Hạng 12+'}
-                </strong>
-                <span> • </span>
-                <strong style={{ color: 'var(--amber-11)' }}>{userPoints} điểm cống hiến</strong>
-              </div>
-            )}
-          </section>
-
-          {/* Gamification Rules Card */}
-          <section
-            style={{
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-xl)',
-              padding: '18px 20px',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-            aria-label="Cơ chế điểm thưởng học thuật"
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-              <HelpCircle size={15} style={{ color: 'var(--primary-base)' }} />
-              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                Quy Tắc Điểm Cống Hiến
-              </h3>
-            </div>
-            <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              <li>
-                <strong>+50 điểm:</strong> Tặng khi kích hoạt tài khoản Sinh viên HCMUE.
-              </li>
-              <li>
-                <strong>+20 điểm:</strong> Mỗi học liệu được Admin phê duyệt đạt 8/8 tiêu chí.
-              </li>
-              <li>
-                <strong>Treo thưởng:</strong> Tạm giữ điểm ví khi đăng yêu cầu tìm học liệu.
-              </li>
-              <li>
-                <strong>Giải thưởng:</strong> 100% điểm thưởng chuyển vào ví người nộp tài liệu chuẩn.
-              </li>
-            </ul>
+          <section className="detail-info" aria-label="Top 10 đóng góp">
+            <h2 className="section-title" style={{ fontSize: '14px' }}>Top 10 đóng góp</h2>
+            <p className="page-sub" style={{ fontSize: '13px', margin: 0 }}>Chưa có dữ liệu xếp hạng.</p>
+            <details className="file-check-details">
+              <summary>Cách tính điểm</summary>
+              <ul style={{ margin: '8px 0 0', paddingLeft: '18px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                <li>+50 điểm khi kích hoạt tài khoản.</li>
+                <li>+20 điểm cho mỗi tài liệu được duyệt.</li>
+                <li>Khi treo thưởng, điểm được tạm giữ.</li>
+                <li>Người nộp đúng tài liệu nhận toàn bộ điểm thưởng.</li>
+              </ul>
+            </details>
           </section>
         </div>
       </div>

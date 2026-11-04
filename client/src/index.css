@@ -1,6 +1,7 @@
 @import './styles/radix_colors.css';
 @import './styles/auth.css';
 @import './styles/platform.css';
+@import './styles/minimal.css';
 
 /* App Container Full-width */
 #root {

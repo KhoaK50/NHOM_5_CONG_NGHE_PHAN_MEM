@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   AlertTriangle,
-  Check,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -10,10 +8,8 @@ import {
   FileCheck,
   FileText,
   Flag,
-  Hash,
   ShieldCheck,
   Trash2,
-  XCircle
 } from 'lucide-react'
 import CriteriaChecklist from './CriteriaChecklist'
 import RejectReasonModal from './RejectReasonModal'
@@ -308,23 +304,14 @@ export default function ModerationQueue({ onNotice, onPendingCountChange }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
-        <div style={{ flex: '1 1 420px' }}>
-          <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>Hàng đợi kiểm duyệt</h2>
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
-            {activeTab === 'pending'
-              ? 'Xem toàn văn tài liệu, xác nhận đủ 8 tiêu chí rồi mới phê duyệt. Tài liệu gửi sớm nhất được xếp lên đầu.'
-              : 'Xử lý báo cáo vi phạm: mỗi quyết định cần ghi chú để lưu nhật ký và thông báo cho các bên liên quan.'}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }} role="tablist" aria-label="Loại công việc kiểm duyệt">
-          <button type="button" role="tab" aria-selected={activeTab === 'pending'} onClick={() => setActiveTab('pending')} className={activeTab === 'pending' ? 'btn-solid-primary' : 'btn-ghost'}>
-            Chờ thẩm định ({docTotal})
-          </button>
-          <button type="button" role="tab" aria-selected={activeTab === 'reports'} onClick={() => setActiveTab('reports')} className={activeTab === 'reports' ? 'btn-solid-primary' : 'btn-ghost'}>
-            Báo cáo vi phạm ({reportTotal})
-          </button>
-        </div>
+      <h1 className="page-title" style={{ marginBottom: '12px' }}>Kiểm duyệt</h1>
+      <div className="underline-tabs" role="tablist" aria-label="Loại công việc kiểm duyệt" style={{ marginBottom: '16px' }}>
+        <button type="button" role="tab" aria-selected={activeTab === 'pending'} onClick={() => setActiveTab('pending')} className={`underline-tab ${activeTab === 'pending' ? 'active' : ''}`}>
+          Chờ duyệt ({docTotal})
+        </button>
+        <button type="button" role="tab" aria-selected={activeTab === 'reports'} onClick={() => setActiveTab('reports')} className={`underline-tab ${activeTab === 'reports' ? 'active' : ''}`}>
+          Báo cáo vi phạm ({reportTotal})
+        </button>
       </div>
 
       {listError && (
@@ -384,8 +371,7 @@ export default function ModerationQueue({ onNotice, onPendingCountChange }) {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginBottom: '5px' }}>
-                      <span className="status-badge blue">{doc.courseCode}</span>
-                      <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{formatBytes(doc.fileSizeBytes)}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)' }}>{doc.courseCode} · {formatBytes(doc.fileSizeBytes)}</span>
                     </div>
                     <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.35, marginBottom: '4px' }}>{doc.title}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
@@ -416,22 +402,25 @@ export default function ModerationQueue({ onNotice, onPendingCountChange }) {
                   gap: '12px'
                 }}
               >
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <span className="status-badge blue">{currentDetail.courseCode}</span>
-                  <span className="status-badge slate">{DOC_TYPE_LABELS[currentDetail.docType] || currentDetail.docType}</span>
-                  <span className={`status-badge ${autoChecks.formatOk ? 'amber' : 'red'}`}>{autoChecks.formatOk ? 'PDF' : 'Sai định dạng'}</span>
-                </div>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.4 }}>{currentDetail.title}</h3>
-                <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.45 }}>{currentDetail.description}</p>
-                <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                  Người đóng góp: {currentDetail.uploaderName} • Năm học {currentDetail.academicYear}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 8px', borderRadius: '6px', backgroundColor: 'var(--bg-muted)' }}>
-                  <Hash size={12} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
-                  <code title={currentDetail.fileHash} style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px', color: 'var(--blue-11)' }}>
-                    {currentDetail.fileHash.slice(0, 8)}…{currentDetail.fileHash.slice(-8)}
-                  </code>
-                </div>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>{currentDetail.title}</h3>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                  {currentDetail.courseCode} · {DOC_TYPE_LABELS[currentDetail.docType] || currentDetail.docType} · {currentDetail.uploaderName}
+                </p>
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.45 }}>{currentDetail.description}</p>
+                {!autoChecks.formatOk && <span className="status-badge red" style={{ alignSelf: 'flex-start' }}>Sai định dạng</span>}
+                <details className="file-check-details">
+                  <summary>Chi tiết tệp</summary>
+                  <dl>
+                    <div>
+                      <dt>Năm học</dt>
+                      <dd>{currentDetail.academicYear || '—'}</dd>
+                    </div>
+                    <div>
+                      <dt>Mã SHA-256</dt>
+                      <dd className="file-check-code">{currentDetail.fileHash}</dd>
+                    </div>
+                  </dl>
+                </details>
 
                 <CriteriaChecklist
                   autoChecks={autoChecks}
@@ -470,8 +459,7 @@ export default function ModerationQueue({ onNotice, onPendingCountChange }) {
                       gap: '6px'
                     }}
                   >
-                    {canApprove ? <CheckCircle2 size={15} /> : <Check size={15} />}
-                    <span>{submitting ? 'Đang xử lý...' : 'Phê duyệt & xuất bản'}</span>
+                    <span>{submitting ? 'Đang xử lý...' : 'Phê duyệt'}</span>
                   </button>
                   <button
                     type="button"
@@ -480,21 +468,9 @@ export default function ModerationQueue({ onNotice, onPendingCountChange }) {
                       setActionError('')
                       setRejectingDoc(currentDetail)
                     }}
-                    style={{
-                      backgroundColor: 'var(--red-9)',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '9px 14px',
-                      fontWeight: 600,
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
+                    className="btn-ghost"
+                    style={{ flex: 1 }}
                   >
-                    <XCircle size={15} />
                     <span>Từ chối</span>
                   </button>
                 </div>

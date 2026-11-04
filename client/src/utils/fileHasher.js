@@ -65,53 +65,31 @@ function bufferToHex(buffer) {
 }
 
 /**
- * Băm chuỗi văn bản dự phòng khi chạy trong môi trường giả lập hoặc chọn tệp mẫu
- */
-export function computeDeterministicHexHash(inputString = '') {
-  let h1 = 0xdeadbeef ^ inputString.length
-  let h2 = 0x41c6ce57 ^ inputString.length
-  for (let i = 0; i < inputString.length; i++) {
-    const ch = inputString.charCodeAt(i)
-    h1 = Math.imul(h1 ^ ch, 2654435761)
-    h2 = Math.imul(h2 ^ ch, 1597334677)
-  }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
-  const baseHex = (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0')
-  return (baseHex + baseHex + baseHex + baseHex).slice(0, 64)
-}
-
-/**
  * Đường ống kiểm tra 4 tầng an ninh tải lên (Multi-Format Validation Pipeline):
  * - Tầng 1: Whitelist phần mở rộng (.pdf, .docx, .pptx) và dung lượng (0 < size <= 25MB)
  * - Tầng 2: Kiểm tra Magic Bytes nhị phân (%PDF- cho PDF, PK\x03\x04 cho DOCX & PPTX)
  * - Tầng 3: Băm mật mã SHA-256 (64 ký tự hex) & Quét chống trùng lặp trong CSDL
  * - Tầng 4: Gắn kết Metadata học thuật hợp lệ
  *
- * @param {File | { name: string, size: number, type?: string, presetHash?: string, presetMagic?: string, arrayBuffer?: Function }} fileObj
+ * @param {File} fileObj
  * @param {Array} existingDocuments
- * @param {Object} options { onlyPdf?: boolean }
  */
-export async function verifyFileAndHash(fileObj, existingDocuments = [], options = {}) {
+export async function verifyFileAndHash(fileObj, existingDocuments = []) {
   if (!fileObj) {
     return {
       isValid: false,
       stageFailed: 'FILE_MISSING',
-      errorMessage: options.onlyPdf
-        ? 'Vui lòng chọn một tệp tin PDF để kiểm tra.'
-        : 'Vui lòng chọn một tệp tin (PDF, Word hoặc PowerPoint) để kiểm tra.'
+      errorMessage: 'Vui lòng chọn một tệp tin (PDF, Word hoặc PowerPoint) để kiểm tra.'
     }
   }
 
-  const fileName = fileObj.name || (options.onlyPdf ? 'tai_lieu.pdf' : 'hoc_lieu.pdf')
-  const sizeBytes = typeof fileObj.size === 'number' ? fileObj.size : 2.4 * 1024 * 1024
+  const fileName = fileObj.name
+  const sizeBytes = fileObj.size
   const sizeMb = Number((sizeBytes / (1024 * 1024)).toFixed(2))
 
   // Tầng 1: Kiểm tra phần mở rộng & MIME type
   const detectedFormat = detectFormatFromExtension(fileName)
-  const isAllowedExt = options.onlyPdf
-    ? detectedFormat === 'pdf'
-    : Boolean(detectedFormat && ['pdf', 'docx', 'pptx'].includes(detectedFormat))
+  const isAllowedExt = Boolean(detectedFormat && ['pdf', 'docx', 'pptx'].includes(detectedFormat))
 
   // Kiểm tra MIME type nếu trình duyệt cung cấp
   let hasInvalidMime = false
@@ -151,9 +129,7 @@ export async function verifyFileAndHash(fileObj, existingDocuments = [], options
       isDuplicate: false,
       duplicateDoc: null,
       stageFailed: 'EXTENSION',
-      errorMessage: options.onlyPdf
-        ? 'Chỉ chấp nhận tệp tin chuẩn định dạng .pdf (MIME application/pdf).'
-        : 'Chỉ chấp nhận tệp tin chuẩn định dạng .pdf, .docx hoặc .pptx.'
+      errorMessage: 'Chỉ chấp nhận tệp tin chuẩn định dạng .pdf, .docx hoặc .pptx.'
     }
   }
 
@@ -174,9 +150,7 @@ export async function verifyFileAndHash(fileObj, existingDocuments = [], options
       isDuplicate: false,
       duplicateDoc: null,
       stageFailed: 'EMPTY_FILE',
-      errorMessage: options.onlyPdf
-        ? 'Tệp tin rỗng (0 byte) không hợp lệ, vui lòng chọn tệp PDF có nội dung.'
-        : 'Tệp tin rỗng (0 byte) không hợp lệ, vui lòng chọn tệp có nội dung.'
+      errorMessage: 'Tệp tin rỗng (0 byte) không hợp lệ, vui lòng chọn tệp có nội dung.'
     }
   }
 
@@ -203,16 +177,10 @@ export async function verifyFileAndHash(fileObj, existingDocuments = [], options
 
   // Tầng 2: Xác thực tính toàn vẹn nhị phân Magic Bytes
   let magicBytesOk = true
-  let magicHeaderHex = detectedFormat === 'pdf'
-    ? '25 50 44 2D 31 2E 37 (%PDF-1.7)'
-    : '50 4B 03 04 (PK.. ZIP OpenXML)'
-  let sha256Hash = fileObj.presetHash || ''
+  let magicHeaderHex = 'N/A'
+  let sha256Hash = ''
 
-  if (fileObj.presetMagic === 'INVALID_EXE' || fileObj.presetMagic === 'INVALID') {
-    magicBytesOk = false
-    magicHeaderHex = '4D 5A 90 00 (MZ - Tệp thực thi giả mạo)'
-  } else if (typeof fileObj.arrayBuffer === 'function') {
-    try {
+  try {
       const arrayBuf = await fileObj.arrayBuffer()
       const firstBytes = new Uint8Array(arrayBuf.slice(0, 8))
 
@@ -244,14 +212,9 @@ export async function verifyFileAndHash(fileObj, existingDocuments = [], options
       if (globalThis.crypto && globalThis.crypto.subtle) {
         const digestBuffer = await globalThis.crypto.subtle.digest('SHA-256', arrayBuf)
         sha256Hash = bufferToHex(digestBuffer)
-      } else {
-        sha256Hash = computeDeterministicHexHash(`${fileName}:${sizeBytes}`)
       }
-    } catch {
-      sha256Hash = computeDeterministicHexHash(`${fileName}:${sizeBytes}`)
-    }
-  } else if (!sha256Hash) {
-    sha256Hash = computeDeterministicHexHash(`${fileName}:${sizeBytes}`)
+  } catch {
+    magicBytesOk = false
   }
 
   if (!magicBytesOk) {
@@ -316,13 +279,4 @@ export async function verifyFileAndHash(fileObj, existingDocuments = [], options
     stageFailed: null,
     errorMessage: null
   }
-}
-
-/**
- * 100% Backward Compatibility Alias cho các bài kiểm tra hiện hữu:
- * - tools/figma-5share-plugin/test-runner.js (9 Edge Cases)
- * - tests/e2e/runner.js
- */
-export async function verifyPdfFileAndHash(fileObj, existingDocuments = []) {
-  return verifyFileAndHash(fileObj, existingDocuments, { onlyPdf: true })
 }

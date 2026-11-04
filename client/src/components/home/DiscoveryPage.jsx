@@ -1,27 +1,21 @@
 import { useState, useMemo } from 'react'
-import {
-  Search,
-  Upload,
-  LayoutGrid,
-  List,
-  X
-} from 'lucide-react'
+import { Search, Upload, X, ChevronDown, ChevronUp } from 'lucide-react'
 import FilterSidebar from './FilterSidebar'
 import CurriculumTreeMap from './CurriculumTreeMap'
 import DocumentGrid from './DocumentGrid'
 import {
   KNOWLEDGE_BLOCKS,
   SEMESTERS,
-  CURRICULUM_SEMESTERS_META,
   DOCUMENT_TYPES
-} from '../../data/mockData'
+} from '../../data/curriculum'
+import { DOC_TYPE_LABELS } from '../../utils/documentCourseApi'
 
 const PAGE_SIZE = 12
 
 function normalizeVietnamese(str = '') {
   return str
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/đ/g, 'd')
     .replace(/Đ/g, 'D')
     .toLowerCase()
@@ -34,19 +28,20 @@ export default function DiscoveryPage({
   documents = [],
   courses = [],
   bookmarkedIds = [],
+  initialQuery = '',
   onSelectDoc,
   onToggleBookmark,
   onOpenUpload
 }) {
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [selectedFormat, setSelectedFormat] = useState('ALL')
   const [selectedBlock, setSelectedBlock] = useState(KNOWLEDGE_BLOCKS[0])
   const [selectedSemester, setSelectedSemester] = useState(SEMESTERS[0])
   const [selectedCourseCode, setSelectedCourseCode] = useState('ALL')
   const [selectedDocType, setSelectedDocType] = useState(DOCUMENT_TYPES[0])
   const [sortBy, setSortBy] = useState('popular')
-  const [viewMode, setViewMode] = useState('grid')
   const [currentPage, setCurrentPage] = useState(1)
+  const [isTreeOpen, setIsTreeOpen] = useState(false)
 
   const activeCourses = useMemo(
     () => courses.filter((c) => c.isActive),
@@ -64,13 +59,21 @@ export default function DiscoveryPage({
     setCurrentPage(1)
   }
 
+  // Đổi bộ lọc nào cũng quay về trang 1
+  const withPageReset = (setter) => (value) => {
+    setter(value)
+    setCurrentPage(1)
+  }
+
   const filteredDocs = useMemo(() => {
-    const activeCourseCodes = new Set(activeCourses.map((c) => c.code))
+    // API công khai chỉ trả mã môn và mã loại tài liệu, nên khối kiến thức và học kỳ lấy từ môn học
+    const courseByCode = new Map(activeCourses.map((c) => [c.code, c]))
     const cleanKeyword = normalizeVietnamese(searchQuery)
 
     const matched = documents.filter((doc) => {
       if (doc.status !== 'APPROVED') return false
-      if (!activeCourseCodes.has(doc.courseCode)) return false
+      const course = courseByCode.get(doc.courseCode)
+      if (!course) return false
 
       if (selectedFormat !== 'ALL') {
         const docFmt = (
@@ -80,16 +83,16 @@ export default function DiscoveryPage({
         if (docFmt !== selectedFormat.toLowerCase()) return false
       }
 
-      if (selectedBlock !== KNOWLEDGE_BLOCKS[0] && doc.knowledgeBlock !== selectedBlock) {
+      if (selectedBlock !== KNOWLEDGE_BLOCKS[0] && course.knowledgeBlock !== selectedBlock) {
         return false
       }
-      if (selectedSemester !== SEMESTERS[0] && doc.semester !== selectedSemester) {
+      if (selectedSemester !== SEMESTERS[0] && course.semester !== selectedSemester) {
         return false
       }
       if (selectedCourseCode !== 'ALL' && doc.courseCode !== selectedCourseCode) {
         return false
       }
-      if (selectedDocType !== DOCUMENT_TYPES[0] && doc.docType !== selectedDocType) {
+      if (selectedDocType !== DOCUMENT_TYPES[0] && (DOC_TYPE_LABELS[doc.docType] || doc.docType) !== selectedDocType) {
         return false
       }
 
@@ -125,27 +128,10 @@ export default function DiscoveryPage({
   const totalPages = Math.max(1, Math.ceil(filteredDocs.length / PAGE_SIZE))
   const paginatedDocs = filteredDocs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
-  // Ngữ cảnh tiêu đề động theo Môn học / Khối kiến thức / Học kỳ đang chọn
   const activeCourseObj =
     selectedCourseCode !== 'ALL'
       ? activeCourses.find((c) => c.code === selectedCourseCode)
       : null
-  const activeSemMeta =
-    selectedSemester !== SEMESTERS[0]
-      ? CURRICULUM_SEMESTERS_META.find((s) => s.id === selectedSemester)
-      : null
-
-  const contextTitle = activeCourseObj
-    ? `${activeCourseObj.code} — ${activeCourseObj.name}`
-    : selectedBlock !== KNOWLEDGE_BLOCKS[0]
-      ? `Khối kiến thức: ${selectedBlock}`
-      : activeSemMeta
-        ? `${activeSemMeta.id} (${activeSemMeta.credits} Tín chỉ) — ${activeSemMeta.focus}`
-        : 'Kho Tài Liệu Sư Phạm Tin Học'
-
-  const contextSubtitle = activeCourseObj
-    ? `${activeCourseObj.knowledgeBlock} • ${activeCourseObj.semester} (${activeCourseObj.credits} tín chỉ) • Khoa Công nghệ Thông tin – ĐH Sư phạm TP.HCM`
-    : 'Hệ thống lưu trữ và chia sẻ tài liệu học tập ngành Sư phạm Tin học – Trường Đại học Sư phạm TP.HCM.'
 
   const hasActiveFilters =
     selectedFormat !== 'ALL' ||
@@ -156,423 +142,148 @@ export default function DiscoveryPage({
     searchQuery.trim().length > 0
 
   return (
-    <section className="saas-workspace" aria-label="Không gian tra cứu học liệu Sư phạm Tin học">
+    <section className="discovery-page" aria-label="Kho học liệu">
+      <header className="page-head">
+        <div>
+          <h1 className="page-title">
+            {activeCourseObj ? `${activeCourseObj.code} – ${activeCourseObj.name}` : 'Kho học liệu'}
+          </h1>
+          <p className="page-sub">{filteredDocs.length} tài liệu đã được kiểm duyệt</p>
+        </div>
+
+        {onOpenUpload && (
+          <button type="button" className="btn-solid-primary" onClick={onOpenUpload}>
+            <Upload size={15} />
+            <span>Đóng góp tài liệu</span>
+          </button>
+        )}
+      </header>
+
+      <div className="saas-search-box discovery-search">
+        <Search size={16} className="saas-search-icon" />
+        <input
+          id="filter-keyword-input"
+          type="search"
+          className="saas-search-input"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value)
+            setCurrentPage(1)
+          }}
+          placeholder="Tìm theo tên tài liệu, mã môn, tác giả"
+          aria-label="Tìm tài liệu"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            className="saas-search-clear"
+            onClick={() => {
+              setSearchQuery('')
+              setCurrentPage(1)
+            }}
+            aria-label="Xóa từ khóa"
+          >
+            <X size={13} />
+          </button>
+        )}
+      </div>
+
       <FilterSidebar
         courses={courses}
-        documents={documents}
         selectedBlock={selectedBlock}
         selectedSemester={selectedSemester}
         selectedCourseCode={selectedCourseCode}
         selectedDocType={selectedDocType}
-        onChangeBlock={(val) => {
-          setSelectedBlock(val)
-          setCurrentPage(1)
-        }}
-        onChangeCourseCode={(val) => {
-          setSelectedCourseCode(val)
-          setCurrentPage(1)
-        }}
-        onChangeDocType={(val) => {
-          setSelectedDocType(val)
-          setCurrentPage(1)
-        }}
-        onResetFilters={handleResetFilters}
+        selectedFormat={selectedFormat}
+        sortBy={sortBy}
+        onChangeBlock={withPageReset(setSelectedBlock)}
+        onChangeSemester={withPageReset(setSelectedSemester)}
+        onChangeCourseCode={withPageReset(setSelectedCourseCode)}
+        onChangeDocType={withPageReset(setSelectedDocType)}
+        onChangeFormat={withPageReset(setSelectedFormat)}
+        onChangeSort={setSortBy}
       />
 
-      <main className="saas-main">
-        {/* 1. Vectoria Academic Header & Breadcrumb (.bc + .view-title + .view-desc) */}
-        <header className="saas-context-header">
-          <div className="saas-context-info">
-            <nav className="saas-breadcrumb" aria-label="Đường dẫn danh mục học thuật">
-              <span
-                className="saas-breadcrumb-link"
-                onClick={handleResetFilters}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleResetFilters()
-                }}
-              >
-                Kho tài liệu
-              </span>
-              <span className="saas-breadcrumb-sep">›</span>
-              <span
-                className="saas-breadcrumb-link"
-                onClick={() => {
-                  setSelectedCourseCode('ALL')
-                  setCurrentPage(1)
-                }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setSelectedCourseCode('ALL')
-                    setCurrentPage(1)
-                  }
-                }}
-              >
-                {selectedBlock === KNOWLEDGE_BLOCKS[0] ? 'Tất cả khối kiến thức' : selectedBlock}
-              </span>
-              {selectedSemester !== SEMESTERS[0] && (
-                <>
-                  <span className="saas-breadcrumb-sep">›</span>
-                  <span className="saas-breadcrumb-current">{selectedSemester}</span>
-                </>
-              )}
-              {activeCourseObj && (
-                <>
-                  <span className="saas-breadcrumb-sep">›</span>
-                  <span className="saas-breadcrumb-current">
-                    {activeCourseObj.code} – {activeCourseObj.name}
-                  </span>
-                </>
-              )}
-            </nav>
-            <h1 className="saas-context-title">{contextTitle}</h1>
-            <p className="saas-context-desc">{contextSubtitle}</p>
-          </div>
-
-          <button
-            type="button"
-            className="saas-upload-action"
-            onClick={onOpenUpload}
-          >
-            <Upload size={14} />
-            <span>Đóng góp tài liệu</span>
+      <div className="discovery-toolbar">
+        {hasActiveFilters ? (
+          <button type="button" className="btn-ghost nav-auth-link" onClick={handleResetFilters}>
+            Xóa bộ lọc
           </button>
-        </header>
+        ) : (
+          <span />
+        )}
+        <button
+          type="button"
+          className="btn-ghost nav-auth-link"
+          aria-expanded={isTreeOpen}
+          onClick={() => setIsTreeOpen((open) => !open)}
+        >
+          <span>{isTreeOpen ? 'Ẩn chương trình đào tạo' : 'Xem theo chương trình đào tạo'}</span>
+          {isTreeOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+        </button>
+      </div>
 
-        {/* 1.5. Sơ đồ Cây Chương trình Đào tạo Tương tác 8 Học kỳ (Đồng bộ 2 chiều với FR-03 & FR-04) */}
+      {isTreeOpen && (
         <CurriculumTreeMap
           courses={courses}
           documents={documents}
           selectedBlock={selectedBlock}
           selectedSemester={selectedSemester}
           selectedCourseCode={selectedCourseCode}
-          onSelectBlock={(blk) => {
-            setSelectedBlock(blk)
-            setCurrentPage(1)
-          }}
-          onSelectSemester={(sem) => {
-            setSelectedSemester(sem)
-            setCurrentPage(1)
-          }}
-          onSelectCourse={(code) => {
-            setSelectedCourseCode(code)
-            setCurrentPage(1)
-          }}
+          onSelectBlock={withPageReset(setSelectedBlock)}
+          onSelectSemester={withPageReset(setSelectedSemester)}
+          onSelectCourse={withPageReset(setSelectedCourseCode)}
           onResetFilters={handleResetFilters}
           onOpenUpload={onOpenUpload}
         />
+      )}
 
-        {/* 2. Vectoria Multi-Criteria Filter Panel (.pathfinding-panel -> .vec-filter-panel / FR-04 & UC05) */}
-        <div className="vec-filter-panel" role="region" aria-label="Bộ lọc tài liệu">
-          <div className="vec-filter-grid">
-            {/* Cột 1: Từ khóa FTS */}
-            <div className="vec-pf-group">
-              <label className="vec-pf-label" htmlFor="filter-keyword-input">
-                Từ khóa tìm kiếm
-              </label>
-              <div className="saas-search-box">
-                <Search size={14} className="saas-search-icon" />
-                <input
-                  id="filter-keyword-input"
-                  type="search"
-                  className="saas-search-input"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value)
-                    setCurrentPage(1)
-                  }}
-                  placeholder="Nhập mã môn, tên bài hoặc chủ đề cần tìm..."
-                  aria-label="Thanh tìm kiếm tài liệu"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    className="saas-search-clear"
-                    onClick={() => {
-                      setSearchQuery('')
-                      setCurrentPage(1)
-                    }}
-                    aria-label="Xóa từ khóa tìm kiếm"
-                  >
-                    <X size={13} />
-                  </button>
-                )}
-              </div>
-            </div>
+      <DocumentGrid
+        documents={paginatedDocs}
+        totalSystemDocs={documents.length}
+        hasActiveFilters={hasActiveFilters}
+        bookmarkedIds={bookmarkedIds}
+        onSelectDoc={onSelectDoc}
+        onToggleBookmark={onToggleBookmark}
+        onResetFilters={handleResetFilters}
+        onOpenUpload={onOpenUpload}
+      />
 
-            {/* Cột 2: Lọc theo Môn học SPTH (FR-03 / FR-04) */}
-            <div className="vec-pf-group">
-              <label className="vec-pf-label" htmlFor="filter-course-select">
-                Môn học
-              </label>
-              <select
-                id="filter-course-select"
-                className="saas-sort-select"
-                value={selectedCourseCode}
-                onChange={(e) => {
-                  setSelectedCourseCode(e.target.value)
-                  setCurrentPage(1)
-                }}
-              >
-                <option value="ALL">Tất cả môn học ({activeCourses.length} môn)</option>
-                {activeCourses.map((crs) => (
-                  <option key={crs.id} value={crs.code}>
-                    {crs.code} – {crs.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Cột 3: Lọc theo Học kỳ (FR-04) */}
-            <div className="vec-pf-group">
-              <label className="vec-pf-label" htmlFor="filter-semester-select">
-                Học kỳ CTĐT
-              </label>
-              <select
-                id="filter-semester-select"
-                className="saas-sort-select"
-                value={selectedSemester}
-                onChange={(e) => {
-                  setSelectedSemester(e.target.value)
-                  setCurrentPage(1)
-                }}
-              >
-                {SEMESTERS.map((sem) => (
-                  <option key={sem} value={sem}>
-                    {sem}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Cột 4: Lọc theo Định dạng tệp (FR-04) */}
-            <div className="vec-pf-group">
-              <label className="vec-pf-label" htmlFor="filter-format-select">
-                Định dạng tệp
-              </label>
-              <select
-                id="filter-format-select"
-                className="saas-sort-select"
-                value={selectedFormat}
-                onChange={(e) => {
-                  setSelectedFormat(e.target.value)
-                  setCurrentPage(1)
-                }}
-              >
-                <option value="ALL">Tất cả định dạng</option>
-                <option value="pdf">Tài liệu PDF</option>
-                <option value="docx">Văn bản Word</option>
-                <option value="pptx">Bài trình chiếu PowerPoint</option>
-              </select>
-            </div>
-
-            {/* Cột 5: Độ phổ biến / Sắp xếp (FR-04) */}
-            <div className="vec-pf-group">
-              <label className="vec-pf-label" htmlFor="filter-sort-select">
-                Sắp xếp theo
-              </label>
-              <select
-                id="filter-sort-select"
-                className="saas-sort-select"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="popular">Lượt tải nhiều nhất</option>
-                <option value="rating">Đánh giá cao nhất</option>
-                <option value="newest">Mới nhất</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* 3. Vectoria Segmented Tabs (.diagram-tabs / .dtab) cho Loại tài liệu (FR-03) & Chế độ xem */}
-        <div className="vec-tabs-toolbar">
-          <div className="vec-diagram-tabs" role="tablist" aria-label="Phân loại theo loại học liệu">
-            {DOCUMENT_TYPES.map((type) => (
+      {totalPages > 1 && (
+        <nav className="saas-pagination" aria-label="Phân trang">
+          <span>
+            Trang <strong>{currentPage}</strong> / {totalPages}
+          </span>
+          <div className="saas-page-controls">
+            <button
+              type="button"
+              className="saas-page-btn"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              Trước
+            </button>
+            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
               <button
-                key={type}
+                key={page}
                 type="button"
-                role="tab"
-                aria-selected={selectedDocType === type}
-                className={`vec-dtab ${selectedDocType === type ? 'active' : ''}`}
-                onClick={() => {
-                  setSelectedDocType(type)
-                  setCurrentPage(1)
-                }}
+                className={`saas-page-btn ${currentPage === page ? 'active' : ''}`}
+                onClick={() => setCurrentPage(page)}
               >
-                {type}
+                {page}
               </button>
             ))}
-          </div>
-
-          <div className="vec-diagram-tabs" role="group" aria-label="Chế độ hiển thị">
             <button
               type="button"
-              className={`vec-dtab ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-              title="Chế độ Lưới"
-              aria-label="Hiển thị dạng Lưới"
+              className="saas-page-btn"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             >
-              <LayoutGrid size={13} />
-              <span>Lưới</span>
-            </button>
-            <button
-              type="button"
-              className={`vec-dtab ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
-              title="Chế độ Bảng danh sách"
-              aria-label="Hiển thị dạng Danh sách"
-            >
-              <List size={13} />
-              <span>Danh sách</span>
+              Sau
             </button>
           </div>
-        </div>
-
-        {/* 4. Thanh trạng thái kết quả & thẻ lọc đang áp dụng */}
-        <div className="saas-status-bar">
-          <span className="saas-result-summary">
-            Hiển thị <strong>{filteredDocs.length}</strong> tài liệu
-          </span>
-
-          {hasActiveFilters && (
-            <div className="saas-filter-tags">
-              {selectedBlock !== KNOWLEDGE_BLOCKS[0] && (
-                <span className="saas-filter-tag">
-                  <span>Khối: {selectedBlock}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedBlock(KNOWLEDGE_BLOCKS[0])
-                      setCurrentPage(1)
-                    }}
-                    aria-label="Bỏ lọc khối kiến thức"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
-
-              {selectedCourseCode !== 'ALL' && (
-                <span className="saas-filter-tag">
-                  <span>Môn: {selectedCourseCode}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedCourseCode('ALL')
-                      setCurrentPage(1)
-                    }}
-                    aria-label="Bỏ lọc môn học"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
-
-              {selectedSemester !== SEMESTERS[0] && (
-                <span className="saas-filter-tag">
-                  <span>{selectedSemester}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedSemester(SEMESTERS[0])
-                      setCurrentPage(1)
-                    }}
-                    aria-label="Bỏ lọc học kỳ"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
-
-              {selectedDocType !== DOCUMENT_TYPES[0] && (
-                <span className="saas-filter-tag">
-                  <span>Loại: {selectedDocType}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedDocType(DOCUMENT_TYPES[0])
-                      setCurrentPage(1)
-                    }}
-                    aria-label="Bỏ lọc loại học liệu"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
-
-              {selectedFormat !== 'ALL' && (
-                <span className="saas-filter-tag">
-                  <span>Định dạng: .{selectedFormat.toLowerCase()}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedFormat('ALL')
-                      setCurrentPage(1)
-                    }}
-                    aria-label="Bỏ lọc định dạng"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* 5. Lưới / Bảng Học liệu chuẩn Vectoria */}
-        <DocumentGrid
-          documents={paginatedDocs}
-          totalSystemDocs={documents.length}
-          hasActiveFilters={hasActiveFilters}
-          bookmarkedIds={bookmarkedIds}
-          viewMode={viewMode}
-          pageOffset={(currentPage - 1) * PAGE_SIZE}
-          onSelectDoc={onSelectDoc}
-          onToggleBookmark={onToggleBookmark}
-          onResetFilters={handleResetFilters}
-        />
-
-        {/* 6. Phân trang */}
-        {totalPages > 1 && (
-          <nav className="saas-pagination" aria-label="Phân trang danh sách học liệu">
-            <span>
-              Trang <strong>{currentPage}</strong> / {totalPages}
-            </span>
-            <div className="saas-page-controls">
-              <button
-                type="button"
-                className="saas-page-btn"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              >
-                Trước
-              </button>
-              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
-                <button
-                  key={page}
-                  type="button"
-                  className={`saas-page-btn ${currentPage === page ? 'active' : ''}`}
-                  onClick={() => setCurrentPage(page)}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                type="button"
-                className="saas-page-btn"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              >
-                Sau
-              </button>
-            </div>
-          </nav>
-        )}
-      </main>
+        </nav>
+      )}
     </section>
   )
 }

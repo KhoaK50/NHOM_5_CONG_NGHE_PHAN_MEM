@@ -1,32 +1,10 @@
 import { useState } from 'react'
-import {
-  ShieldCheck,
-  ShieldAlert,
-  FileText,
-  FileSpreadsheet,
-  Presentation,
-  Hash,
-  Copy,
-  Check,
-  CheckCircle2,
-  XCircle,
-  FileUp
-} from 'lucide-react'
-import { MAX_FILE_SIZE_BYTES } from '../../utils/fileHasher'
+import { Copy, Check } from 'lucide-react'
 
 export default function Sha256Verifier({ verificationResult }) {
   const [hashCopied, setHashCopied] = useState(false)
 
-  if (!verificationResult) {
-    return (
-      <div className="vec-inspector-box" style={{ textAlign: 'center', padding: '24px 16px' }}>
-        <FileUp size={28} style={{ color: 'var(--text-tertiary)', margin: '0 auto 8px', display: 'block' }} />
-        <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-          Chưa chọn tệp tin. Vui lòng tải lên tài liệu để hệ thống kiểm tra định dạng và trùng lặp.
-        </p>
-      </div>
-    )
-  }
+  if (!verificationResult) return null
 
   const handleCopyHash = async () => {
     if (!verificationResult?.sha256Hash) return
@@ -48,199 +26,59 @@ export default function Sha256Verifier({ verificationResult }) {
     }
   }
 
-  const formatKey = (
-    verificationResult.format ||
-    verificationResult.fileType ||
-    'pdf'
-  ).toLowerCase()
-
-  const FORMAT_META = {
-    pdf: { label: 'PDF', icon: FileText },
-    docx: { label: 'DOCX', icon: FileSpreadsheet },
-    pptx: { label: 'PPTX', icon: Presentation }
-  }
-  const formatMeta = FORMAT_META[formatKey] || { label: 'FILE', icon: FileText }
-
-  const FileFormatIcon = formatMeta.icon
-  const sizeBytes = Number(verificationResult.sizeBytes) || 0
-  const quotaPct = Math.min(100, Math.max(2, (sizeBytes / MAX_FILE_SIZE_BYTES) * 100))
+  const { isValid, isDuplicate, magicBytesOk, sizeOk } = verificationResult
 
   return (
-    <div
-      className={`vec-inspector-box ${verificationResult.isValid ? 'valid' : 'invalid'}`}
-      aria-label="Kết quả kiểm tra tệp tin"
-    >
-      {/* 1. Tên tệp & Trạng thái hợp lệ */}
-      <div className="vec-inspector-row">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-          <FileFormatIcon
-            size={16}
-            style={{
-              color: verificationResult.isValid
-                ? 'var(--blue-9, #0090ff)'
-                : 'var(--red-9, #e5484d)',
-              flexShrink: 0
-            }}
-          />
-          <strong
-            style={{
-              color: 'var(--slate-12, #11181c)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
-            title={verificationResult.fileName}
-          >
-            {verificationResult.fileName}
-          </strong>
-        </div>
-
-        <span
-          className={`vec-check-tag ${verificationResult.isValid ? 'ok' : 'err'}`}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-        >
-          {verificationResult.isValid ? (
-            <>
-              <ShieldCheck size={11} />
-              <span>HỢP LỆ</span>
-            </>
-          ) : (
-            <>
-              <ShieldAlert size={11} />
-              <span>CHƯA ĐẠT</span>
-            </>
-          )}
+    <div className={`file-check ${isValid ? 'valid' : 'invalid'}`} aria-label="Kết quả kiểm tra tệp">
+      <div className="file-check-row">
+        <strong className="file-check-name" title={verificationResult.fileName}>
+          {verificationResult.fileName}
+          {verificationResult.sizeMb ? ` · ${verificationResult.sizeMb} MB` : ''}
+        </strong>
+        <span className={`status-badge ${isValid ? 'green' : 'red'}`}>
+          {isValid ? 'Tệp hợp lệ, chưa có trong kho' : 'Chưa đạt'}
         </span>
       </div>
 
-      {/* 2. Dung lượng tệp */}
-      <div>
-        <div className="vec-inspector-row" style={{ marginBottom: '5px', fontSize: '11.5px' }}>
-          <span style={{ color: 'var(--slate-11, #687076)' }}>
-            Dung lượng tệp
-          </span>
-          <span
-            style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontWeight: 600,
-              color: verificationResult.sizeOk
-                ? 'var(--slate-12, #11181c)'
-                : 'var(--red-9, #e5484d)'
-            }}
-          >
-            {verificationResult.sizeMb} MB / 25 MB
-          </span>
-        </div>
-        <div className="vec-quota-track">
-          <div
-            className={`vec-quota-fill ${verificationResult.sizeOk ? '' : 'danger'}`}
-            style={{ width: `${quotaPct}%` }}
-          />
-        </div>
-      </div>
+      {!isValid && (
+        <p className="file-check-error" role="alert">
+          {verificationResult.errorMessage || 'Tệp không đủ điều kiện tải lên.'}
+        </p>
+      )}
 
-      {/* 3. Kiểm tra tính toàn vẹn & cấu trúc tệp */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11.5px' }}>
-        <div className="vec-inspector-row">
-          <span style={{ color: 'var(--slate-11, #687076)' }}>Định dạng tệp:</span>
-          <span
-            style={{
-              fontWeight: 600,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              color: verificationResult.magicBytesOk ? 'var(--green-11, #18794e)' : 'var(--red-9, #e5484d)'
-            }}
-          >
-            {verificationResult.magicBytesOk ? (
-              <>
-                <CheckCircle2 size={12} />
-                <span>Đúng chuẩn {formatMeta.label}</span>
-              </>
-            ) : (
-              <>
-                <XCircle size={12} />
-                <span>Sai cấu trúc tệp</span>
-              </>
-            )}
-          </span>
-        </div>
-
-        <div className="vec-inspector-row">
-          <span style={{ color: 'var(--slate-11, #687076)' }}>Kiểm tra trùng lặp:</span>
-          <span
-            style={{
-              fontWeight: 600,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              color: !verificationResult.isDuplicate ? 'var(--green-11, #18794e)' : 'var(--red-9, #e5484d)'
-            }}
-          >
-            {!verificationResult.isDuplicate ? (
-              <>
-                <CheckCircle2 size={12} />
-                <span>Chưa có trên hệ thống</span>
-              </>
-            ) : (
-              <>
-                <XCircle size={12} />
-                <span>Tài liệu đã tồn tại</span>
-              </>
-            )}
-          </span>
-        </div>
-      </div>
-
-      {/* 4. Mã xác thực SHA-256 */}
-      {verificationResult.sha256Hash && (
-        <div>
-          <div className="vec-inspector-row" style={{ marginBottom: '4px', fontSize: '11px' }}>
-            <span
-              style={{
-                color: 'var(--slate-11, #687076)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <Hash size={11} />
-              <span>Mã xác thực SHA-256</span>
-            </span>
-            <button
-              type="button"
-              className="vec-template-btn"
-              onClick={handleCopyHash}
-              style={{ padding: '1px 6px', fontSize: '10px' }}
-            >
-              {hashCopied ? <Check size={10} /> : <Copy size={10} />}
-              <span style={{ marginLeft: '3px' }}>
-                {hashCopied ? 'Đã sao chép' : 'Sao chép'}
-              </span>
-            </button>
+      <details className="file-check-details">
+        <summary>Chi tiết kỹ thuật</summary>
+        <dl>
+          <div>
+            <dt>Dung lượng</dt>
+            <dd>{sizeOk === false ? `${verificationResult.sizeMb} MB, vượt 25 MB` : `${verificationResult.sizeMb} MB / 25 MB`}</dd>
           </div>
-          <div className="vec-hash-box">{verificationResult.sha256Hash}</div>
-        </div>
-      )}
-
-      {/* 5. Thông báo lỗi nếu chưa đạt */}
-      {!verificationResult.isValid && (
-        <div
-          style={{
-            padding: '10px 12px',
-            borderRadius: '6px',
-            backgroundColor: 'var(--red-3, #ffefef)',
-            border: '1px solid var(--red-7, #cd2b31)',
-            color: 'var(--red-11, #cd2b31)',
-            fontSize: '11.5px',
-            lineHeight: 1.45
-          }}
-        >
-          <strong style={{ display: 'block', marginBottom: '2px' }}>
-            {verificationResult.errorMessage || 'Tệp tin không đủ điều kiện tải lên.'}
-          </strong>
-        </div>
-      )}
+          <div>
+            <dt>Chữ ký tệp</dt>
+            <dd>{magicBytesOk ? 'Đúng định dạng' : 'Sai cấu trúc tệp'}</dd>
+          </div>
+          {verificationResult.magicHeaderHex && verificationResult.magicHeaderHex !== 'N/A' && (
+            <div>
+              <dt>Bytes đầu tệp</dt>
+              <dd className="file-check-code">{verificationResult.magicHeaderHex}</dd>
+            </div>
+          )}
+          <div>
+            <dt>Trùng lặp</dt>
+            <dd>{isDuplicate ? 'Tài liệu đã tồn tại' : 'Chưa có trong kho'}</dd>
+          </div>
+          {verificationResult.sha256Hash && (
+            <div>
+              <dt>Mã SHA-256</dt>
+              <dd className="file-check-code">{verificationResult.sha256Hash}</dd>
+              <button type="button" className="btn-ghost nav-auth-link" onClick={handleCopyHash}>
+                {hashCopied ? <Check size={13} /> : <Copy size={13} />}
+                <span>{hashCopied ? 'Đã sao chép' : 'Sao chép'}</span>
+              </button>
+            </div>
+          )}
+        </dl>
+      </details>
     </div>
   )
 }
