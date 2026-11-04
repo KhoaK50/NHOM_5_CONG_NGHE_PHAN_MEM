@@ -1,11 +1,27 @@
 import {
+  useState,
+  useRef,
+  useLayoutEffect,
+  useMemo,
+  useCallback
+} from 'react'
+import {
+  GitBranch,
+  ChevronDown,
+  ChevronUp,
+  RotateCcw,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2,
+  Move
+} from 'lucide-react'
+import {
   CURRICULUM_SEMESTERS_META,
-  CURRICULUM_COURSES,
   CURRICULUM_OFFICIAL_CONNECTIONS,
-  MANDATORY_GRADUATION_CONDITIONS,
   KNOWLEDGE_BLOCKS,
   SEMESTERS
-} from '../../data/curriculum'
+} from '../../data/curriculum' 
 
 /**
  * Dựng đường dẫn SVG vuông góc (Orthogonal Manhattan / PCB Bus Routing)
