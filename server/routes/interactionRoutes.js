@@ -12,6 +12,7 @@ router.get('/stats/dashboard', requireMember, asyncRoute(controller.dashboard));
 router.get('/documents', attachOptionalUser, asyncRoute(controller.publicDocuments));
 router.get('/documents/my-uploads', requireMember, asyncRoute(controller.myUploads));
 router.post('/documents/:id/access', viewLimit, attachOptionalUser, asyncRoute(controller.recordView));
+router.get('/documents/:id/preview', attachOptionalUser, asyncRoute(controller.previewDocument));
 router.get('/documents/:id/download', requireMember, asyncRoute(controller.download));
 
 router.get('/bookmarks', requireMember, asyncRoute(controller.bookmarks));

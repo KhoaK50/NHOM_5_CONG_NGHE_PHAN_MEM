@@ -71,6 +71,7 @@ export default function DocumentDetail({
             documentItem={documentItem}
             isAuthenticated={isAuthenticated}
             onRequireLogin={onRequireLogin}
+            onDownload={onDownload}
           />
         </div>
 

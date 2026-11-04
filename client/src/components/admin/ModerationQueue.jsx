@@ -18,6 +18,7 @@ import {
 import CriteriaChecklist from './CriteriaChecklist'
 import RejectReasonModal from './RejectReasonModal'
 import ResolveReportModal from './ResolveReportModal'
+import { getApiBaseUrl } from '../../utils/authGuard'
 import {
   AUTO_CRITERIA,
   DOC_TYPE_LABELS,
@@ -26,7 +27,6 @@ import {
   formatBytes,
   formatRelativeTime,
   getModerationDocument,
-  isSafeHttpsUrl,
   listModerationDocuments,
   listReports,
   moderateDocument,
@@ -91,7 +91,7 @@ function PageControls({ page, total, onChange }) {
 }
 
 function DocumentReader({ detail }) {
-  const canEmbed = isSafeHttpsUrl(detail.fileUrl)
+  const streamUrl = `${getApiBaseUrl()}/api/documents/${detail.id}/preview`
   return (
     <section
       aria-label="Xem toàn văn tài liệu"
@@ -123,33 +123,31 @@ function DocumentReader({ detail }) {
         <span className="status-badge green">Toàn văn • {detail.pageCount} trang</span>
       </div>
 
-      {canEmbed ? (
+      <object
+        data={`${streamUrl}#toolbar=1`}
+        type="application/pdf"
+        style={{ width: '100%', height: '640px', border: 'none', display: 'block', backgroundColor: '#525659' }}
+      >
         <iframe
-          src={detail.fileUrl}
+          src={`${streamUrl}#toolbar=1`}
           title={`Nội dung tài liệu ${detail.title}`}
           referrerPolicy="no-referrer"
           style={{ width: '100%', height: '640px', border: 'none', display: 'block', backgroundColor: '#eef0f3' }}
         />
-      ) : (
-        <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>
-          Đường dẫn tệp không hợp lệ nên không thể hiển thị. Vui lòng từ chối tài liệu để tác giả tải lại.
-        </div>
-      )}
+      </object>
 
-      {canEmbed && (
-        <div style={{ padding: '10px 16px', backgroundColor: 'var(--bg-muted)', borderTop: '1px solid var(--border-subtle)', fontSize: '12px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          Khung xem không hiển thị?{' '}
-          <a
-            href={detail.fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: 'var(--primary-base)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-          >
-            <span>Mở tệp ở tab mới</span>
-            <ExternalLink size={12} />
-          </a>
-        </div>
-      )}
+      <div style={{ padding: '10px 16px', backgroundColor: 'var(--bg-muted)', borderTop: '1px solid var(--border-subtle)', fontSize: '12px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+        Đọc tài liệu thuận tiện hơn?{' '}
+        <a
+          href={streamUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: 'var(--primary-base)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+        >
+          <span>Mở tệp ở tab mới</span>
+          <ExternalLink size={12} />
+        </a>
+      </div>
     </section>
   )
 }
