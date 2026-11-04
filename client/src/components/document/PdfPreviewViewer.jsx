@@ -314,13 +314,21 @@ export default function PdfPreviewViewer({
     }
   }
 
-  // In ấn tài liệu
+  // In ấn tài liệu (Chỉ áp dụng khi đã đăng nhập)
   const handlePrint = () => {
+    if (!isAuthenticated) {
+      if (onRequireLogin) onRequireLogin()
+      return
+    }
     window.open(streamUrl, '_blank')
   }
 
-  // Tải về
+  // Tải về (Chặn khách vãng lai theo quy định UC06 / UC12)
   const handleDownload = () => {
+    if (!isAuthenticated) {
+      if (onRequireLogin) onRequireLogin()
+      return
+    }
     if (onDownload) {
       onDownload(documentItem)
     } else {
