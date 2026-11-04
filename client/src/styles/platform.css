@@ -1191,31 +1191,104 @@
   transition: background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
-/* Phân nhóm màu pastel Radix Light Mode bám sát Chú thích CTĐT HCMUE */
+/* 4 Nhóm Màu Thẻ Học Phần Chuẩn Pháp lệnh Sơ đồ Khoa CNTT */
 .vec-tree-node.group-foundation {
-  background-color: var(--brand-soft);
-  border-color: var(--primary-base);
+  background-color: #dbeafe;
+  border-color: #93c5fd;
 }
 
 .vec-tree-node.group-pedagogy {
-  background-color: var(--bg-muted);
-  border-color: var(--line-strong);
+  background-color: #fae8ff;
+  border-color: #f0abfc;
 }
 
 .vec-tree-node.group-practice {
-  background-color: var(--status-success-soft);
-  border-color: var(--status-success);
+  background-color: #dcfce7;
+  border-color: #86efac;
 }
 
 .vec-tree-node.group-graduation {
-  background-color: var(--status-danger-soft);
-  border-color: var(--status-danger);
+  background-color: #fee2e2;
+  border-color: #fca5a5;
 }
 
-/* Học phần tự chọn: viền nét đứt đúng quy ước Sơ đồ CTĐT */
+/* Dark mode colors */
+[data-theme='dark'] .vec-tree-node.group-foundation {
+  background-color: rgba(14, 165, 233, 0.16);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+[data-theme='dark'] .vec-tree-node.group-pedagogy {
+  background-color: rgba(217, 70, 239, 0.16);
+  border-color: rgba(232, 121, 249, 0.5);
+}
+
+[data-theme='dark'] .vec-tree-node.group-practice {
+  background-color: rgba(34, 197, 94, 0.16);
+  border-color: rgba(74, 222, 128, 0.5);
+}
+
+[data-theme='dark'] .vec-tree-node.group-graduation {
+  background-color: rgba(239, 68, 68, 0.16);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+/* Kiểu khung viền Bắt buộc vs Tự chọn */
+.vec-tree-node.is-mandatory {
+  border-style: solid;
+  border-width: 1.5px;
+}
+
 .vec-tree-node.is-elective {
   border-style: dashed;
-  border-width: 1.5px;
+  border-width: 2px;
+}
+
+/* 3 Màu chữ phân cấp phạm vi học phần */
+.scope-school,
+.vec-tree-node .scope-school {
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+}
+
+.scope-field,
+.vec-tree-node .scope-field {
+  color: #1d4ed8 !important;
+  font-weight: 700 !important;
+}
+
+.scope-major,
+.vec-tree-node .scope-major {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+[data-theme='dark'] .scope-school,
+[data-theme='dark'] .vec-tree-node .scope-school {
+  color: #f87171 !important;
+}
+
+[data-theme='dark'] .scope-field,
+[data-theme='dark'] .vec-tree-node .scope-field {
+  color: #60a5fa !important;
+}
+
+[data-theme='dark'] .scope-major,
+[data-theme='dark'] .vec-tree-node .scope-major {
+  color: #f1f5f9 !important;
+}
+
+/* Các kiểu đường nối SVG */
+.vec-tree-edge.type-prerequisite {
+  stroke-dasharray: 5 4;
+  stroke: var(--slate-12, #0f172a);
+  stroke-width: 1.8px;
+}
+
+.vec-tree-edge.type-corequisite {
+  stroke: #dc2626 !important;
+  stroke-width: 2px;
+  stroke-dasharray: 4 3;
 }
 
 .vec-tree-node:hover,
@@ -1452,109 +1525,274 @@
   overflow: hidden;
 }
 
-/* 3 Thanh Học phần Điều kiện Tốt nghiệp trải ngang cuối sơ đồ */
+/* 3 Thanh Học phần Điều kiện Tốt nghiệp trải ngang cuối sơ đồ chuẩn Pháp lệnh */
 .vec-tree-graduation-bars {
   grid-column: 1 / -1;
   position: relative;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 7px;
+  margin-top: 10px;
 }
 
 .vec-tree-grad-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 14px;
-  height: 32px;
-  padding: 0 18px;
-  border-radius: 6px;
-  border: 1px solid var(--slate-7);
-  background-color: var(--slate-2);
-  color: var(--slate-12);
-}
-
-.vec-tree-grad-title {
+  padding: 0 14px;
+  height: 28px;
+  border-radius: 5px;
   font-family: var(--font-ui);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
-  color: var(--slate-12);
+  transition: all 0.12s ease;
 }
 
-.vec-tree-grad-note {
+.vec-tree-grad-bar.col-span-3 {
+  width: 37.5%;
+  background-color: #dbeafe;
+  border: 1px solid #93c5fd;
+  color: #dc2626;
+  font-weight: 700;
+  justify-content: center;
+}
+
+.vec-tree-grad-bar.col-span-4 {
+  width: 50%;
+  background-color: #dbeafe;
+  border: 1px solid #93c5fd;
+  color: #dc2626;
+  font-weight: 700;
+  justify-content: center;
+}
+
+.vec-tree-grad-bar.col-span-8 {
+  width: 100%;
+  background-color: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #dc2626;
+  font-weight: 700;
+  justify-content: center;
+}
+
+[data-theme='dark'] .vec-tree-grad-bar.col-span-3,
+[data-theme='dark'] .vec-tree-grad-bar.col-span-4 {
+  background-color: rgba(14, 165, 233, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #f87171;
+}
+
+[data-theme='dark'] .vec-tree-grad-bar.col-span-8 {
+  background-color: rgba(225, 29, 72, 0.12);
+  border-color: rgba(244, 63, 94, 0.35);
+  color: #fb7185;
+}
+
+.vec-tree-footnote-star {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+[data-theme='dark'] .vec-tree-footnote-star {
+  color: #f87171;
+}
+
+.vec-tree-condition-footnote {
+  font-family: var(--font-ui);
   font-size: 11px;
   color: var(--slate-11);
+  margin-top: 4px;
+  text-align: left;
+  font-style: italic;
 }
 
-/* Thanh CHÚ THÍCH chính thức dưới chân Sơ đồ Chương trình Đào tạo */
-.vec-tree-official-legend {
+/* Bảng Chú thích Pháp lệnh Sơ đồ Khoa CNTT chân sơ đồ */
+.vec-tree-official-decree-legend {
+  display: grid;
+  grid-template-columns: 88px 2.2fr 1.6fr 1.7fr 1.8fr;
+  align-items: stretch;
+  gap: 12px;
+  padding: 12px 18px;
+  background-color: var(--slate-2);
+  border-top: 2px solid var(--slate-7);
+}
+
+@media (max-width: 900px) {
+  .vec-tree-official-decree-legend {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.decree-legend-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.decree-legend-col.title-col {
+  justify-content: center;
+}
+
+.decree-legend-badge {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 800;
+  color: #dc2626;
+  letter-spacing: 0.04em;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 10px 16px;
-  background-color: var(--slate-2);
-  border-top: 1px solid var(--slate-6);
-  flex-wrap: wrap;
 }
 
-.vec-official-legend-title {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--slate-12);
-  letter-spacing: 0.03em;
-}
-
-.vec-official-legend-chip {
-  display: inline-flex;
-  align-items: center;
+.decree-legend-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
-  font-size: 11.5px;
-  font-weight: 500;
+}
+
+.decree-swatch-card {
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.decree-swatch-card.group-foundation {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e3a8a;
+}
+
+.decree-swatch-card.group-pedagogy {
+  background-color: #fae8ff;
+  border-color: #f0abfc;
+  color: #86198f;
+}
+
+.decree-swatch-card.group-practice {
+  background-color: #dcfce7;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.decree-swatch-card.group-graduation {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+[data-theme='dark'] .decree-swatch-card.group-foundation {
+  background-color: rgba(14, 165, 233, 0.2);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #bae6fd;
+}
+
+[data-theme='dark'] .decree-swatch-card.group-pedagogy {
+  background-color: rgba(217, 70, 239, 0.2);
+  border-color: rgba(232, 121, 249, 0.4);
+  color: #f5d0fe;
+}
+
+[data-theme='dark'] .decree-swatch-card.group-practice {
+  background-color: rgba(34, 197, 94, 0.2);
+  border-color: rgba(74, 222, 128, 0.4);
+  color: #bbf7d0;
+}
+
+[data-theme='dark'] .decree-swatch-card.group-graduation {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fecaca;
+}
+
+.decree-legend-box-sample {
+  border: 1px solid var(--slate-7);
+  border-radius: 5px;
+  padding: 5px 8px;
+  background-color: var(--slate-1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.decree-sample-header {
+  font-size: 9.5px;
+  text-align: center;
+  line-height: 1.25;
   color: var(--slate-12);
 }
 
-.vec-swatch-box {
-  width: 22px;
-  height: 13px;
+.decree-sample-header span {
+  display: block;
+  font-size: 8.5px;
+  color: var(--slate-10);
+}
+
+.decree-sample-borders {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.sample-box-border {
+  font-size: 9.5px;
+  text-align: center;
+  padding: 3px 4px;
   border-radius: 3px;
-  display: inline-block;
-  border: 1px solid var(--slate-8);
+  background-color: var(--slate-2);
+  color: var(--slate-12);
+  font-weight: 600;
+}
+
+.sample-box-border.mandatory {
+  border: 1.5px solid var(--slate-11);
+}
+
+.sample-box-border.elective {
+  border: 1.5px dashed var(--slate-11);
+}
+
+.decree-legend-scopes {
+  border: 1px solid var(--slate-7);
+  border-radius: 5px;
+  padding: 6px 8px;
+  background-color: var(--slate-1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 3px;
+}
+
+.decree-scope-tag {
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.decree-legend-lines {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid var(--slate-7);
+  border-radius: 5px;
   background-color: var(--slate-1);
 }
 
-.vec-swatch-box.mandatory {
-  border-style: solid;
-  border-width: 1.5px;
-  border-color: var(--slate-11);
-}
-
-.vec-swatch-box.elective {
-  border-style: dashed;
-  border-width: 1.5px;
-  border-color: var(--slate-11);
-}
-
-.vec-swatch-box.group-foundation {
-  background-color: var(--brand-soft);
-  border-color: var(--primary-base);
-}
-
-.vec-swatch-box.group-pedagogy {
-  background-color: var(--bg-muted);
-  border-color: var(--line-strong);
-}
-
-.vec-swatch-box.group-practice {
-  background-color: var(--status-success-soft);
-  border-color: var(--status-success);
-}
-
-.vec-swatch-box.group-graduation {
-  background-color: var(--status-danger-soft);
-  border-color: var(--status-danger);
+.decree-line-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--slate-12);
 }
 
 /* ==========================================================================

@@ -334,21 +334,6 @@ export const INITIAL_COURSES = [
     isActive: true
   },
   {
-    id: 'crs-hk2-poli2003',
-    code: 'POLI2003',
-    name: 'Chủ nghĩa xã hội khoa học',
-    shortName: 'CNXH Khoa học',
-    credits: 2,
-    knowledgeBlock: 'Đại cương',
-    treeGroup: 'foundation',
-    courseScope: 'school',
-    isElective: false,
-    semester: 'Học kỳ 2',
-    prerequisites: ['POLI2002'],
-    documentCount: 0,
-    isActive: true
-  },
-  {
     id: 'crs-hk2-3',
     code: 'PSYC2802',
     name: 'Tâm lí học giáo dục',
@@ -479,17 +464,17 @@ export const INITIAL_COURSES = [
   // HỌC KỲ 3 (15 TC) — 5 HP Bắt buộc
   // ============================================================================
   {
-    id: 'crs-hk3-poli2005',
-    code: 'POLI2005',
-    name: 'Tư tưởng Hồ Chí Minh',
-    shortName: 'Tư tưởng HCM',
+    id: 'crs-hk3-poli2003',
+    code: 'POLI2003',
+    name: 'Chủ nghĩa xã hội khoa học',
+    shortName: 'CNXH Khoa học',
     credits: 2,
     knowledgeBlock: 'Đại cương',
     treeGroup: 'foundation',
     courseScope: 'school',
     isElective: false,
     semester: 'Học kỳ 3',
-    prerequisites: ['POLI2003'],
+    prerequisites: ['POLI2002'],
     documentCount: 0,
     isActive: true
   },
@@ -558,17 +543,17 @@ export const INITIAL_COURSES = [
   // HỌC KỲ 4 (15 TC) — 6 HP Bắt buộc
   // ============================================================================
   {
-    id: 'crs-hk4-poli2004',
-    code: 'POLI2004',
-    name: 'Lịch sử Đảng Cộng sản Việt Nam',
-    shortName: 'Lịch sử ĐCSVN',
+    id: 'crs-hk4-poli2005',
+    code: 'POLI2005',
+    name: 'Tư tưởng Hồ Chí Minh',
+    shortName: 'Tư tưởng HCM',
     credits: 2,
     knowledgeBlock: 'Đại cương',
     treeGroup: 'foundation',
     courseScope: 'school',
     isElective: false,
     semester: 'Học kỳ 4',
-    prerequisites: ['POLI2005'],
+    prerequisites: ['POLI2003'],
     documentCount: 0,
     isActive: true
   },
@@ -652,6 +637,21 @@ export const INITIAL_COURSES = [
   // ============================================================================
   // HỌC KỲ 5 (18 TC) — 6 HP Bắt buộc
   // ============================================================================
+  {
+    id: 'crs-hk5-poli2004',
+    code: 'POLI2004',
+    name: 'Lịch sử Đảng Cộng sản Việt Nam',
+    shortName: 'Lịch sử ĐCSVN',
+    credits: 2,
+    knowledgeBlock: 'Đại cương',
+    treeGroup: 'foundation',
+    courseScope: 'school',
+    isElective: false,
+    semester: 'Học kỳ 5',
+    prerequisites: ['POLI2005'],
+    documentCount: 0,
+    isActive: true
+  },
   {
     id: 'crs-hk5-3',
     code: 'COMP1819',
