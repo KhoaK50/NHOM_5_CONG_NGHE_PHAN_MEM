@@ -1,5 +1,6 @@
-import { Bookmark } from 'lucide-react'
+import { Bookmark, Download, Star } from 'lucide-react'
 import { DOC_TYPE_LABELS } from '../../utils/documentCourseApi'
+import DocumentThumbnail from './DocumentThumbnail'
 
 const FORMAT_META = {
   pdf: { label: 'PDF', unit: 'trang' },
@@ -23,7 +24,7 @@ export default function DocumentCard({
   ).toLowerCase()
 
   const formatMeta = FORMAT_META[rawFormat] || FORMAT_META.pdf
-  const rating = doc.ratingAvg > 0 ? `★ ${doc.ratingAvg.toFixed(1)}` : 'Mới'
+  const rating = Number(doc.ratingAvg || 0)
 
   return (
     <article
@@ -32,9 +33,13 @@ export default function DocumentCard({
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onSelectDoc(doc)
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelectDoc(doc)
+        }
       }}
     >
+      <DocumentThumbnail doc={doc} format={rawFormat} />
       <div className="doc-card-top">
         <span className="doc-card-meta">
           {doc.courseCode} · {DOC_TYPE_LABELS[doc.docType] || doc.docType}
@@ -60,10 +65,15 @@ export default function DocumentCard({
         {doc.title}
       </h3>
       <p className="doc-card-course">{doc.courseName}</p>
-      <p className="doc-card-stats">
-        {rating} · {doc.downloadCount || 0} lượt tải · {formatMeta.label}
-        {doc.pageCount ? ` ${doc.pageCount} ${formatMeta.unit}` : ''}
-      </p>
+      <div className="doc-card-stats">
+        <span className="doc-card-rating" aria-label={rating ? `Đánh giá ${rating.toFixed(1)} trên 5` : 'Chưa có đánh giá'}>
+          <Star size={14} fill="currentColor" aria-hidden="true" /> {rating ? rating.toFixed(1) : 'Mới'}
+        </span>
+        <span className="doc-card-downloads">
+          <Download size={14} aria-hidden="true" /> {Number(doc.downloadCount || 0).toLocaleString('vi-VN')} lượt tải
+        </span>
+        <span className="doc-card-file-meta">{formatMeta.label}{doc.pageCount ? ` · ${doc.pageCount} ${formatMeta.unit}` : ''}</span>
+      </div>
     </article>
   )
 }

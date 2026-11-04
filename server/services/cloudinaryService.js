@@ -7,6 +7,7 @@
  */
 
 const crypto = require('crypto');
+const { isZipBuffer, mimeForFormat } = require('../utils/documentFormat');
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -144,17 +145,17 @@ function countPdfPages(buffer) {
 }
 
 /**
- * Tải tệp tài liệu PDF lên Cloudinary (thư mục 5share/documents)
+ * Tải tệp tài liệu PDF, DOCX hoặc PPTX lên Cloudinary (thư mục 5share/documents)
  */
-async function uploadPdfBufferToCloudinary(fileBuffer, originalName = 'document.pdf') {
+async function uploadDocumentBufferToCloudinary(fileBuffer, originalName = 'document.pdf', format = 'pdf') {
   if (!fileBuffer || fileBuffer.length === 0) {
-    return { ok: false, statusCode: 400, message: 'Vui lòng chọn tệp PDF để tải lên.' };
+    return { ok: false, statusCode: 400, message: 'Vui lòng chọn tệp tài liệu để tải lên.' };
   }
   if (fileBuffer.length > MAX_PDF_BYTES) {
     return { ok: false, statusCode: 413, message: 'Kích thước tệp vượt quá 25 MB.' };
   }
-  if (!isPdfBuffer(fileBuffer)) {
-    return { ok: false, statusCode: 415, message: 'Tệp không đúng định dạng PDF hợp lệ (thiếu chữ ký %PDF-).' };
+  if (format === 'pdf' ? !isPdfBuffer(fileBuffer) : !isZipBuffer(fileBuffer)) {
+    return { ok: false, statusCode: 415, message: 'Tệp không đúng định dạng đã chọn: chữ ký đầu tệp không khớp.' };
   }
 
   const cloudName = String(process.env.CLOUDINARY_CLOUD_NAME || '').trim();
@@ -168,12 +169,12 @@ async function uploadPdfBufferToCloudinary(fileBuffer, originalName = 'document.
   const timestamp = Math.floor(Date.now() / 1000);
   const folder = '5share/documents';
   const safeBase = originalName.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
-  const publicId = `doc_${timestamp}_${safeBase}`;
+  const publicId = `doc_${timestamp}_${safeBase}${format === 'pdf' ? '' : `.${format}`}`;
 
   const stringToSign = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
   const signature = crypto.createHash('sha1').update(stringToSign).digest('hex');
 
-  const dataUri = `data:application/pdf;base64,${fileBuffer.toString('base64')}`;
+  const dataUri = `data:${mimeForFormat(format)};base64,${fileBuffer.toString('base64')}`;
   const formBody = new URLSearchParams({
     file: dataUri,
     api_key: apiKey,
@@ -201,7 +202,7 @@ async function uploadPdfBufferToCloudinary(fileBuffer, originalName = 'document.
     secureUrl: payload.secure_url,
     publicId: payload.public_id,
     bytes: payload.bytes || fileBuffer.length,
-    pages: countPdfPages(fileBuffer)
+    pages: format === 'pdf' ? countPdfPages(fileBuffer) : null
   };
 }
 
@@ -210,5 +211,5 @@ module.exports = {
   MAX_PDF_BYTES,
   detectImageMimeType,
   uploadAvatarBufferToCloudinary,
-  uploadPdfBufferToCloudinary
+  uploadDocumentBufferToCloudinary
 };

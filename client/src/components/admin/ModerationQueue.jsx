@@ -399,7 +399,7 @@ export default function ModerationQueue({ onNotice, onPendingCountChange }) {
                     style={{
                       flex: 1,
                       backgroundColor: canApprove ? 'var(--green-9)' : 'var(--bg-hover)',
-                      color: canApprove ? '#ffffff' : 'var(--text-tertiary)',
+                      color: canApprove ? 'var(--text-on-brand)' : 'var(--text-tertiary)',
                       border: canApprove ? 'none' : '1px solid var(--border-subtle)',
                       borderRadius: '8px',
                       padding: '9px 14px',
@@ -424,7 +424,7 @@ export default function ModerationQueue({ onNotice, onPendingCountChange }) {
                     }}
                     style={{
                       backgroundColor: 'var(--red-9)',
-                      color: '#ffffff',
+                      color: 'var(--text-on-brand)',
                       border: 'none',
                       borderRadius: '8px',
                       padding: '9px 14px',
@@ -498,7 +498,7 @@ export default function ModerationQueue({ onNotice, onPendingCountChange }) {
                     onClick={() => setResolving({ report, action: 'HIDE' })}
                     style={{
                       backgroundColor: canHide ? 'var(--amber-9)' : 'var(--bg-hover)',
-                      color: canHide ? '#11181c' : 'var(--text-tertiary)',
+                      color: canHide ? 'var(--text-on-amber)' : 'var(--text-tertiary)',
                       border: canHide ? 'none' : '1px solid var(--border-subtle)',
                       borderRadius: '8px',
                       padding: '8px 14px',
@@ -519,7 +519,7 @@ export default function ModerationQueue({ onNotice, onPendingCountChange }) {
                     onClick={() => setResolving({ report, action: 'DELETE' })}
                     style={{
                       backgroundColor: canDelete ? 'var(--red-9)' : 'var(--bg-hover)',
-                      color: canDelete ? '#ffffff' : 'var(--text-tertiary)',
+                      color: canDelete ? 'var(--text-on-brand)' : 'var(--text-tertiary)',
                       border: canDelete ? 'none' : '1px solid var(--border-subtle)',
                       borderRadius: '8px',
                       padding: '8px 14px',

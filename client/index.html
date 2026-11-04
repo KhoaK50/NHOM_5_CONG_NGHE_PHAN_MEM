@@ -22,7 +22,21 @@
       name="description"
       content="5Share - Nền tảng quản lý và chia sẻ tài liệu học tập dành cho ngành Sư phạm Tin học - ĐH Sư phạm TP.HCM (HCMUE)."
     />
-    <meta name="theme-color" content="#fcfcfd" />
+    <meta name="theme-color" content="#ffffff" />
+    <script>
+      (function () {
+        var theme
+        try {
+          theme = localStorage.getItem('5share_theme')
+        } catch (e) {
+          theme = null
+        }
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        }
+        document.documentElement.dataset.theme = theme
+      })()
+    </script>
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />

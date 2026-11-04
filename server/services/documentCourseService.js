@@ -7,7 +7,8 @@
 
 const crypto = require('crypto');
 const repo = require('../repositories/documentCourseRepository');
-const { uploadPdfBufferToCloudinary } = require('./cloudinaryService');
+const { uploadDocumentBufferToCloudinary } = require('./cloudinaryService');
+const { InvalidDocumentError, detectDocumentFormat, inspectOfficeDocument } = require('../utils/documentFormat');
 
 const MAX_PDF_BYTES = 26214400; // 25 MB
 const APPROVE_REWARD_POINTS = 20;
@@ -91,18 +92,36 @@ function assertReadablePdf(buffer) {
   }
 }
 
+/** Kiểm tra theo định dạng trên tên tệp, trả về định dạng và số trang nếu đọc được. */
+function assertReadableDocument(file) {
+  const format = detectDocumentFormat(file.originalname);
+  if (!format) {
+    throw new ApiError(415, 'UNSUPPORTED_FORMAT', 'Chỉ chấp nhận tệp .pdf, .docx hoặc .pptx.');
+  }
+  if (format === 'pdf') {
+    assertReadablePdf(file.buffer);
+    return { format, pages: null };
+  }
+  try {
+    return { format, pages: inspectOfficeDocument(file.buffer, format).pages };
+  } catch (error) {
+    if (error instanceof InvalidDocumentError) throw new ApiError(415, 'INVALID_OFFICE_FILE', error.message);
+    throw error;
+  }
+}
+
 /**
  * Băm từ bytes gốc ở server, không nhận hash do client gửi.
  * Bản trùng không lộ id, người đăng hay URL: tài liệu gốc có thể đang PENDING/REJECTED.
  */
 async function checkDuplicateHash(file) {
   if (!file || !file.buffer || file.buffer.length === 0) {
-    throw new ApiError(400, 'FILE_REQUIRED', 'Vui lòng chọn một tệp PDF để kiểm tra.');
+    throw new ApiError(400, 'FILE_REQUIRED', 'Vui lòng chọn một tệp tài liệu để kiểm tra.');
   }
   if (file.buffer.length > MAX_PDF_BYTES) {
     throw new ApiError(413, 'FILE_TOO_LARGE', 'Tệp vượt quá giới hạn 25 MB.');
   }
-  assertReadablePdf(file.buffer);
+  assertReadableDocument(file);
 
   const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
   if (await repo.hashExists(fileHash)) {
@@ -119,7 +138,7 @@ async function checkDuplicateHash(file) {
 function computeAutoChecks(doc) {
   const fileHash = String(doc.file_hash || '');
   return {
-    formatOk: String(doc.file_name || '').toLowerCase().endsWith('.pdf'),
+    formatOk: Boolean(detectDocumentFormat(doc.file_name)),
     sizeOk: Number(doc.file_size_bytes) > 0 && Number(doc.file_size_bytes) <= MAX_PDF_BYTES,
     notDuplicate: /^[0-9a-f]{64}$/i.test(fileHash),
     metadataComplete:
@@ -631,6 +650,7 @@ async function deleteCourse(rawId, admin, ipAddress) {
 }
 
 const DOC_TYPE_MAP = {
+  TAI_LIEU: 'TAI_LIEU',
   KHBD_5512: 'KHBD_5512',
   SLIDE_BAI_GIANG: 'SLIDE_BAI_GIANG',
   DE_THI_DAP_AN: 'DE_THI_DAP_AN',
@@ -649,6 +669,7 @@ const DOC_TYPE_MAP = {
   'Đề cương & Bài tập': 'GIAO_TRINH',
   'Tài liệu tham khảo': 'GIAO_TRINH',
   'Tài liệu học tập': 'GIAO_TRINH',
+  'Tài liệu': 'TAI_LIEU',
   'Sách học liệu': 'GIAO_TRINH'
 };
 
@@ -663,6 +684,7 @@ function normalizeDocType(input) {
   if (upper.includes('THI') || upper.includes('DAP_AN')) return 'DE_THI_DAP_AN';
   if (upper.includes('DO_AN') || upper.includes('KHOA_LUAN') || upper.includes('BTL')) return 'DO_AN_MAU';
   if (upper.includes('GIAO_TRINH') || upper.includes('SACH') || upper.includes('THAM_KHAO')) return 'GIAO_TRINH';
+  if (upper.includes('TAI_LIEU')) return 'TAI_LIEU';
   return 'GIAO_TRINH';
 }
 
@@ -672,7 +694,7 @@ async function uploadDocument(file, body, user) {
   }
 
   if (!file || !file.buffer) {
-    throw new ApiError(400, 'FILE_REQUIRED', 'Vui lòng chọn tệp PDF để tải lên.');
+    throw new ApiError(400, 'FILE_REQUIRED', 'Vui lòng chọn tệp tài liệu để tải lên.');
   }
 
   const { title, courseCode, courseId, docType, description } = body || {};
@@ -699,6 +721,8 @@ async function uploadDocument(file, body, user) {
     resolvedCourseId = allCourses.rows?.[0]?.id || 1;
   }
 
+  const { format, pages } = assertReadableDocument(file);
+
   // Băm SHA-256 đối chiếu trước khi tốn băng thông Cloudinary
   const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
   if (await repo.hashExists(fileHash)) {
@@ -706,7 +730,7 @@ async function uploadDocument(file, body, user) {
   }
 
   // Tải file lên Cloudinary thật (p47plumd)
-  const uploadResult = await uploadPdfBufferToCloudinary(file.buffer, file.originalname);
+  const uploadResult = await uploadDocumentBufferToCloudinary(file.buffer, file.originalname, format);
   if (!uploadResult.ok) {
     throw new ApiError(uploadResult.statusCode || 502, 'CLOUDINARY_UPLOAD_FAILED', uploadResult.message);
   }
@@ -717,11 +741,11 @@ async function uploadDocument(file, body, user) {
     title: String(title).trim(),
     description: String(description).trim(),
     docType: normalizeDocType(docType),
-    fileName: file.originalname || 'document.pdf',
+    fileName: file.originalname,
     fileUrl: uploadResult.secureUrl,
     previewUrl: uploadResult.secureUrl,
     fileSizeBytes: uploadResult.bytes,
-    pageCount: uploadResult.pages,
+    pageCount: pages || uploadResult.pages || 1,
     fileHash
   });
 

@@ -106,17 +106,17 @@ export default function AuthSubsystem({
 
   // Password progress metrics
   let progressWidth = '0%'
-  let progressColor = '#94a3b8'
+  let progressColor = 'var(--text-tertiary)'
   if (registerPassword.length > 0) {
     if (passedRuleCount === 1) {
       progressWidth = '33%'
-      progressColor = '#ef4444'
+      progressColor = 'var(--status-danger)'
     } else if (passedRuleCount === 2) {
       progressWidth = '66%'
-      progressColor = '#f59e0b'
+      progressColor = 'var(--status-warning)'
     } else if (passedRuleCount === 3) {
       progressWidth = '100%'
-      progressColor = '#22c55e'
+      progressColor = 'var(--status-success)'
     }
   }
 
@@ -438,9 +438,9 @@ export default function AuthSubsystem({
       {/* Toast Notification */}
       <div id="static-toast" className={activeToast ? 'show' : ''}>
         {activeToast?.isSuccess ? (
-          <CheckCircle2 size={22} color="#22c55e" style={{ flexShrink: 0 }} />
+          <CheckCircle2 size={22} color="var(--status-success)" style={{ flexShrink: 0 }} />
         ) : (
-          <XCircle size={22} color="#ef4444" style={{ flexShrink: 0 }} />
+          <XCircle size={22} color="var(--status-danger)" style={{ flexShrink: 0 }} />
         )}
         <div className="toast-body">
           <h4>{activeToast?.title || 'Thông báo'}</h4>
@@ -483,15 +483,13 @@ export default function AuthSubsystem({
                 ? 'Khóa phiên & Đổi mật khẩu khẩn cấp'
                 : 'Đặt lại mật khẩu'}
             </h2>
-            <p className="form-subtitle">
-              {currentView === 'auth'
-                ? activeTab === 'login'
-                  ? 'Truy cập kho học liệu số ngành Sư phạm Tin học 5share'
-                  : 'Khởi tạo định danh sinh viên và đồng bộ tủ học liệu cá nhân'
-                : currentView === 'forgot'
-                ? 'Nhập email tài khoản để nhận mã khôi phục bảo mật (15 phút)'
-                : 'Thiết lập mật khẩu mới và thu hồi toàn bộ các phiên đăng nhập cũ'}
-            </p>
+            {currentView !== 'auth' && (
+              <p className="form-subtitle">
+                {currentView === 'forgot'
+                  ? 'Nhập email tài khoản để nhận mã khôi phục bảo mật (15 phút)'
+                  : 'Thiết lập mật khẩu mới và thu hồi toàn bộ các phiên đăng nhập cũ'}
+              </p>
+            )}
           </div>
 
           {currentView === 'auth' && (
@@ -962,8 +960,8 @@ export default function AuthSubsystem({
                       width: '52px',
                       height: '52px',
                       borderRadius: '50%',
-                      backgroundColor: '#dcfce7',
-                      color: '#16a34a',
+                      backgroundColor: 'var(--status-success-soft)',
+                      color: 'var(--status-success)',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -997,8 +995,8 @@ export default function AuthSubsystem({
                   {sandboxResetCode && (
                     <div
                       style={{
-                        backgroundColor: 'var(--slate-2, #f9f9fb)',
-                        border: '1px dashed var(--blue-9, #0090ff)',
+                        backgroundColor: 'var(--slate-2)',
+                        border: '1px dashed var(--blue-9)',
                         borderRadius: '8px',
                         padding: '10px 14px',
                         marginBottom: '18px',
@@ -1006,7 +1004,7 @@ export default function AuthSubsystem({
                         color: 'var(--slate-12)'
                       }}
                     >
-                      Mã khôi phục từ Supabase: <strong style={{ color: '#0077e6', letterSpacing: '1px' }}>{sandboxResetCode}</strong>
+                      Mã khôi phục từ Supabase: <strong style={{ color: 'var(--primary-base)', letterSpacing: '1px' }}>{sandboxResetCode}</strong>
                     </div>
                   )}
 
@@ -1098,13 +1096,13 @@ export default function AuthSubsystem({
                     display: 'flex',
                     alignItems: 'flex-start',
                     gap: '10px',
-                    backgroundColor: '#fef2f2',
-                    border: '1px solid #fecaca',
+                    backgroundColor: 'var(--status-danger-soft)',
+                    border: '1px solid var(--status-danger)',
                     borderRadius: '8px',
                     padding: '10px 12px',
                     marginBottom: '14px',
                     fontSize: '12px',
-                    color: '#991b1b',
+                    color: 'var(--status-danger)',
                     lineHeight: 1.45
                   }}
                 >

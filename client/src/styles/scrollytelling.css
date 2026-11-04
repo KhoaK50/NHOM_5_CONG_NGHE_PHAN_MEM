@@ -239,7 +239,7 @@
   font-style: italic;
   letter-spacing: -0.01em;
   line-height: 1.38;
-  color: rgba(248, 250, 252, 0.96);
+  color: #f8fafc;
   text-shadow:
     0 0 28px rgba(255, 255, 255, 0.28),
     0 0 64px rgba(56, 189, 248, 0.18);
@@ -351,7 +351,7 @@
   position: absolute;
   left: 0;
   width: 100%;
-  background: rgba(17, 24, 28, 0.92);
+  background: #11181c;
   z-index: 12;
   pointer-events: none;
   transition: height 0.12s linear;

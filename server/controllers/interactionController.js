@@ -3,6 +3,7 @@ const { Readable } = require('stream');
 const { pipeline } = require('stream/promises');
 const service = require('../services/interactionService');
 const { getClientIp } = require('../utils/security');
+const { contentDisposition, mimeForFormat } = require('../utils/documentFormat');
 
 function requestIp(req) {
   const ip = getClientIp(req);
@@ -25,9 +26,9 @@ async function deleteComment(req, res) {
   return res.json({ success: true, message: 'Đã xử lý bình luận.', data });
 }
 async function previewDocument(req, res) {
-  const { upstream, fileName } = await service.preview(req.params.id, req.user);
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+  const { upstream, fileName, format } = await service.preview(req.params.id, req.user);
+  res.setHeader('Content-Type', mimeForFormat(format));
+  res.setHeader('Content-Disposition', contentDisposition('inline', fileName));
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Accept-Ranges', 'bytes');
   res.setHeader('Cache-Control', 'public, max-age=3600');
@@ -44,9 +45,9 @@ async function previewDocument(req, res) {
 }
 
 async function download(req, res) {
-  const { upstream, fileName } = await service.download(req.params.id, req.user, requestIp(req));
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+  const { upstream, fileName, format } = await service.download(req.params.id, req.user, requestIp(req));
+  res.setHeader('Content-Type', mimeForFormat(format));
+  res.setHeader('Content-Disposition', contentDisposition('attachment', fileName));
   res.setHeader('X-Content-Type-Options', 'nosniff');
   const length = upstream.headers.get('content-length');
   if (length && /^\d+$/.test(length)) res.setHeader('Content-Length', length);

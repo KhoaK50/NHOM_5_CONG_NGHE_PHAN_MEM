@@ -83,34 +83,6 @@ export default function BrandLogo({
             <stop offset="70%" stopColor="#0099ff" />
             <stop offset="100%" stopColor="#00c7fe" />
           </linearGradient>
-
-          {/* Top Fold Crease: Directional contact shadow at underpass */}
-          <linearGradient
-            id={`${id}-crease-top`}
-            x1="26"
-            y1="13"
-            x2="22"
-            y2="17"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop offset="0%" stopColor="#020c1e" stopOpacity="0.42" />
-            <stop offset="60%" stopColor="#020c1e" stopOpacity="0.10" />
-            <stop offset="100%" stopColor="#020c1e" stopOpacity="0" />
-          </linearGradient>
-
-          {/* Bottom Fold Crease: Directional contact shadow at underpass */}
-          <linearGradient
-            id={`${id}-crease-bottom`}
-            x1="22"
-            y1="35"
-            x2="26"
-            y2="31"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop offset="0%" stopColor="#020c1e" stopOpacity="0.42" />
-            <stop offset="60%" stopColor="#020c1e" stopOpacity="0.10" />
-            <stop offset="100%" stopColor="#020c1e" stopOpacity="0" />
-          </linearGradient>
         </defs>
 
         {/* 1. Right Loop Base (Center: 30, 24, R=11, Stroke=5) */}
@@ -122,14 +94,6 @@ export default function BrandLogo({
           strokeWidth="5"
         />
 
-        {/* 2. Top Fold Crease on Right Loop (before Left Loop overlaps) */}
-        <path
-          d="M 26 16.5 A 11 11 0 0 0 21.5 13.5"
-          stroke={`url(#${id}-crease-top)`}
-          strokeWidth="5"
-          strokeLinecap="butt"
-        />
-
         {/* 3. Left Loop Base (Center: 18, 24, R=11, Stroke=5) */}
         <circle
           cx="18"
@@ -137,14 +101,6 @@ export default function BrandLogo({
           r="11"
           stroke={`url(#${id}-left)`}
           strokeWidth="5"
-        />
-
-        {/* 4. Bottom Fold Crease on Left Loop (before Right Loop overlaps) */}
-        <path
-          d="M 22 31.5 A 11 11 0 0 0 26.5 34.5"
-          stroke={`url(#${id}-crease-bottom)`}
-          strokeWidth="5"
-          strokeLinecap="butt"
         />
 
         {/* 5. Top Crossing Overpass: Left Loop cleanly over Right Loop */}
@@ -172,7 +128,7 @@ export default function BrandLogo({
             fontFamily: "'Be Vietnam Pro', system-ui, -apple-system, sans-serif",
             fontSize: `${fontSize}px`,
             fontWeight: 700,
-            color: 'var(--slate-12, #11181c)',
+            color: 'var(--text-primary)',
             letterSpacing: '-0.025em',
             display: 'inline-flex',
             alignItems: 'baseline',
@@ -182,10 +138,7 @@ export default function BrandLogo({
           <span
             style={{
               fontWeight: 800,
-              background: 'linear-gradient(155deg, #003d99 0%, #006adc 52%, #00b4ff 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              color: 'var(--primary-base)',
               marginRight: '0.5px'
             }}
           >

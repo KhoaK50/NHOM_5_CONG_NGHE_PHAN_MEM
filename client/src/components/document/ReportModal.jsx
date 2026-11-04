@@ -3,7 +3,7 @@
  * UC04: BÁO CÁO HỌC LIỆU VI PHẠM CHUẨN MỰC HỌC THUẬT (REPORT MODAL)
  * Thành viên phụ trách: Lê Nguyễn Thùy Trâm (50.01.103.088)
  * Nối API POST /api/reports chuẩn RESTful (Chống trùng lặp 409 & Chống rỗng)
- * Tinh chỉnh UI tương thích Radix Colors & Dark/Light Theme của 5Share
+ * Giao diện theo Figma bản V5, dùng token màu sáng/tối trong styles/theme.css
  * ============================================================================
  */
 
@@ -17,12 +17,6 @@ const REASONS = [
   { value: "Nội dung xấu", hint: "Nội dung phản cảm, sai lệch kiến thức hoặc spam" },
 ];
 const MAX_DESC = 1000;
-
-const BANNER = {
-  warning: "border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300",
-  info: "border-sky-200 bg-sky-50 dark:border-sky-900/50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300",
-  error: "border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300",
-};
 
 export default function ReportModal({
   open = true,
@@ -175,47 +169,40 @@ export default function ReportModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:items-center sm:p-4 backdrop-blur-sm transition-all"
+      className="report-modal"
       onMouseDown={(e) => e.target === e.currentTarget && !submitting && onClose()}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="report-title"
-        className="max-h-full w-full max-w-lg overflow-y-auto rounded-t-2xl bg-[var(--bg-surface,#ffffff)] border border-[var(--border-subtle,#e2e8f0)] dark:border-slate-800 shadow-2xl sm:rounded-2xl"
+        className="report-dialog"
       >
         {success ? (
-          <div role="status" className="px-6 py-10 text-center sm:px-8">
-            <span
-              className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
-              aria-hidden="true"
-            >
-              <svg viewBox="0 0 20 20" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <div role="status" className="report-success">
+            <span aria-hidden="true">
+              <svg viewBox="0 0 20 20" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 10.5l3.2 3.2L15 6.8" />
               </svg>
             </span>
-            <h2 id="report-title" className="mt-4 text-xl font-bold text-[var(--text-primary,#0f172a)]">
+            <h2 id="report-title">
               Cảm ơn bạn đã phản hồi!
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary,#475569)]">
+            <p>
               Báo cáo vi phạm đã được chuyển tới Ban Kiểm duyệt Khoa CNTT. Chúng tôi sẽ thẩm tra và xử lý tài liệu nếu phát hiện vi phạm.
             </p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-6 rounded-xl bg-[var(--brand-primary,#007A5E)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary,#007A5E)] focus-visible:ring-offset-2 transition"
-            >
+            <button type="button" onClick={onClose}>
               Đóng hộp thoại
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate>
-            <div className="flex items-start justify-between gap-4 border-b border-[var(--border-subtle,#e2e8f0)] dark:border-slate-800 px-6 py-5 bg-[var(--bg-muted,#f8fafc)]">
+            <div className="report-header">
               <div>
-                <h2 id="report-title" className="text-lg font-bold text-[var(--text-primary,#0f172a)]">
+                <h2 id="report-title">
                   Báo cáo tài liệu vi phạm
                 </h2>
-                <p className="mt-0.5 text-xs text-[var(--text-secondary,#475569)]">
+                <p>
                   Giúp cộng đồng giữ gìn nguồn học liệu chuẩn mực, chất lượng cao.
                 </p>
               </div>
@@ -224,43 +211,38 @@ export default function ReportModal({
                 onClick={onClose}
                 disabled={submitting}
                 aria-label="Đóng"
-                className="-mr-2 -mt-1 rounded-full p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary,#007A5E)] transition"
               >
-                <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                   <path d="M5 5l10 10M15 5L5 15" />
                 </svg>
               </button>
             </div>
 
-            <div className="space-y-4 px-6 py-5">
-              <div className="rounded-xl bg-[var(--bg-muted,#f8fafc)] px-4 py-3 border border-[var(--border-subtle,#e2e8f0)] dark:border-slate-800">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary,#64748b)]">
-                  Học liệu phản ánh (Mã #{activeDocId})
+            <div className="report-body">
+              <div className="report-document">
+                <p>
+                  Tài liệu
                 </p>
-                <p className="mt-0.5 text-sm font-semibold text-[var(--text-primary,#0f172a)]">
+                <p>
                   {activeDocTitle}
                 </p>
               </div>
 
               {banner && (
-                <div role="alert" className={`rounded-xl border px-4 py-3 text-xs leading-relaxed font-medium ${BANNER[banner.tone] || BANNER.error}`}>
+                <div role="alert" className={`report-banner report-banner-${banner.tone || 'error'}`}>
                   {banner.text}
                 </div>
               )}
 
-              <fieldset aria-describedby={errors.reason ? "reason-error" : undefined}>
-                <legend className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary,#475569)]">
-                  Nhóm lý do vi phạm
+              <fieldset className="report-fieldset" aria-describedby={errors.reason ? "reason-error" : undefined}>
+                <legend>
+                  Lý do báo cáo
                 </legend>
-                <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="report-reasons">
                   {REASONS.map((r) => (
                     <label
                       key={r.value}
-                      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-xs transition ${
-                        reason === r.value
-                          ? "border-[var(--brand-primary,#007A5E)] bg-[var(--brand-primary,#007A5E)]/5 ring-1 ring-[var(--brand-primary,#007A5E)]"
-                          : "border-[var(--border-subtle,#e2e8f0)] dark:border-slate-700 hover:bg-[var(--bg-muted,#f8fafc)]"
-                      }`}
+                      className="report-reason"
                     >
                       <input
                         type="radio"
@@ -278,13 +260,12 @@ export default function ReportModal({
                           }
                         }}
                         disabled={submitting}
-                        className="mt-0.5 h-4 w-4 flex-none text-[var(--brand-primary,#007A5E)] focus:ring-0"
-                      />
+                                              />
                       <span>
-                        <span className="block font-semibold text-[var(--text-primary,#0f172a)]">
+                        <span>
                           {r.value}
                         </span>
-                        <span className="mt-0.5 block text-[11px] leading-snug text-[var(--text-secondary,#475569)]">
+                        <span>
                           {r.hint}
                         </span>
                       </span>
@@ -292,18 +273,18 @@ export default function ReportModal({
                   ))}
                 </div>
                 {errors.reason && (
-                  <p id="reason-error" role="alert" className="mt-1.5 text-xs text-rose-600">
+                  <p id="reason-error" role="alert">
                     {errors.reason}
                   </p>
                 )}
               </fieldset>
 
-              <div>
-                <div className="mb-1.5 flex items-baseline justify-between">
-                  <label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary,#475569)]">
-                    Nội dung giải trình cụ thể
+              <div className="report-description">
+                <div>
+                  <label htmlFor="description">
+                    Mô tả chi tiết
                   </label>
-                  <span className="text-[11px] text-[var(--text-tertiary,#64748b)]">
+                  <span>
                     {description.length}/{MAX_DESC}
                   </span>
                 </div>
@@ -327,31 +308,27 @@ export default function ReportModal({
                   placeholder="Ví dụ: Trang 12–18 trùng lặp hoàn toàn với tài liệu đã đăng, hoặc có dấu hiệu sao chép sách có bản quyền..."
                   aria-invalid={!!errors.description}
                   aria-describedby={errors.description ? "description-error" : undefined}
-                  className={`block w-full resize-y rounded-xl border bg-[var(--bg-surface,#ffffff)] px-3.5 py-2.5 text-sm text-[var(--text-primary,#0f172a)] placeholder-slate-400 focus:border-[var(--brand-primary,#007A5E)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary,#007A5E)] transition ${
-                    errors.description ? "border-rose-500" : "border-[var(--border-subtle,#e2e8f0)] dark:border-slate-700"
-                  }`}
                 />
                 {errors.description && (
-                  <p id="description-error" role="alert" className="mt-1.5 text-xs text-rose-600">
+                  <p id="description-error" role="alert">
                     {errors.description}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-[var(--border-subtle,#e2e8f0)] dark:border-slate-800 bg-[var(--bg-muted,#f8fafc)] px-6 py-4 sm:flex-row sm:justify-end">
+            <div className="report-actions">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="rounded-xl border border-[var(--border-subtle,#e2e8f0)] dark:border-slate-700 bg-[var(--bg-surface,#ffffff)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary,#007A5E)] transition"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition"
+                className="report-submit"
               >
                 {submitting ? "Đang gửi báo cáo..." : "Gửi báo cáo"}
               </button>

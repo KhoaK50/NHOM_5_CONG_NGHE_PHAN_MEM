@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ArrowLeft, Flag, ShieldCheck, Hash, Calendar, User, BookOpen } from 'lucide-react'
+import { ArrowLeft, Download, Flag, Star } from 'lucide-react'
+import { DOC_TYPE_LABELS } from '../../utils/documentCourseApi'
 import PdfPreviewViewer from './PdfPreviewViewer'
 import DownloadAction from './DownloadAction'
 import RatingComments from './RatingComments'
@@ -25,6 +26,21 @@ export default function DocumentDetail({
 
   if (!documentItem) return null
 
+  const displayDate = (() => {
+    const date = new Date(documentItem.createdAt)
+    if (Number.isNaN(date.getTime())) return 'Chưa rõ'
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh'
+    }).format(date).replaceAll('/', '-')
+  })()
+
+  const rating = Number(documentItem.ratingAvg || 0)
+  const format = String(documentItem.format || documentItem.fileName?.split('.').pop() || 'pdf').toUpperCase()
+  const formatLabel = { PDF: 'PDF', DOCX: 'Word', PPTX: 'PowerPoint' }[format] || format
+  const fileSummary = documentItem.pageCount
+    ? `${formatLabel} · ${documentItem.pageCount} ${format === 'PPTX' ? 'slide' : 'trang'}`
+    : formatLabel
+
   const handleOpenDocReport = () => {
     if (!isAuthenticated) {
       if (onRequireLogin) onRequireLogin()
@@ -45,8 +61,8 @@ export default function DocumentDetail({
 
   return (
     <div>
-      {/* Thanh điều hướng quay lại & Breadcrumb môn học */}
-      <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+      {/* Quay lại Kho học liệu */}
+      <div style={{ marginBottom: '16px' }}>
         <button
           type="button"
           className="btn-ghost"
@@ -56,11 +72,6 @@ export default function DocumentDetail({
           <ArrowLeft size={16} />
           <span>Quay lại Kho học liệu</span>
         </button>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="status-badge blue">{documentItem.courseCode} • {documentItem.courseName}</span>
-          <span className="status-badge green">{documentItem.docType}</span>
-        </div>
       </div>
 
       {/* Bố cục Reader-First 2 cột: 70% Khung đọc trực tuyến + 30% Cột thông tin, Tải về, Bookmark & Thảo luận */}
@@ -77,31 +88,34 @@ export default function DocumentDetail({
 
         {/* Cột phải cố định (30%): Thông tin tài liệu, Tải về, Bookmark, Thảo luận & Báo cáo */}
         <aside className="detail-sticky-sidebar">
-          <div
-            style={{
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '20px',
-              boxShadow: 'var(--shadow-card)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px'
-            }}
-          >
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <div className="detail-info-card">
+            <div className="detail-info-badges">
               <span className="status-badge blue">{documentItem.courseCode}</span>
-              <span className="status-badge slate">{documentItem.semester}</span>
-              <span className="status-badge green">Đã thẩm định</span>
+              <span className="status-badge slate">{DOC_TYPE_LABELS[documentItem.docType] || documentItem.docType}</span>
+              <span className="status-badge green">Đã kiểm duyệt</span>
             </div>
 
-            <h1 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.38 }}>
-              {documentItem.title}
-            </h1>
+            <h1 className="detail-title">{documentItem.title}</h1>
 
-            <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-              {documentItem.description}
-            </p>
+            {documentItem.description && <p className="detail-desc">{documentItem.description}</p>}
+
+            {/* Hai chỉ số cần nổi bật */}
+            <div className="detail-highlights">
+              <div className="detail-highlight detail-highlight-rating">
+                <Star size={18} fill="currentColor" aria-hidden="true" />
+                <div>
+                  <strong>{rating ? rating.toFixed(1) : 'Mới'}</strong>
+                  <span>{rating ? 'điểm đánh giá' : 'chưa có đánh giá'}</span>
+                </div>
+              </div>
+              <div className="detail-highlight detail-highlight-downloads">
+                <Download size={18} aria-hidden="true" />
+                <div>
+                  <strong>{Number(documentItem.downloadCount || 0).toLocaleString('vi-VN')}</strong>
+                  <span>lượt tải</span>
+                </div>
+              </div>
+            </div>
 
             {/* Nút Tải xuống & Lưu Bookmark */}
             <DownloadAction
@@ -113,85 +127,16 @@ export default function DocumentDetail({
               onRequireLogin={onRequireLogin}
             />
 
-            {/* Bảng thông tin học thuật */}
-            <div
-              style={{
-                backgroundColor: 'var(--bg-muted)',
-                borderRadius: '10px',
-                padding: '12px 14px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '7px',
-                fontSize: '12px'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-                <span style={{ color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                  <BookOpen size={13} /> Học phần:
-                </span>
-                <strong style={{ color: 'var(--text-primary)', textAlign: 'right' }}>{documentItem.courseName}</strong>
-              </div>
+            <dl className="detail-facts">
+              <div><dt>Học phần</dt><dd>{documentItem.courseName}</dd></div>
+              <div><dt>Người đăng</dt><dd>{documentItem.uploaderName}</dd></div>
+              <div><dt>Ngày đăng</dt><dd><time dateTime={documentItem.createdAt}>{displayDate}</time></dd></div>
+              <div><dt>Định dạng</dt><dd>{fileSummary}</dd></div>
+            </dl>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-                <span style={{ color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                  <User size={13} /> Tác giả:
-                </span>
-                <strong style={{ color: 'var(--text-primary)' }}>{documentItem.uploaderName}</strong>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-                <span style={{ color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                  <Calendar size={13} /> Ngày đăng:
-                </span>
-                <span style={{ color: 'var(--text-primary)' }}>{documentItem.createdAt}</span>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-                <span style={{ color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                  <ShieldCheck size={13} /> Trạng thái kiểm duyệt:
-                </span>
-                <span style={{ color: 'var(--green-7)', fontWeight: 700 }}>Đã kiểm duyệt</span>
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '6px' }}>
-                <div style={{ color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', marginBottom: '2px' }}>
-                  <Hash size={11} /> Mã xác thực tệp (SHA-256):
-                </div>
-                <div
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '10.5px',
-                    color: 'var(--text-secondary)',
-                    wordBreak: 'break-all'
-                  }}
-                >
-                  {documentItem.fileHash}
-                </div>
-              </div>
-            </div>
-
-            {/* Nút Báo cáo tài liệu vi phạm */}
-            <button
-              type="button"
-              onClick={handleOpenDocReport}
-              style={{
-                width: '100%',
-                padding: '7px 12px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-subtle)',
-                backgroundColor: 'transparent',
-                color: 'var(--text-tertiary)',
-                fontWeight: 600,
-                fontSize: '12px',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px'
-              }}
-            >
-              <Flag size={13} />
-              <span>Báo cáo sai sót hoặc vi phạm học thuật</span>
+            <button type="button" className="detail-report-link" onClick={handleOpenDocReport}>
+              <Flag size={14} aria-hidden="true" />
+              <span>Báo cáo vi phạm</span>
             </button>
           </div>
 

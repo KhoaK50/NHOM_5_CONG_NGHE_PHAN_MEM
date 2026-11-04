@@ -60,7 +60,7 @@
 .doc-card:hover {
   transform: translateY(-3px);
   border-color: var(--blue-4);
-  box-shadow: 0 14px 28px -8px rgba(15, 23, 42, 0.1);
+  box-shadow: none;
 }
 
 /* Back sheet layer for physical paper depth */
@@ -276,7 +276,7 @@
   position: fixed;
   inset: 0;
   z-index: 200;
-  background-color: rgba(15, 23, 42, 0.58);
+  background-color: var(--bg-scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -367,8 +367,8 @@
   padding: 0 24px;
   height: 60px;
   max-height: 60px;
-  background-color: var(--bg-surface, #ffffff);
-  border-bottom: 1px solid var(--slate-7, #d7dfe3);
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--slate-7);
   position: sticky;
   top: 0;
   left: 0;
@@ -412,7 +412,7 @@
   padding: 0 4px;
   background: transparent;
   border: none;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
   font-family: var(--font-ui, 'Be Vietnam Pro', sans-serif);
   font-size: 14.5px;
   font-weight: 500;
@@ -424,12 +424,12 @@
 }
 
 .vec-nav-link:hover {
-  color: var(--primary-base, #0090ff);
+  color: var(--primary-base);
 }
 
 /* 2px Bottom Active Bar Indicator */
 .vec-nav-link.active {
-  color: var(--primary-base, #0090ff) !important;
+  color: var(--primary-base) !important;
   font-weight: 600;
 }
 
@@ -440,7 +440,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background-color: var(--primary-base, #0090ff);
+  background-color: var(--primary-base);
   border-radius: 2px 2px 0 0;
 }
 
@@ -456,10 +456,10 @@
   position: absolute;
   top: calc(100% + 2px);
   left: 0;
-  background: #ffffff;
-  border: 1px solid var(--slate-7, #d7dfe3);
+  background: var(--bg-surface);
+  border: 1px solid var(--slate-7);
   border-radius: 10px;
-  box-shadow: 0 10px 25px -4px rgba(17, 24, 28, 0.1), 0 4px 8px -2px rgba(17, 24, 28, 0.05);
+  box-shadow: none;
   min-width: 240px;
   display: flex;
   flex-direction: column;
@@ -478,7 +478,7 @@
   align-items: center;
   gap: 10px;
   padding: 9px 16px;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
   font-size: 13.5px;
   font-weight: 500;
   text-decoration: none;
@@ -492,13 +492,13 @@
 }
 
 .vec-dropdown-item:hover {
-  background-color: rgba(0, 144, 255, 0.06);
-  color: var(--primary-base, #0090ff);
+  background-color: var(--brand-soft);
+  color: var(--primary-base);
 }
 
 .vec-dropdown-divider {
   height: 1px;
-  background-color: var(--slate-6, #e6e8eb);
+  background-color: var(--slate-6);
   margin: 6px 0;
 }
 
@@ -509,7 +509,7 @@
   border-radius: 50%;
   background: transparent;
   border: 1px solid transparent;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -519,8 +519,8 @@
 }
 
 .vec-icon-btn:hover {
-  background: var(--slate-3, #f0f0f3);
-  color: var(--primary-base, #0090ff);
+  background: var(--slate-3);
+  color: var(--primary-base);
 }
 
 .vec-unread-badge {
@@ -531,8 +531,8 @@
   height: 16px;
   padding: 0 4px;
   border-radius: 999px;
-  background-color: var(--red-9, #e5484d);
-  color: #ffffff;
+  background-color: var(--red-9);
+  color: var(--text-on-brand);
   font-size: 10px;
   font-weight: 800;
   display: inline-flex;
@@ -551,10 +551,10 @@
   right: 0;
   width: 260px;
   min-width: 260px;
-  background: #ffffff;
-  border: 1px solid var(--slate-7, #d7dfe3);
+  background: var(--bg-surface);
+  border: 1px solid var(--slate-7);
   border-radius: 12px;
-  box-shadow: 0 12px 32px -4px rgba(17, 24, 28, 0.12), 0 4px 12px -2px rgba(17, 24, 28, 0.06);
+  box-shadow: none;
   z-index: 10007;
   overflow: hidden;
   animation: vecFadeSlideDown 0.18s cubic-bezier(0.16, 1, 0.3, 1);
@@ -564,7 +564,7 @@
 .vec-switch-account-panel {
   display: flex;
   flex-direction: column;
-  background: #ffffff;
+  background: var(--bg-surface);
   border-radius: inherit;
   animation: vecFadeSlideIn 0.18s ease-out;
 }
@@ -574,8 +574,8 @@
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
-  border-bottom: 1px solid var(--slate-6, #e6e8eb);
-  background: var(--slate-2, #f9f9fb);
+  border-bottom: 1px solid var(--slate-6);
+  background: var(--slate-2);
 }
 
 .vec-switch-account-list {
@@ -594,33 +594,29 @@
 }
 
 .vec-switch-account-item:hover {
-  background-color: var(--slate-3, #f0f0f3);
+  background-color: var(--slate-3);
 }
 
 .vec-switch-account-item.active {
-  background-color: rgba(0, 144, 255, 0.06);
+  background-color: var(--brand-soft);
   cursor: default;
 }
 
 /* Animations */
 @keyframes vecFadeSlideDown {
   from {
-    opacity: 0;
     transform: translateY(6px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
 
 @keyframes vecFadeSlideIn {
   from {
-    opacity: 0;
     transform: translateX(8px);
   }
   to {
-    opacity: 1;
     transform: translateX(0);
   }
 }
@@ -634,13 +630,13 @@
 /* Left Category Tree Sidebar (FR-03: Khối kiến thức -> Môn học SPTH & Loại tài liệu) */
 
 .saas-reset-btn {
-  background: var(--slate-2, #f9f9fb);
-  border: 1px solid var(--slate-7, #d7dfe3);
+  background: var(--slate-2);
+  border: 1px solid var(--slate-7);
   border-radius: 6px;
   padding: 4px 9px;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -649,9 +645,9 @@
 }
 
 .saas-reset-btn:hover {
-  color: var(--slate-12, #11181c);
-  border-color: var(--slate-9, #8b939a);
-  background-color: var(--slate-3, #f0f0f3);
+  color: var(--slate-12);
+  border-color: var(--slate-9);
+  background-color: var(--slate-3);
 }
 
 /* Sidebar Item — Pure Vectoria Surface Highlight (Zero vertical blue bar) */
@@ -674,7 +670,7 @@
 .saas-search-icon {
   position: absolute;
   left: 11px;
-  color: var(--slate-9, #8b939a);
+  color: var(--slate-9);
   pointer-events: none;
 }
 
@@ -682,10 +678,10 @@
   width: 100%;
   height: 36px;
   padding: 0 30px 0 34px;
-  border: 1px solid var(--slate-7, #d7dfe3);
+  border: 1px solid var(--slate-7);
   border-radius: 6px;
-  background-color: var(--slate-1, #fcfcfd);
-  color: var(--slate-12, #11181c);
+  background-color: var(--slate-1);
+  color: var(--slate-12);
   font-family: var(--font-academic);
   font-size: 13.5px;
   outline: none;
@@ -693,8 +689,8 @@
 }
 
 .saas-search-input:focus {
-  border-color: var(--blue-9, #0090ff);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  border-color: var(--blue-9);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .saas-search-clear {
@@ -702,7 +698,7 @@
   right: 8px;
   background: none;
   border: none;
-  color: var(--slate-9, #8b939a);
+  color: var(--slate-9);
   cursor: pointer;
   padding: 2px;
   display: inline-flex;
@@ -710,7 +706,7 @@
 }
 
 .saas-search-clear:hover {
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
 }
 
 /* 3. Vectoria Diagram-Tabs Bar (.diagram-tabs / .dtab from knowledge_info.html) */
@@ -740,9 +736,9 @@
   align-items: center;
   justify-content: space-between;
   padding-top: 14px;
-  border-top: 1px solid var(--slate-6, #e6e8eb);
+  border-top: 1px solid var(--slate-6);
   font-size: 12.5px;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
 }
 
 .saas-page-controls {
@@ -756,9 +752,9 @@
   height: 30px;
   padding: 0 8px;
   border-radius: 6px;
-  border: 1px solid var(--slate-6, #e6e8eb);
-  background-color: #ffffff;
-  color: var(--slate-11, #687076);
+  border: 1px solid var(--slate-6);
+  background-color: var(--bg-surface);
+  color: var(--slate-11);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
@@ -767,24 +763,25 @@
 }
 
 .saas-page-btn:hover:not(:disabled) {
-  border-color: var(--slate-8, #c1c8cd);
-  color: var(--slate-12, #11181c);
+  border-color: var(--slate-8);
+  color: var(--slate-12);
 }
 
 .saas-page-btn.active {
-  background-color: var(--slate-12, #11181c);
-  border-color: var(--slate-12, #11181c);
-  color: #ffffff;
+  background-color: var(--slate-12);
+  border-color: var(--slate-12);
+  color: var(--text-on-brand);
 }
 
-.saas-page-btn:disabled {
-  opacity: 0.4;
+.saas-page-btn:disabled {  background-color: var(--disabled-bg);
+  color: var(--disabled-text);
+  border-color: var(--disabled-bg);
   cursor: not-allowed;
 }
 
 .saas-empty-state {
-  background-color: var(--slate-2, #f9f9fb);
-  border: 1px solid var(--slate-6, #e6e8eb);
+  background-color: var(--slate-2);
+  border: 1px solid var(--slate-6);
   border-radius: 6px;
   padding: 40px 28px;
   display: flex;
@@ -794,20 +791,20 @@
 }
 
 .saas-empty-icon {
-  color: var(--blue-9, #0090ff);
+  color: var(--blue-9);
 }
 
 .saas-empty-title {
   font-family: var(--font-academic);
   font-size: 18px;
   font-weight: 700;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
   margin: 0;
 }
 
 .saas-empty-desc {
   font-size: 13.5px;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
   max-width: 540px;
   margin: 0 0 6px;
   line-height: 1.5;
@@ -817,8 +814,8 @@
    VECTORIA INTERACTIVE CURRICULUM TREE MAP (.vec-curriculum-map)
    ========================================================================== */
 .vec-curriculum-map {
-  background-color: var(--slate-1, #fcfcfd);
-  border: 1px solid var(--slate-6, #e6e8eb);
+  background-color: var(--slate-1);
+  border: 1px solid var(--slate-6);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -829,8 +826,8 @@
   justify-content: space-between;
   gap: 14px;
   padding: 12px 16px;
-  background-color: var(--slate-2, #f9f9fb);
-  border-bottom: 1px solid var(--slate-6, #e6e8eb);
+  background-color: var(--slate-2);
+  border-bottom: 1px solid var(--slate-6);
   flex-wrap: wrap;
 }
 
@@ -844,9 +841,9 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background-color: var(--slate-3, #f0f0f3);
-  border: 1px solid var(--slate-7, #d7dfe3);
-  color: var(--blue-9, #0090ff);
+  background-color: var(--slate-3);
+  border: 1px solid var(--slate-7);
+  color: var(--blue-9);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -857,7 +854,7 @@
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 700;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
   margin: 0;
   line-height: 1.3;
 }
@@ -872,7 +869,7 @@
 .vec-tree-block-pills {
   display: inline-flex;
   align-items: center;
-  background-color: var(--slate-3, #f0f0f3);
+  background-color: var(--slate-3);
   padding: 2px;
   border-radius: 6px;
   gap: 2px;
@@ -884,7 +881,7 @@
   border-radius: 5px;
   border: none;
   background: transparent;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
   font-family: var(--font-ui);
   font-size: 11.5px;
   font-weight: 500;
@@ -893,14 +890,14 @@
 }
 
 .vec-tree-block-btn:hover {
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
 }
 
 .vec-tree-block-btn.active {
-  background-color: var(--slate-1, #fcfcfd);
-  color: var(--slate-12, #11181c);
+  background-color: var(--slate-1);
+  color: var(--slate-12);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: none;
 }
 
 .vec-tree-toggle-btn {
@@ -910,9 +907,9 @@
   height: 28px;
   padding: 0 10px;
   border-radius: 6px;
-  border: 1px solid var(--slate-7, #d7dfe3);
-  background-color: var(--slate-1, #fcfcfd);
-  color: var(--slate-12, #11181c);
+  border: 1px solid var(--slate-7);
+  background-color: var(--slate-1);
+  color: var(--slate-12);
   font-family: var(--font-ui);
   font-size: 11.5px;
   font-weight: 600;
@@ -921,8 +918,8 @@
 }
 
 .vec-tree-toggle-btn:hover {
-  border-color: var(--blue-9, #0090ff);
-  color: var(--blue-9, #0090ff);
+  border-color: var(--blue-9);
+  color: var(--blue-9);
 }
 
 .vec-tree-legend-row {
@@ -939,7 +936,7 @@
   gap: 6px;
   font-size: 11px;
   font-weight: 500;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
 }
 
 .vec-legend-line {
@@ -950,11 +947,11 @@
 }
 
 .vec-legend-line.pre {
-  background-color: #d97706;
+  background-color: var(--status-warning);
 }
 
 .vec-legend-line.next {
-  background-color: var(--blue-9, #0090ff);
+  background-color: var(--blue-9);
 }
 
 .vec-legend-line.chain {
@@ -972,14 +969,14 @@
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: var(--slate-9, #8b939a);
+  color: var(--slate-9);
 }
 
 .vec-zoom-toolbar {
   display: inline-flex;
   align-items: center;
-  background-color: var(--slate-1, #fcfcfd);
-  border: 1px solid var(--slate-7, #d7dfe3);
+  background-color: var(--slate-1);
+  border: 1px solid var(--slate-7);
   border-radius: 6px;
   padding: 2px;
   gap: 2px;
@@ -991,7 +988,7 @@
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1000,8 +997,8 @@
 }
 
 .vec-zoom-btn:hover {
-  background-color: var(--slate-3, #f0f0f3);
-  color: var(--slate-12, #11181c);
+  background-color: var(--slate-3);
+  color: var(--slate-12);
 }
 
 .vec-zoom-pct {
@@ -1013,30 +1010,30 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   font-weight: 600;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
   cursor: pointer;
 }
 
 .vec-zoom-pct:hover {
-  background-color: var(--slate-3, #f0f0f3);
+  background-color: var(--slate-3);
 }
 
 .vec-zoom-fit-btn {
   height: 24px;
   padding: 0 8px;
   border: none;
-  border-inline: 1px solid var(--slate-6, #e6e8eb);
+  border-inline: 1px solid var(--slate-6);
   background: transparent;
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 600;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
   cursor: pointer;
   transition: color 0.12s ease;
 }
 
 .vec-zoom-fit-btn:hover {
-  color: var(--blue-9, #0090ff);
+  color: var(--blue-9);
 }
 
 .vec-tree-stage-scroll {
@@ -1044,8 +1041,8 @@
   overflow: auto;
   max-height: 640px;
   padding: 24px 28px 28px;
-  background-color: var(--slate-1, #fcfcfd);
-  background-image: radial-gradient(var(--slate-5, #e0e1e6) 1px, transparent 1px);
+  background-color: var(--slate-1);
+  background-image: radial-gradient(var(--slate-5) 1px, transparent 1px);
   background-size: 18px 18px;
   cursor: grab;
   user-select: none;
@@ -1083,57 +1080,50 @@
 }
 
 .vec-tree-edge {
-  stroke: var(--slate-7, #d7dfe3);
+  stroke: var(--slate-7);
   stroke-width: 1.5px;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.38;
-  transition: stroke 0.16s ease, stroke-width 0.16s ease, opacity 0.16s ease;
+  transition: stroke 0.16s ease, stroke-width 0.16s ease;
 }
 
 .vec-tree-edge.direct-pre {
-  stroke: #d97706;
+  stroke: var(--status-warning);
   stroke-width: 2.5px;
-  opacity: 1;
 }
 
 .vec-tree-edge.direct-next {
-  stroke: var(--blue-9, #0090ff);
+  stroke: var(--blue-9);
   stroke-width: 2.5px;
-  opacity: 1;
 }
 
 .vec-tree-edge.chain {
-  stroke: #0d74ce;
+  stroke: var(--primary-base);
   stroke-width: 1.75px;
   stroke-dasharray: 5 4;
-  opacity: 0.72;
 }
 
-.vec-tree-edge.dimmed {
-  opacity: 0.16;
+.vec-tree-edge.dimmed {  stroke: var(--line-default);
 }
 
 .vec-tree-terminal {
-  fill: var(--slate-8, #c1c8cd);
-  transition: fill 0.16s ease, opacity 0.16s ease;
+  fill: var(--slate-8);
+  transition: fill 0.16s ease;
 }
 
 .vec-tree-terminal.direct-pre {
-  fill: #d97706;
+  fill: var(--status-warning);
 }
 
 .vec-tree-terminal.direct-next {
-  fill: var(--blue-9, #0090ff);
+  fill: var(--blue-9);
 }
 
 .vec-tree-terminal.chain {
-  fill: #0d74ce;
-  opacity: 0.75;
+  fill: var(--primary-base);
 }
 
-.vec-tree-terminal.dimmed {
-  opacity: 0.16;
+.vec-tree-terminal.dimmed {  fill: var(--line-default);
 }
 
 .vec-tree-col {
@@ -1151,9 +1141,9 @@
   height: 36px;
   padding: 0 12px;
   border-radius: 6px;
-  border: 1px solid var(--slate-7, #d7dfe3);
-  background-color: var(--slate-2, #f9f9fb);
-  color: var(--slate-12, #11181c);
+  border: 1px solid var(--slate-7);
+  background-color: var(--slate-2);
+  color: var(--slate-12);
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 700;
@@ -1162,21 +1152,21 @@
 }
 
 .vec-tree-sem-header:hover {
-  border-color: var(--blue-9, #0090ff);
-  color: var(--blue-9, #0090ff);
+  border-color: var(--blue-9);
+  color: var(--blue-9);
 }
 
 .vec-tree-sem-header.active {
-  background-color: var(--slate-3, #f0f0f3);
-  border-color: var(--blue-9, #0090ff);
-  color: var(--blue-9, #0090ff);
+  background-color: var(--slate-3);
+  border-color: var(--blue-9);
+  color: var(--blue-9);
 }
 
 .vec-tree-sem-tc {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10.5px;
   font-weight: 600;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
 }
 
 .vec-tree-col-nodes {
@@ -1191,35 +1181,35 @@
   text-align: left;
   padding: 8px 11px;
   border-radius: 7px;
-  border: 1px solid var(--slate-7, #d7dfe3);
-  background-color: var(--slate-1, #fcfcfd);
+  border: 1px solid var(--slate-7);
+  background-color: var(--slate-1);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 1px 2px rgba(17, 24, 28, 0.03);
-  transition: background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+  box-shadow: none;
+  transition: background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 /* Phân nhóm màu pastel Radix Light Mode bám sát Chú thích CTĐT HCMUE */
 .vec-tree-node.group-foundation {
-  background-color: #f4f9ff;
-  border-color: #b7d9f8;
+  background-color: var(--brand-soft);
+  border-color: var(--primary-base);
 }
 
 .vec-tree-node.group-pedagogy {
-  background-color: #faf7ff;
-  border-color: #d7cbf5;
+  background-color: var(--bg-muted);
+  border-color: var(--line-strong);
 }
 
 .vec-tree-node.group-practice {
-  background-color: #f3fbf6;
-  border-color: #a9e5c3;
+  background-color: var(--status-success-soft);
+  border-color: var(--status-success);
 }
 
 .vec-tree-node.group-graduation {
-  background-color: #fff7f6;
-  border-color: #f6c2be;
+  background-color: var(--status-danger-soft);
+  border-color: var(--status-danger);
 }
 
 /* Học phần tự chọn: viền nét đứt đúng quy ước Sơ đồ CTĐT */
@@ -1230,39 +1220,40 @@
 
 .vec-tree-node:hover,
 .vec-tree-node.focused {
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   border-style: solid;
-  border-color: var(--blue-9, #0090ff);
-  box-shadow: 0 0 0 1.5px var(--blue-9, #0090ff), 0 4px 12px rgba(0, 144, 255, 0.12);
+  border-color: var(--blue-9);
+  box-shadow: 0 0 0 1.5px var(--blue-9);
 }
 
 .vec-tree-node.selected {
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   border-style: solid;
-  border-color: var(--blue-9, #0090ff);
-  box-shadow: 0 0 0 2px var(--blue-9, #0090ff), 0 6px 16px rgba(0, 144, 255, 0.14);
+  border-color: var(--blue-9);
+  box-shadow: 0 0 0 2px var(--blue-9);
 }
 
 .vec-tree-node.direct-pre {
-  background-color: #fffdf9;
+  background-color: var(--status-warning-soft);
   border-style: solid;
-  border-color: #d97706;
-  box-shadow: 0 0 0 1px #d97706, 0 4px 10px rgba(217, 119, 6, 0.1);
+  border-color: var(--status-warning);
+  box-shadow: 0 0 0 1px #d97706;
 }
 
 .vec-tree-node.direct-next {
-  background-color: #f8fcff;
+  background-color: var(--brand-soft);
   border-style: solid;
-  border-color: var(--blue-9, #0090ff);
-  box-shadow: 0 0 0 1px var(--blue-9, #0090ff), 0 4px 10px rgba(0, 144, 255, 0.1);
+  border-color: var(--blue-9);
+  box-shadow: 0 0 0 1px var(--blue-9);
 }
 
 .vec-tree-node.chain-node {
-  border-color: #8ec8f6;
+  border-color: var(--primary-base);
 }
 
-.vec-tree-node.dimmed {
-  opacity: 0.28;
+.vec-tree-node.dimmed {  background-color: var(--bg-muted);
+  color: var(--text-tertiary);
+  border-color: var(--line-default);
 }
 
 .vec-tree-node-top {
@@ -1276,17 +1267,17 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 10.5px;
   font-weight: 700;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
 }
 
 .vec-tree-node.selected .vec-tree-node-code,
 .vec-tree-node.focused .vec-tree-node-code,
 .vec-tree-node.direct-next .vec-tree-node-code {
-  color: var(--blue-9, #0090ff);
+  color: var(--blue-9);
 }
 
 .vec-tree-node.direct-pre .vec-tree-node-code {
-  color: #b45309;
+  color: var(--status-warning);
 }
 
 .vec-tree-node-docs {
@@ -1295,20 +1286,20 @@
   font-weight: 600;
   padding: 1px 6px;
   border-radius: 99px;
-  background-color: var(--slate-3, #f0f0f3);
-  color: var(--slate-11, #687076);
+  background-color: var(--slate-3);
+  color: var(--slate-11);
 }
 
 .vec-tree-node-docs.has-docs {
-  background-color: var(--blue-9, #0090ff);
-  color: #ffffff;
+  background-color: var(--blue-9);
+  color: var(--text-on-brand);
 }
 
 .vec-tree-node-name {
   font-family: var(--font-ui);
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
   line-height: 1.28;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1326,7 +1317,7 @@
 
 .vec-tree-node-block {
   font-size: 9.5px;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1335,7 +1326,7 @@
 .vec-tree-node-credits {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9.5px;
-  color: var(--slate-9, #8b939a);
+  color: var(--slate-9);
   flex-shrink: 0;
 }
 
@@ -1349,30 +1340,30 @@
   padding: 1px 6px;
   border-radius: 4px;
   letter-spacing: 0.01em;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .vec-tree-relation-tag.direct-pre {
-  background-color: #d97706;
-  color: #ffffff;
+  background-color: var(--status-warning);
+  color: var(--text-on-brand);
 }
 
 .vec-tree-relation-tag.direct-next {
-  background-color: var(--blue-9, #0090ff);
-  color: #ffffff;
+  background-color: var(--blue-9);
+  color: var(--text-on-brand);
 }
 
 .vec-tree-relation-tag.chain {
-  background-color: var(--slate-3, #f0f0f3);
-  border: 1px solid var(--slate-7, #d7dfe3);
-  color: var(--slate-12, #11181c);
+  background-color: var(--slate-3);
+  border: 1px solid var(--slate-7);
+  color: var(--slate-12);
 }
 
 /* Cụm 5 môn tự chọn Kỹ năng ở cuối Học kỳ 2 (Chọn 1 môn - 2 TC) */
 .vec-tree-elective-stack {
-  border: 1.5px dashed var(--slate-8, #c1c8cd);
+  border: 1.5px dashed var(--slate-8);
   border-radius: 8px;
-  background-color: var(--slate-2, #f9f9fb);
+  background-color: var(--slate-2);
   padding: 7px;
   display: flex;
   flex-direction: column;
@@ -1384,11 +1375,11 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 4px 3px;
-  border-bottom: 1px dashed var(--slate-6, #e6e8eb);
+  border-bottom: 1px dashed var(--slate-6);
   font-family: 'JetBrains Mono', monospace;
   font-size: 9.5px;
   font-weight: 700;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
 }
 
 .vec-tree-stack-list {
@@ -1402,8 +1393,8 @@
   text-align: left;
   padding: 5px 8px;
   border-radius: 5px;
-  border: 1px dashed var(--slate-7, #d7dfe3);
-  background-color: var(--slate-1, #fcfcfd);
+  border: 1px dashed var(--slate-7);
+  background-color: var(--slate-1);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -1414,14 +1405,15 @@
 .vec-tree-stack-item:hover,
 .vec-tree-stack-item.focused,
 .vec-tree-stack-item.selected {
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   border-style: solid;
-  border-color: var(--blue-9, #0090ff);
-  box-shadow: 0 0 0 1px var(--blue-9, #0090ff);
+  border-color: var(--blue-9);
+  box-shadow: 0 0 0 1px var(--blue-9);
 }
 
-.vec-tree-stack-item.dimmed {
-  opacity: 0.28;
+.vec-tree-stack-item.dimmed {  background-color: var(--bg-muted);
+  color: var(--text-tertiary);
+  border-color: var(--line-default);
 }
 
 .vec-tree-stack-top {
@@ -1435,7 +1427,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 9.5px;
   font-weight: 700;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
 }
 
 .vec-tree-stack-docs {
@@ -1444,15 +1436,15 @@
   font-weight: 600;
   padding: 0 5px;
   border-radius: 99px;
-  background-color: var(--blue-9, #0090ff);
-  color: #ffffff;
+  background-color: var(--blue-9);
+  color: var(--text-on-brand);
 }
 
 .vec-tree-stack-name {
   font-family: var(--font-ui);
   font-size: 10.5px;
   font-weight: 600;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
   line-height: 1.25;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1479,21 +1471,21 @@
   height: 32px;
   padding: 0 18px;
   border-radius: 6px;
-  border: 1px solid var(--slate-7, #d7dfe3);
-  background-color: var(--slate-2, #f9f9fb);
-  color: var(--slate-12, #11181c);
+  border: 1px solid var(--slate-7);
+  background-color: var(--slate-2);
+  color: var(--slate-12);
 }
 
 .vec-tree-grad-title {
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 700;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
 }
 
 .vec-tree-grad-note {
   font-size: 11px;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
 }
 
 /* Thanh CHÚ THÍCH chính thức dưới chân Sơ đồ Chương trình Đào tạo */
@@ -1502,8 +1494,8 @@
   align-items: center;
   gap: 16px;
   padding: 10px 16px;
-  background-color: var(--slate-2, #f9f9fb);
-  border-top: 1px solid var(--slate-6, #e6e8eb);
+  background-color: var(--slate-2);
+  border-top: 1px solid var(--slate-6);
   flex-wrap: wrap;
 }
 
@@ -1511,7 +1503,7 @@
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 700;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
   letter-spacing: 0.03em;
 }
 
@@ -1521,7 +1513,7 @@
   gap: 6px;
   font-size: 11.5px;
   font-weight: 500;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
 }
 
 .vec-swatch-box {
@@ -1529,40 +1521,40 @@
   height: 13px;
   border-radius: 3px;
   display: inline-block;
-  border: 1px solid var(--slate-8, #c1c8cd);
-  background-color: var(--slate-1, #fcfcfd);
+  border: 1px solid var(--slate-8);
+  background-color: var(--slate-1);
 }
 
 .vec-swatch-box.mandatory {
   border-style: solid;
   border-width: 1.5px;
-  border-color: var(--slate-11, #687076);
+  border-color: var(--slate-11);
 }
 
 .vec-swatch-box.elective {
   border-style: dashed;
   border-width: 1.5px;
-  border-color: var(--slate-11, #687076);
+  border-color: var(--slate-11);
 }
 
 .vec-swatch-box.group-foundation {
-  background-color: #f4f9ff;
-  border-color: #7ab8f5;
+  background-color: var(--brand-soft);
+  border-color: var(--primary-base);
 }
 
 .vec-swatch-box.group-pedagogy {
-  background-color: #faf7ff;
-  border-color: #b79ef0;
+  background-color: var(--bg-muted);
+  border-color: var(--line-strong);
 }
 
 .vec-swatch-box.group-practice {
-  background-color: #f3fbf6;
-  border-color: #6fd49c;
+  background-color: var(--status-success-soft);
+  border-color: var(--status-success);
 }
 
 .vec-swatch-box.group-graduation {
-  background-color: #fff7f6;
-  border-color: #f09892;
+  background-color: var(--status-danger-soft);
+  border-color: var(--status-danger);
 }
 
 /* ==========================================================================
@@ -1578,10 +1570,10 @@
 
 /* Dropzone chuẩn Vectoria */
 .vec-dropzone {
-  border: 1.5px dashed var(--slate-7, #d7dfe3);
+  border: 1.5px dashed var(--slate-7);
   border-radius: 8px;
   padding: 18px 20px;
-  background-color: var(--slate-2, #f9f9fb);
+  background-color: var(--slate-2);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1591,29 +1583,29 @@
 }
 
 .vec-dropzone.dragging {
-  border-color: var(--blue-9, #0090ff);
-  background-color: var(--slate-1, #fcfcfd);
+  border-color: var(--blue-9);
+  background-color: var(--slate-1);
 }
 
 .vec-dropzone-title {
   font-size: 13.5px;
   font-weight: 700;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
   display: block;
   margin-bottom: 2px;
 }
 
 .vec-dropzone-sub {
   font-size: 12px;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
 }
 
 .vec-file-picker-btn {
   height: 36px;
   padding: 0 14px;
   border-radius: 6px;
-  background-color: var(--slate-12, #11181c);
-  color: #ffffff;
+  background-color: var(--slate-12);
+  color: var(--text-on-brand);
   font-family: var(--font-ui);
   font-size: 12.5px;
   font-weight: 600;
@@ -1625,7 +1617,7 @@
 }
 
 .vec-file-picker-btn:hover {
-  background-color: var(--blue-9, #0090ff);
+  background-color: var(--blue-9);
 }
 
 /* Bộ kịch bản mô phỏng kiểm thử UC08 */
@@ -1648,13 +1640,13 @@
 .vec-form-label {
   font-size: 12px;
   font-weight: 700;
-  color: var(--slate-12, #11181c);
+  color: var(--slate-12);
 }
 
 .vec-form-hint {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-  color: var(--slate-11, #687076);
+  color: var(--slate-11);
 }
 
 .vec-form-input,
@@ -1662,9 +1654,9 @@
 .vec-form-textarea {
   width: 100%;
   border-radius: 6px;
-  border: 1px solid var(--slate-7, #d7dfe3);
-  background-color: var(--slate-1, #fcfcfd);
-  color: var(--slate-12, #11181c);
+  border: 1px solid var(--slate-7);
+  background-color: var(--slate-1);
+  color: var(--slate-12);
   font-family: var(--font-ui);
   font-size: 13px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -1686,16 +1678,16 @@
 .vec-form-select:focus,
 .vec-form-textarea:focus {
   outline: none;
-  border-color: var(--blue-9, #0090ff);
-  box-shadow: 0 0 0 2px rgba(0, 144, 255, 0.12);
+  border-color: var(--blue-9);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .vec-template-btn {
   padding: 3px 8px;
   border-radius: 5px;
-  border: 1px solid var(--slate-7, #d7dfe3);
-  background-color: var(--slate-2, #f9f9fb);
-  color: var(--slate-12, #11181c);
+  border: 1px solid var(--slate-7);
+  background-color: var(--slate-2);
+  color: var(--slate-12);
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 600;
@@ -1704,51 +1696,12 @@
 }
 
 .vec-template-btn:hover {
-  border-color: var(--blue-9, #0090ff);
-  color: var(--blue-9, #0090ff);
+  border-color: var(--blue-9);
+  color: var(--blue-9);
 }
 
 /* Cột Phải: Trạm Kiểm định Nhị phân & 8 Tiêu chí (Binary & Hash Inspector) */
 
-/* Ẩn nút 3 gạch trên Desktop (> 768px) */
-.vec-mobile-menu-btn {
-  display: none !important;
-}
-
-/* Responsive Navigation for Mobile */
-@media (max-width: 768px) {
-  .vec-mobile-menu-btn {
-    display: inline-flex !important;
-  }
-  .vec-topbar {
-    padding: 0 14px;
-  }
-  .vec-nav-links {
-    display: none;
-    position: absolute;
-    top: 60px;
-    left: 0;
-    right: 0;
-    background: #ffffff;
-    flex-direction: column;
-    padding: 12px 16px;
-    gap: 8px;
-    border-bottom: 1px solid var(--slate-7, #d7dfe3);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-  }
-  .vec-nav-links.show-mobile {
-    display: flex;
-  }
-  .vec-nav-link {
-    height: 40px;
-    width: 100%;
-    padding: 0 8px;
-  }
-  .vec-nav-link.active::after {
-    left: 8px;
-    right: 8px;
-  }
-}
 
 /* ==========================================================================
    NÚT DÙNG CHUNG: btn-solid-primary & btn-ghost (đang được dùng toàn hệ thống)
@@ -1771,7 +1724,7 @@
 .btn-solid-primary {
   background-color: var(--primary-base);
   border: 1px solid var(--primary-base);
-  color: #ffffff;
+  color: var(--text-on-brand);
 }
 
 .btn-solid-primary:hover:not(:disabled) {
@@ -1796,7 +1749,8 @@
 }
 
 .btn-solid-primary:disabled,
-.btn-ghost:disabled {
-  opacity: 0.55;
+.btn-ghost:disabled {  background-color: var(--disabled-bg);
+  color: var(--disabled-text);
+  border-color: var(--disabled-bg);
   cursor: not-allowed;
 }

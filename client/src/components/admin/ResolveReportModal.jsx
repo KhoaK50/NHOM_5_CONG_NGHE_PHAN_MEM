@@ -9,7 +9,7 @@ const ACTION_COPY = {
     title: 'Xác nhận bỏ qua báo cáo?',
     confirm: 'Xác nhận bỏ qua',
     confirmBg: 'var(--primary-base)',
-    confirmColor: '#ffffff',
+    confirmColor: 'var(--text-on-brand)',
     consequences: ['Tài liệu vẫn hiển thị như hiện tại.', 'Người báo cáo nhận được thông báo kết quả xem xét.']
   },
   HIDE: {
@@ -19,7 +19,7 @@ const ACTION_COPY = {
     title: 'Xác nhận tạm ẩn tài liệu?',
     confirm: 'Xác nhận tạm ẩn',
     confirmBg: 'var(--amber-9)',
-    confirmColor: '#11181c',
+    confirmColor: 'var(--text-on-amber)',
     consequences: [
       'Tài liệu bị gỡ khỏi kho công khai và không tải được.',
       'Bình luận của tài liệu bị ẩn; bookmark vẫn được giữ để truy vết.',
@@ -33,7 +33,7 @@ const ACTION_COPY = {
     title: 'Xác nhận xóa tài liệu?',
     confirm: 'Xác nhận xóa',
     confirmBg: 'var(--red-9)',
-    confirmColor: '#ffffff',
+    confirmColor: 'var(--text-on-brand)',
     consequences: [
       'Tài liệu chuyển sang trạng thái đã xóa và không còn truy cập được.',
       'Bình luận bị ẩn; mã băm và nhật ký vẫn được giữ, nên tệp này không thể đóng góp lại.',
@@ -178,8 +178,7 @@ export default function ResolveReportModal({ report, action, submitting = false,
                 padding: '9px 18px',
                 fontWeight: 700,
                 fontSize: '13px',
-                cursor: submitting ? 'wait' : 'pointer',
-                opacity: submitting ? 0.7 : 1
+                cursor: submitting ? 'wait' : 'pointer'
               }}
             >
               {submitting ? 'Đang xử lý...' : copy.confirm}

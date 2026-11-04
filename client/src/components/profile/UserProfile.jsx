@@ -404,7 +404,7 @@ export default function UserProfile({
                         borderRadius: '50%',
                         background: p.gradient,
                         border: avatarPreset === p.id && !customAvatarUrl ? '3px solid var(--primary-base)' : '2px solid #ffffff',
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                        boxShadow: 'none',
                         cursor: 'pointer',
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -542,8 +542,7 @@ export default function UserProfile({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  padding: '10px 24px',
-                  opacity: infoSubmitting || avatarUploading ? 0.6 : 1
+                  padding: '10px 24px'
                 }}
               >
                 <Save size={15} />
@@ -788,8 +787,7 @@ export default function UserProfile({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  padding: '10px 24px',
-                  opacity: !isPwdFormValid || pwdSubmitting ? 0.5 : 1
+                  padding: '10px 24px'
                 }}
               >
                 <KeyRound size={15} />

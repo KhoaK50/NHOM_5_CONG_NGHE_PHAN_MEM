@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import { AlertCircle } from 'lucide-react'
 import { addDocumentComment, deleteDocumentComment, getDocumentComments, rateDocument } from '../../utils/interactionApi'
+import ConfirmDialog from '../common/ConfirmDialog'
 
 function formatDate(value) {
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('vi-VN')
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
 export default function RatingComments({
@@ -28,6 +31,7 @@ export default function RatingComments({
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
+  const [pendingDeleteId, setPendingDeleteId] = useState(null)
 
   const docId = documentItem?.id
 
@@ -65,7 +69,7 @@ export default function RatingComments({
         await rateDocument(docId, selectedStars)
       }
       if (text.trim()) {
-        await addDocumentComment(docId, { content: text.trim(), parentCommentId })
+        await addDocumentComment(docId, text.trim(), parentCommentId)
       }
       setCommentText('')
       setReplyingTo(null)
@@ -94,7 +98,7 @@ export default function RatingComments({
   }
 
   const handleDelete = async (commentId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa bình luận này?')) return
+    setPendingDeleteId(null)
     setError('')
     try {
       await deleteDocumentComment(docId, commentId)
@@ -107,9 +111,9 @@ export default function RatingComments({
   const canDelete = (comment) => isAuthenticated && (isOwner(comment) || currentUser?.role === 'ADMIN')
 
   return (
-    <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '18px 20px', boxShadow: 'var(--shadow-card)' }} aria-label="Đánh giá và bình luận">
+    <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '18px 20px', boxShadow: 'var(--shadow-card)' }} aria-label="Đánh giá">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid var(--border-subtle)' }}>
-        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Đánh giá & bình luận ({pagination.totalItems})</h3>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Đánh giá</h3>
         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{summary.totalRatings ? `★ ${Number(summary.average).toFixed(1)} · ${summary.totalRatings} lượt` : 'Chưa có đánh giá'}</span>
       </div>
 
@@ -129,7 +133,7 @@ export default function RatingComments({
                   background: 'none',
                   padding: 0,
                   cursor: 'pointer',
-                  color: star <= (hoverStar || selectedStars) ? 'var(--amber-9)' : 'var(--slate-7)',
+                  color: star <= (hoverStar || selectedStars) ? 'var(--accent-star)' : 'var(--line-strong)',
                   fontSize: 24
                 }}
               >
@@ -149,7 +153,7 @@ export default function RatingComments({
               resize: 'vertical',
               padding: 9,
               borderRadius: 7,
-              border: '1px solid var(--border-subtle)',
+              border: '1px solid var(--line-strong)',
               background: 'var(--bg-surface)',
               color: 'var(--text-primary)'
             }}
@@ -185,17 +189,17 @@ export default function RatingComments({
                   </button>
                 )}
                 {canDelete(comment) && (
-                  <button type="button" className="btn-ghost" onClick={() => handleDelete(comment.id)} style={{ padding: 0, fontSize: 11, color: 'var(--red-9)' }}>
+                  <button type="button" className="btn-ghost" onClick={() => setPendingDeleteId(comment.id)} style={{ padding: 0, fontSize: 11, color: 'var(--red-9)' }}>
                     Xóa
                   </button>
                 )}
               </div>
             </div>
             {comment.parentCommentId && <div style={{ marginBottom: 4, fontSize: 10, color: 'var(--text-tertiary)' }}>Phản hồi bình luận #{comment.parentCommentId}</div>}
-            <p style={{ margin: 0, fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{comment.content}</p>
+            <p style={{ margin: 0, fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{typeof comment.content === 'string' && comment.content !== '[object Object]' ? comment.content : 'Bình luận cũ không hiển thị được nội dung.'}</p>
             {replyingTo === comment.id && (
               <form onSubmit={(event) => submit(event, comment.id, replyText)} style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                <input value={replyText} onChange={(event) => setReplyText(event.target.value)} maxLength={2000} placeholder="Viết phản hồi…" style={{ flex: 1, minWidth: 0, padding: 7, border: '1px solid var(--border-subtle)', borderRadius: 6 }} />
+                <input value={replyText} onChange={(event) => setReplyText(event.target.value)} maxLength={2000} placeholder="Viết phản hồi…" style={{ flex: 1, minWidth: 0, padding: 7, border: '1px solid var(--line-strong)', borderRadius: 6, background: 'var(--bg-surface)', color: 'var(--text-primary)' }} />
                 <button className="btn-solid-primary" disabled={saving}>Gửi</button>
               </form>
             )}
@@ -206,6 +210,15 @@ export default function RatingComments({
         <button type="button" className="btn-ghost" disabled={loading} onClick={handleLoadMore} style={{ marginTop: 10, width: '100%' }}>
           Tải thêm bình luận
         </button>
+      )}
+      {pendingDeleteId !== null && (
+        <ConfirmDialog
+          title="Xóa bình luận này?"
+          message="Bình luận sẽ bị xóa khỏi tài liệu và không thể khôi phục."
+          confirmLabel="Xóa bình luận"
+          onConfirm={() => handleDelete(pendingDeleteId)}
+          onCancel={() => setPendingDeleteId(null)}
+        />
       )}
     </section>
   )

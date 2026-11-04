@@ -113,7 +113,7 @@ function SinglePdfPage({ pageNumber, pdfDoc, scale, rotation, onPageLoaded }) {
       <div
         style={{
           fontSize: '11px',
-          color: '#9aa0a6',
+          color: 'var(--text-secondary)',
           marginBottom: '6px',
           userSelect: 'none',
           fontFamily: 'monospace'
@@ -124,9 +124,9 @@ function SinglePdfPage({ pageNumber, pdfDoc, scale, rotation, onPageLoaded }) {
       <canvas
         ref={canvasRef}
         style={{
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.45), 0 1px 4px rgba(0, 0, 0, 0.3)',
+          boxShadow: 'none',
           borderRadius: '3px',
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--bg-paper)',
           display: 'block',
           maxWidth: '100%',
           height: 'auto'
@@ -206,6 +206,8 @@ export default function PdfPreviewViewer({
         if (!isMounted) return
 
         const loadingTask = pdfjsLib.getDocument({
+          // Tệp do người dùng tải lên: tắt eval để chặn lỗ hổng CVE-2024-4367 của pdf.js 3.x
+          isEvalSupported: false,
           data: new Uint8Array(arrayBuffer),
           cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
           cMapPacked: true
@@ -361,24 +363,25 @@ export default function PdfPreviewViewer({
   if (isOfficeDoc) {
     return (
       <div className="pdf-sandbox-card" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-        <div style={{ padding: '14px 18px', backgroundColor: '#323639', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '14px 18px', backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileText size={18} style={{ color: '#8ab4f8' }} />
+            <FileText size={18} style={{ color: 'var(--primary-base)' }} />
             <span style={{ fontWeight: 600, fontSize: '13px' }}>{documentItem.fileName}</span>
           </div>
           <button
             onClick={handleDownload}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#0077e6', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--primary-base)', color: 'var(--text-on-brand)', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
           >
             <Download size={14} />
-            <span>Tải tệp tin gốc</span>
+            <span>Tải tệp gốc</span>
           </button>
         </div>
         <iframe
-          src={`https://docs.google.com/viewer?url=${encodeURIComponent(documentItem.fileUrl || streamUrl)}&embedded=true`}
+          src={`https://docs.google.com/viewer?url=${encodeURIComponent(documentItem.fileUrl || documentItem.previewUrl || streamUrl)}&embedded=true`}
           title={documentItem.title}
-          style={{ width: '100%', height: '680px', border: 'none', backgroundColor: '#ffffff' }}
+          style={{ width: '100%', height: '680px', border: 'none', backgroundColor: 'var(--bg-paper)' }}
         />
+        <p className="office-viewer-hint">Không thấy nội dung? Tải tệp gốc để xem bằng Word hoặc PowerPoint.</p>
       </div>
     )
   }
@@ -390,9 +393,9 @@ export default function PdfPreviewViewer({
       style={{
         borderRadius: '8px',
         overflow: 'hidden',
-        border: '1px solid #3c4043',
-        backgroundColor: '#323639',
-        boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+        border: '1px solid var(--line-default)',
+        backgroundColor: 'var(--bg-surface)',
+        boxShadow: 'none',
         display: 'flex',
         flexDirection: 'column'
       }}
@@ -400,8 +403,8 @@ export default function PdfPreviewViewer({
       {/* THANH CÔNG CỤ CHUẨN CHROME PDF VIEWER (DARK SLATE TOOLBAR) */}
       <div
         style={{
-          backgroundColor: '#323639',
-          color: '#f1f3f4',
+          backgroundColor: 'var(--bg-surface)',
+          color: 'var(--text-primary)',
           minHeight: '48px',
           padding: '6px 14px',
           display: 'flex',
@@ -409,19 +412,19 @@ export default function PdfPreviewViewer({
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '10px',
-          borderBottom: '1px solid #202124',
+          borderBottom: '1px solid var(--line-default)',
           userSelect: 'none'
         }}
       >
         {/* Nhóm trái: Tiêu đề tệp & Trạng thái phân quyền */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-          <FileText size={18} style={{ color: '#8ab4f8', flexShrink: 0 }} />
+          <FileText size={18} style={{ color: 'var(--primary-base)', flexShrink: 0 }} />
           <span
             title={documentItem.fileName}
             style={{
               fontWeight: 600,
               fontSize: '13px',
-              color: '#e8eaed',
+              color: 'var(--text-primary)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -440,9 +443,9 @@ export default function PdfPreviewViewer({
                 fontSize: '11px',
                 padding: '2px 8px',
                 borderRadius: '12px',
-                backgroundColor: 'rgba(52, 168, 83, 0.2)',
-                color: '#81c995',
-                border: '1px solid rgba(52, 168, 83, 0.3)',
+                backgroundColor: 'var(--status-success-soft)',
+                color: 'var(--status-success)',
+                border: '1px solid var(--status-success)',
                 fontWeight: 600
               }}
             >
@@ -458,10 +461,12 @@ export default function PdfPreviewViewer({
                 fontSize: '11px',
                 padding: '2px 8px',
                 borderRadius: '12px',
-                backgroundColor: 'rgba(251, 188, 4, 0.2)',
-                color: '#fdd663',
-                border: '1px solid rgba(251, 188, 4, 0.3)',
-                fontWeight: 600
+                backgroundColor: 'var(--status-warning-soft)',
+                color: 'var(--status-warning)',
+                border: '1px solid var(--status-warning)',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               <Lock size={11} />
@@ -477,10 +482,10 @@ export default function PdfPreviewViewer({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              backgroundColor: '#202124',
+              backgroundColor: 'var(--bg-muted)',
               padding: '3px 8px',
               borderRadius: '6px',
-              border: '1px solid #3c4043'
+              border: '1px solid var(--line-default)'
             }}
           >
             <button
@@ -491,7 +496,7 @@ export default function PdfPreviewViewer({
               style={{
                 background: 'none',
                 border: 'none',
-                color: currentPage <= 1 ? '#5f6368' : '#e8eaed',
+                color: currentPage <= 1 ? 'var(--disabled-text)' : 'var(--text-primary)',
                 cursor: currentPage <= 1 ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -510,17 +515,17 @@ export default function PdfPreviewViewer({
               style={{
                 width: '32px',
                 textAlign: 'center',
-                backgroundColor: '#323639',
-                border: '1px solid #5f6368',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--line-strong)',
                 borderRadius: '4px',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 fontSize: '12px',
                 padding: '2px 0',
                 outline: 'none'
               }}
             />
 
-            <span style={{ fontSize: '12px', color: '#9aa0a6' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
               / {maxAccessiblePages}
             </span>
 
@@ -532,7 +537,7 @@ export default function PdfPreviewViewer({
               style={{
                 background: 'none',
                 border: 'none',
-                color: currentPage >= maxAccessiblePages ? '#5f6368' : '#e8eaed',
+                color: currentPage >= maxAccessiblePages ? 'var(--disabled-text)' : 'var(--text-primary)',
                 cursor: currentPage >= maxAccessiblePages ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -554,7 +559,7 @@ export default function PdfPreviewViewer({
             style={{
               background: 'none',
               border: 'none',
-              color: '#e8eaed',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               padding: '6px',
               borderRadius: '4px',
@@ -570,13 +575,13 @@ export default function PdfPreviewViewer({
             title="Bấm để căn vừa trang"
             style={{
               fontSize: '12px',
-              color: '#e8eaed',
+              color: 'var(--text-primary)',
               minWidth: '42px',
               textAlign: 'center',
               cursor: 'pointer',
               padding: '2px 4px',
               borderRadius: '4px',
-              backgroundColor: '#202124',
+              backgroundColor: 'var(--bg-muted)',
               userSelect: 'none'
             }}
           >
@@ -590,7 +595,7 @@ export default function PdfPreviewViewer({
             style={{
               background: 'none',
               border: 'none',
-              color: '#e8eaed',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               padding: '6px',
               borderRadius: '4px',
@@ -608,7 +613,7 @@ export default function PdfPreviewViewer({
             style={{
               background: 'none',
               border: 'none',
-              color: '#e8eaed',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               padding: '6px',
               borderRadius: '4px',
@@ -626,7 +631,7 @@ export default function PdfPreviewViewer({
             style={{
               background: 'none',
               border: 'none',
-              color: '#e8eaed',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               padding: '6px',
               borderRadius: '4px',
@@ -644,7 +649,7 @@ export default function PdfPreviewViewer({
             style={{
               background: 'none',
               border: 'none',
-              color: '#e8eaed',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               padding: '6px',
               borderRadius: '4px',
@@ -655,7 +660,7 @@ export default function PdfPreviewViewer({
             {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
           </button>
 
-          <div style={{ width: '1px', height: '18px', backgroundColor: '#5f6368', margin: '0 4px' }} />
+          <div style={{ width: '1px', height: '18px', backgroundColor: 'var(--line-strong)', margin: '0 4px' }} />
 
           {/* Nút In ấn */}
           <button
@@ -665,7 +670,7 @@ export default function PdfPreviewViewer({
             style={{
               background: 'none',
               border: 'none',
-              color: '#e8eaed',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               padding: '6px',
               borderRadius: '4px',
@@ -684,7 +689,7 @@ export default function PdfPreviewViewer({
             style={{
               background: 'none',
               border: 'none',
-              color: copiedLink ? '#81c995' : '#e8eaed',
+              color: copiedLink ? 'var(--status-success)' : 'var(--text-primary)',
               cursor: 'pointer',
               padding: '6px',
               borderRadius: '4px',
@@ -701,9 +706,9 @@ export default function PdfPreviewViewer({
             onClick={handleDownload}
             title="Tải xuống tệp tin gốc (.pdf)"
             style={{
-              backgroundColor: '#0077e6',
+              backgroundColor: 'var(--primary-base)',
               border: 'none',
-              color: '#ffffff',
+              color: 'var(--text-on-brand)',
               cursor: 'pointer',
               padding: '5px 12px',
               borderRadius: '6px',
@@ -724,7 +729,7 @@ export default function PdfPreviewViewer({
       <div
         ref={scrollContainerRef}
         style={{
-          backgroundColor: '#525659',
+          backgroundColor: 'var(--bg-muted)',
           minHeight: '750px',
           maxHeight: isFullscreen ? 'calc(100vh - 48px)' : '850px',
           overflowY: 'auto',
@@ -742,12 +747,12 @@ export default function PdfPreviewViewer({
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: '400px',
-              color: '#e8eaed'
+              color: 'var(--text-primary)'
             }}
           >
-            <Loader2 size={36} className="spin" style={{ color: '#8ab4f8', marginBottom: '14px' }} />
+            <Loader2 size={36} className="spin" style={{ color: 'var(--primary-base)', marginBottom: '14px' }} />
             <div style={{ fontSize: '14px', fontWeight: 600 }}>Đang chuẩn bị hiển thị học liệu...</div>
-            <div style={{ fontSize: '12px', color: '#9aa0a6', marginTop: '4px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
               Giải mã trang tài liệu bằng PDF.js Engine
             </div>
           </div>
@@ -762,16 +767,16 @@ export default function PdfPreviewViewer({
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: '380px',
-              color: '#fff',
+              color: 'var(--text-primary)',
               textAlign: 'center',
               padding: '24px'
             }}
           >
-            <AlertCircle size={44} style={{ color: '#f28b82', marginBottom: '12px' }} />
+            <AlertCircle size={44} style={{ color: 'var(--status-danger)', marginBottom: '12px' }} />
             <div style={{ fontSize: '15px', fontWeight: 700, marginBottom: '6px' }}>
               Không thể hiển thị bản xem trước trực tiếp
             </div>
-            <div style={{ fontSize: '13px', color: '#dadce0', maxWidth: '420px', marginBottom: '20px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-primary)', maxWidth: '420px', marginBottom: '20px' }}>
               {loadError}
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -783,8 +788,8 @@ export default function PdfPreviewViewer({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  backgroundColor: '#3c4043',
-                  color: '#fff',
+                  backgroundColor: 'var(--bg-hover)',
+                  color: 'var(--text-primary)',
                   padding: '8px 16px',
                   borderRadius: '6px',
                   fontSize: '13px',
@@ -802,8 +807,8 @@ export default function PdfPreviewViewer({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  backgroundColor: '#0077e6',
-                  color: '#fff',
+                  backgroundColor: 'var(--primary-base)',
+                  color: 'var(--text-on-brand)',
                   border: 'none',
                   padding: '8px 16px',
                   borderRadius: '6px',
@@ -840,10 +845,10 @@ export default function PdfPreviewViewer({
                   width: '100%',
                   margin: '16px auto 32px auto',
                   padding: '24px 28px',
-                  backgroundColor: '#202124',
+                  backgroundColor: 'var(--bg-muted)',
                   borderRadius: '12px',
-                  border: '1px solid #3c4043',
-                  boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)',
+                  border: '1px solid var(--line-default)',
+                  boxShadow: 'none',
                   textAlign: 'center'
                 }}
               >
@@ -852,8 +857,8 @@ export default function PdfPreviewViewer({
                     width: '48px',
                     height: '48px',
                     borderRadius: '50%',
-                    backgroundColor: 'rgba(251, 188, 4, 0.15)',
-                    color: '#fdd663',
+                    backgroundColor: 'var(--status-warning-soft)',
+                    color: 'var(--status-warning)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -863,11 +868,11 @@ export default function PdfPreviewViewer({
                   <Lock size={24} />
                 </div>
 
-                <div style={{ fontSize: '16px', fontWeight: 700, color: '#e8eaed', marginBottom: '8px' }}>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
                   Giới hạn xem trước 3/{numPages} trang (Quy định UC06)
                 </div>
 
-                <p style={{ fontSize: '13.5px', color: '#9aa0a6', lineHeight: 1.6, marginBottom: '20px' }}>
+                <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '20px' }}>
                   Bạn đang trải nghiệm chế độ đọc thử dành cho <strong>Khách vãng lai</strong>. Để tiếp tục đọc toàn văn{' '}
                   <strong>từ trang 4 đến trang {numPages}</strong> cũng như tải tệp tin gốc về máy cá nhân, vui lòng đăng nhập
                   bằng tài khoản Sinh viên / Giảng viên HCMUE.
@@ -880,15 +885,15 @@ export default function PdfPreviewViewer({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '8px',
-                    backgroundColor: '#0077e6',
-                    color: '#ffffff',
+                    backgroundColor: 'var(--primary-base)',
+                    color: 'var(--text-on-brand)',
                     border: 'none',
                     padding: '10px 24px',
                     borderRadius: '8px',
                     fontSize: '13.5px',
                     fontWeight: 700,
                     cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(0, 119, 230, 0.4)'
+                    boxShadow: 'none'
                   }}
                 >
                   <LogIn size={16} />

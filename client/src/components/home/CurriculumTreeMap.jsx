@@ -798,7 +798,7 @@ export default function CurriculumTreeMap({
                       markerHeight="6"
                       orient="auto"
                     >
-                      <path d="M 0 1 L 6.8 4 L 0 7 z" fill="#d97706" />
+                      <path d="M 0 1 L 6.8 4 L 0 7 z" fill="var(--status-warning)" />
                     </marker>
                     <marker
                       id="vec-ortho-arrow-next"
@@ -820,7 +820,7 @@ export default function CurriculumTreeMap({
                       markerHeight="5.5"
                       orient="auto"
                     >
-                      <path d="M 0 1 L 6.8 4 L 0 7 z" fill="#0d74ce" />
+                      <path d="M 0 1 L 6.8 4 L 0 7 z" fill="var(--primary-base)" />
                     </marker>
                   </defs>
 
