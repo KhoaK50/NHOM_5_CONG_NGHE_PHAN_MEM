@@ -7,9 +7,9 @@ import {
   BookOpen,
   HelpCircle,
   Send,
-  AlertCircle,
-  CheckCircle2
+  AlertCircle
 } from 'lucide-react'
+import { BACKEND_PENDING_MESSAGE } from '../../utils/documentCourseApi'
 
 const FEEDBACK_CATEGORIES = [
   {
@@ -45,15 +45,13 @@ const FEEDBACK_CATEGORIES = [
 export default function FeedbackModal({
   isOpen,
   onClose,
-  currentUser,
-  onSubmitFeedback
+  currentUser
 }) {
   const [category, setCategory] = useState('FEATURE_REQUEST')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [contactEmail, setContactEmail] = useState(currentUser?.email || '')
   const [errorMsg, setErrorMsg] = useState('')
-  const [isSubmitted, setIsSubmitted] = useState(false)
 
   if (!isOpen) return null
 
@@ -78,33 +76,7 @@ export default function FeedbackModal({
       return
     }
 
-    setErrorMsg('')
-
-    const payload = {
-      id: `fb-${Date.now()}`,
-      category,
-      categoryLabel: FEEDBACK_CATEGORIES.find((c) => c.id === category)?.label || category,
-      title: trimmedTitle,
-      content: trimmedContent,
-      contactEmail: trimmedEmail || currentUser?.email || 'Chưa cung cấp',
-      userId: currentUser?.id || 'guest',
-      userName: currentUser?.fullName || 'Khách vãng lai',
-      userRole: currentUser?.role || 'GUEST',
-      createdAt: new Date().toISOString(),
-      status: 'RECEIVED'
-    }
-
-    if (onSubmitFeedback) {
-      onSubmitFeedback(payload)
-    }
-
-    setIsSubmitted(true)
-    setTimeout(() => {
-      setIsSubmitted(false)
-      setTitle('')
-      setContent('')
-      if (onClose) onClose()
-    }, 1800)
+    setErrorMsg(BACKEND_PENDING_MESSAGE)
   }
 
   return (
@@ -166,26 +138,6 @@ export default function FeedbackModal({
           Ban Quản trị Khoa CNTT trân trọng mọi phản ánh về lỗi kỹ thuật, đề xuất tài liệu học tập và sáng kiến trải nghiệm người dùng.
         </p>
 
-        {isSubmitted ? (
-          <div
-            style={{
-              padding: '36px 20px',
-              textAlign: 'center',
-              backgroundColor: 'var(--green-2)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--green-4)',
-              margin: '12px 0'
-            }}
-          >
-            <CheckCircle2 size={42} style={{ color: 'var(--green-9)', margin: '0 auto 12px' }} />
-            <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', fontWeight: 800, color: 'var(--green-12)' }}>
-              Cảm ơn đóng góp quý báu của bạn!
-            </h3>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--green-11)' }}>
-              Phản ánh đã được chuyển tới Ban Quản trị. Chúng tôi sẽ nghiên cứu và phản hồi sớm nhất qua email.
-            </p>
-          </div>
-        ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Báo lỗi validate */}
             {errorMsg && (
@@ -357,7 +309,6 @@ export default function FeedbackModal({
               </button>
             </div>
           </form>
-        )}
       </div>
     </div>
   )

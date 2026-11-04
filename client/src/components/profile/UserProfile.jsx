@@ -1,12 +1,6 @@
 import { useState, useRef } from 'react'
 import {
-  User,
   KeyRound,
-  FileText,
-  Bookmark,
-  History,
-  Coins,
-  ShieldCheck,
   CheckCircle2,
   XCircle,
   Eye,
@@ -20,8 +14,6 @@ import {
   Loader2,
   Trash2
 } from 'lucide-react'
-import MyDocuments from './MyDocuments'
-import SavedBookmarks from './SavedBookmarks'
 import { AuthGuard, getApiBaseUrl } from '../../utils/authGuard'
 
 const COHORT_OPTIONS = [
@@ -47,15 +39,11 @@ export default function UserProfile({
   currentUser,
   initialTab = 'info',
   documents = [],
-  bookmarkedIds = [],
   downloadHistory = [],
   onUpdateProfile,
   onAvatarUploaded,
   onChangePassword,
-  onSelectDoc,
-  onToggleBookmark,
-  onOpenUpload,
-  onNavigateDiscovery
+  onSelectDoc
 }) {
   const [activeTab, setActiveTab] = useState(initialTab)
 
@@ -86,15 +74,7 @@ export default function UserProfile({
   const [pwdSuccess, setPwdSuccess] = useState('')
   const [pwdSubmitting, setPwdSubmitting] = useState(false)
 
-  // Metrics
-  const myUploadedDocs = documents.filter(
-    (d) =>
-      d.uploaderId === currentUser?.id ||
-      (d.uploaderName && currentUser?.fullName && d.uploaderName.includes(currentUser.fullName))
-  )
-  const approvedCount = myUploadedDocs.filter((d) => d.status === 'APPROVED').length
-  const pendingCount = myUploadedDocs.filter((d) => d.status === 'PENDING').length
-  const bookmarksCount = bookmarkedIds.length
+
 
   // Password Checklist validation
   const pwdChecklist = [
@@ -145,7 +125,7 @@ export default function UserProfile({
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || data.status !== 'success') {
-        throw new Error(data.message || 'Không thể tải ảnh đại diện lên Cloudinary.')
+        throw new Error(data.message || 'Không thể tải ảnh đại diện lên.')
       }
 
       const uploadedUrl = data.avatarUrl || data.user?.avatar_url || data.user?.avatarUrl || ''
@@ -159,7 +139,7 @@ export default function UserProfile({
       }
 
       setInfoSuccess(
-        data.message || 'Đã tải ảnh đại diện lên Cloudinary và cập nhật hồ sơ thành công.'
+        data.message || 'Đã cập nhật ảnh đại diện.'
       )
       setTimeout(() => setInfoSuccess(''), 4500)
     } catch (err) {
@@ -233,12 +213,10 @@ export default function UserProfile({
     }
   }
 
-  const selectedPresetObj = AVATAR_PRESETS.find((p) => p.id === avatarPreset) || AVATAR_PRESETS[0]
-  const avatarInitials = currentUser?.avatarInitials || (fullName ? fullName.split(' ').slice(-1)[0]?.slice(0, 2).toUpperCase() : 'TV')
+
 
   return (
     <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Hidden File Input for Cloudinary Avatar Upload */}
       <input
         ref={avatarFileInputRef}
         type="file"
@@ -247,249 +225,31 @@ export default function UserProfile({
         style={{ display: 'none' }}
       />
 
-      {/* 1. Profile Header Card */}
-      <section
-        style={{
-          backgroundColor: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-xl)',
-          padding: '24px 28px',
-          boxShadow: 'var(--shadow-card)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '20px'
-        }}
-        aria-label="Thông tin tổng quan sinh viên"
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', minWidth: 0 }}>
-          {/* Circular Avatar */}
-          <div
-            onClick={() => !avatarUploading && avatarFileInputRef.current?.click()}
-            title="Nhấn để tải ảnh đại diện từ thiết bị lên Cloudinary"
-            style={{
-              width: '72px',
-              height: '72px',
-              borderRadius: '50%',
-              background: customAvatarUrl ? 'none' : selectedPresetObj.gradient,
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: '24px',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(0, 144, 255, 0.25)',
-              overflow: 'hidden',
-              border: '2px solid #ffffff',
-              cursor: avatarUploading ? 'wait' : 'pointer',
-              position: 'relative'
-            }}
-          >
-            {customAvatarUrl ? (
-              <img
-                src={customAvatarUrl}
-                alt={fullName}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                onError={(e) => {
-                  e.target.style.display = 'none'
-                }}
-              />
-            ) : (
-              <span>{avatarInitials}</span>
-            )}
-          </div>
+      <header>
+        <h1 className="page-title">Hồ sơ cá nhân</h1>
+        <p className="page-sub">
+          {currentUser?.email || 'Chưa cập nhật email'}
+          {currentUser?.role !== 'ADMIN' && ` · ${currentUser?.points ?? 0} điểm`}
+        </p>
+      </header>
 
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
-              <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {fullName}
-              </h1>
-              <span className="status-badge blue" style={{ fontWeight: 700 }}>
-                {cohort} Sư phạm Tin học
-              </span>
-              <span className="status-badge green" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <ShieldCheck size={12} />
-                <span>HCMUE Verified</span>
-              </span>
-            </div>
-
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-              <span>{currentUser?.email || 'Chưa cập nhật email'}</span>
-              <span>•</span>
-              <span>MSSV: <strong>{studentId || 'Chưa cập nhật'}</strong></span>
-              <span>•</span>
-              <span style={{ color: 'var(--text-tertiary)' }}>Khoa Công nghệ Thông tin</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Points Balance Pill */}
-        <div
-          style={{
-            padding: '12px 18px',
-            borderRadius: '12px',
-            backgroundColor: 'var(--amber-1, #fff9ed)',
-            border: '1.5px solid var(--amber-3, #ffe3a2)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
-          }}
-        >
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              backgroundColor: 'var(--amber-2)',
-              color: 'var(--amber-9)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Coins size={20} />
-          </div>
-          <div>
-            <span style={{ display: 'block', fontSize: '11.5px', color: 'var(--amber-11)', fontWeight: 600 }}>
-              Ví điểm cống hiến
-            </span>
-            <strong style={{ fontSize: '18px', color: 'var(--amber-12)', fontWeight: 800 }}>
-              {currentUser?.points ?? 140} điểm
-            </strong>
-          </div>
-        </div>
-      </section>
-
-      {/* Metric Counter Chips */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '14px'
-        }}
-      >
-        <div
-          onClick={() => setActiveTab('my-docs')}
-          style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '12px',
-            padding: '14px 18px',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-sm)',
-            transition: 'border-color 0.2s ease'
-          }}
-        >
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '2px' }}>
-            Tài liệu đã đăng
-          </span>
-          <strong style={{ fontSize: '20px', color: 'var(--text-primary)' }}>{myUploadedDocs.length}</strong>
-        </div>
-
-        <div
-          onClick={() => setActiveTab('my-docs')}
-          style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '12px',
-            padding: '14px 18px',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '2px' }}>
-            Đã phê duyệt (+20đ/bản)
-          </span>
-          <strong style={{ fontSize: '20px', color: 'var(--green-7)' }}>{approvedCount}</strong>
-        </div>
-
-        <div
-          onClick={() => setActiveTab('my-docs')}
-          style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '12px',
-            padding: '14px 18px',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '2px' }}>
-            Đang chờ thẩm định
-          </span>
-          <strong style={{ fontSize: '20px', color: 'var(--amber-7)' }}>{pendingCount}</strong>
-        </div>
-
-        <div
-          onClick={() => setActiveTab('bookmarks')}
-          style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '12px',
-            padding: '14px 18px',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '2px' }}>
-            Tủ tài liệu đã lưu
-          </span>
-          <strong style={{ fontSize: '20px', color: 'var(--primary-base)' }}>{bookmarksCount}</strong>
-        </div>
-      </div>
-
-      {/* 2. Tab Bar Navigation */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '6px',
-          borderBottom: '2px solid var(--slate-3)',
-          paddingBottom: '2px',
-          overflowX: 'auto'
-        }}
-        role="tablist"
-        aria-label="Các phân hệ hồ sơ sinh viên"
-      >
+      <div className="underline-tabs" role="tablist" aria-label="Các mục hồ sơ">
         {[
-          { id: 'info', label: 'Thông tin cá nhân', icon: User },
-          { id: 'password', label: 'Bảo mật & Mật khẩu', icon: KeyRound },
-          { id: 'my-docs', label: `Tài liệu của tôi (${myUploadedDocs.length})`, icon: FileText },
-          { id: 'bookmarks', label: `Tủ đã lưu (${bookmarksCount})`, icon: Bookmark },
-          { id: 'history', label: 'Lịch sử tải xuống', icon: History }
-        ].map((tab) => {
-          const TabIcon = tab.icon
-          const isActive = activeTab === tab.id
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: '9px 16px',
-                borderRadius: '8px 8px 0 0',
-                border: 'none',
-                backgroundColor: isActive ? 'var(--bg-surface)' : 'transparent',
-                color: isActive ? 'var(--primary-base)' : 'var(--text-secondary)',
-                fontWeight: isActive ? 800 : 600,
-                fontSize: '13px',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '7px',
-                borderBottom: isActive ? '2px solid var(--primary-base)' : '2px solid transparent',
-                marginBottom: '-4px',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              <TabIcon size={14} />
-              <span>{tab.label}</span>
-            </button>
-          )
-        })}
+          { id: 'info', label: 'Thông tin cá nhân' },
+          { id: 'password', label: 'Bảo mật' },
+          { id: 'history', label: 'Lịch sử tải xuống' }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            className={`underline-tab ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* 3. Tab Panels */}
@@ -507,10 +267,10 @@ export default function UserProfile({
         >
           <div style={{ marginBottom: '20px' }}>
             <h2 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
-              Thông tin Cá nhân & Khóa học HCMUE
+              Thông tin cá nhân
             </h2>
             <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
-              Quản lý danh tính sinh viên, thông tin khóa học và giao diện đại diện trên hệ thống 5share.
+              Cập nhật họ tên, mã số sinh viên, khóa học và ảnh đại diện.
             </p>
           </div>
 
@@ -545,7 +305,7 @@ export default function UserProfile({
                   htmlFor="profile-email"
                   style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}
                 >
-                  Email tài khoản (Xác thực HCMUE):
+                  Email:
                 </label>
                 <input
                   id="profile-email"
@@ -598,7 +358,7 @@ export default function UserProfile({
                   htmlFor="profile-cohort"
                   style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}
                 >
-                  Khóa học (Hợp lệ K48 – K52):
+                  Khóa học:
                 </label>
                 <select
                   id="profile-cohort"
@@ -626,7 +386,7 @@ export default function UserProfile({
             {/* Avatar Selector + Cloudinary Upload */}
             <div>
               <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-                Ảnh đại diện hiển thị (Tải ảnh lên Cloudinary hoặc chọn bảng màu):
+                Ảnh đại diện
               </label>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -681,7 +441,7 @@ export default function UserProfile({
                   {avatarUploading ? (
                     <>
                       <Loader2 size={15} className="spin-loader" />
-                      <span>Đang tải ảnh lên Cloudinary...</span>
+                      <span>Đang tải ảnh lên...</span>
                     </>
                   ) : (
                     <>
@@ -719,7 +479,7 @@ export default function UserProfile({
               <div style={{ marginTop: '10px' }}>
                 <input
                   type="url"
-                  placeholder="Hoặc dán đường dẫn ảnh đại diện (URL Cloudinary / HTTPS)..."
+                  placeholder="Hoặc dán đường dẫn ảnh (https://...)"
                   value={customAvatarUrl}
                   onChange={(e) => setCustomAvatarUrl(e.target.value)}
                   style={{
@@ -734,19 +494,6 @@ export default function UserProfile({
                   }}
                 />
               </div>
-            </div>
-
-            {/* Read-only department */}
-            <div
-              style={{
-                padding: '10px 14px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--bg-muted)',
-                fontSize: '12.5px',
-                color: 'var(--text-secondary)'
-              }}
-            >
-              <strong>Đơn vị đào tạo:</strong> Ngành Sư phạm Tin học — Khoa Công nghệ Thông tin, Trường Đại học Sư phạm TP.HCM.
             </div>
 
             {infoError && (
@@ -801,7 +548,7 @@ export default function UserProfile({
                 }}
               >
                 <Save size={15} />
-                <span>{infoSubmitting ? 'Đang lưu...' : 'Lưu thay đổi hồ sơ'}</span>
+                <span>{infoSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
               </button>
             </div>
           </form>
@@ -1052,27 +799,6 @@ export default function UserProfile({
             </div>
           </form>
         </section>
-      )}
-
-      {/* Tab 3: My Documents */}
-      {activeTab === 'my-docs' && (
-        <MyDocuments
-          documents={documents}
-          currentUser={currentUser}
-          onSelectDoc={onSelectDoc}
-          onOpenUpload={onOpenUpload}
-        />
-      )}
-
-      {/* Tab 4: Bookmarks */}
-      {activeTab === 'bookmarks' && (
-        <SavedBookmarks
-          documents={documents}
-          bookmarkedIds={bookmarkedIds}
-          onSelectDoc={onSelectDoc}
-          onToggleBookmark={onToggleBookmark}
-          onNavigateDiscovery={onNavigateDiscovery}
-        />
       )}
 
       {/* Tab 5: Download History */}

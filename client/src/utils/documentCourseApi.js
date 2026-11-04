@@ -107,6 +107,9 @@ export function deleteCourse(id) {
   return request(`/api/admin/courses/${id}`, { method: 'DELETE' })
 }
 
+// Máy chủ chưa có API cho chức năng này nên giao diện không được báo đã gửi thành công
+export const BACKEND_PENDING_MESSAGE = 'Chức năng này chưa kết nối máy chủ nên nội dung chưa được gửi.'
+
 // Nhãn hiển thị cho các giá trị trong CSDL
 export const AUTO_CRITERIA = [
   { key: 'metadataComplete', title: 'Thông tin tài liệu đầy đủ', hint: 'Tiêu đề, mô tả, môn học, loại tài liệu' },

@@ -1,5 +1,4 @@
-import { DOCUMENT_TYPES } from '../../data/mockData'
-import { FileText } from 'lucide-react'
+import { DOCUMENT_TYPES } from '../../data/curriculum'
 
 const DESCRIPTION_TEMPLATES = {
   'KHBD Công văn 5512':
@@ -27,7 +26,6 @@ export default function MetadataForm({
 }) {
   const activeCourses = courses.filter((c) => c.isActive)
   const validDocTypes = DOCUMENT_TYPES.filter((t) => t !== 'Tất cả loại học liệu')
-  const selectedCourseObj = activeCourses.find((c) => c.code === courseCode)
 
   const handleApplyTemplate = () => {
     const tpl =
@@ -42,7 +40,7 @@ export default function MetadataForm({
       <div className="vec-form-field">
         <div className="vec-form-label-row">
           <label htmlFor="upload-doc-title" className="vec-form-label">
-            Tiêu đề tài liệu
+            Tiêu đề
           </label>
           <span className="vec-form-hint">
             {title.trim().length} / 10 ký tự tối thiểu
@@ -71,11 +69,6 @@ export default function MetadataForm({
             <label htmlFor="upload-course-select" className="vec-form-label">
               Môn học
             </label>
-            {selectedCourseObj && (
-              <span className="vec-form-hint">
-                {selectedCourseObj.knowledgeBlock}
-              </span>
-            )}
           </div>
           <select
             id="upload-course-select"
@@ -85,7 +78,7 @@ export default function MetadataForm({
           >
             {activeCourses.map((crs) => (
               <option key={crs.id} value={crs.code}>
-                {crs.code} – {crs.name} ({crs.semester} • {crs.credits} tín chỉ)
+                {crs.code} – {crs.name}
               </option>
             ))}
           </select>
@@ -116,7 +109,7 @@ export default function MetadataForm({
       <div className="vec-form-field">
         <div className="vec-form-label-row">
           <label htmlFor="upload-doc-desc" className="vec-form-label">
-            Mô tả tóm tắt nội dung
+            Mô tả
           </label>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <span className="vec-form-hint">
@@ -128,7 +121,6 @@ export default function MetadataForm({
               onClick={handleApplyTemplate}
               title={`Chèn mô tả gợi ý cho ${docType}`}
             >
-              <FileText size={11} style={{ marginRight: '4px', verticalAlign: '-1px' }} />
               Chèn mô tả gợi ý
             </button>
           </div>
@@ -139,7 +131,7 @@ export default function MetadataForm({
           className="vec-form-textarea"
           value={description}
           onChange={(e) => onChangeDescription(e.target.value)}
-          placeholder="Mô tả tóm tắt nội dung trọng tâm, mục tiêu bài học hoặc phạm vi kiến thức..."
+          placeholder="Tóm tắt nội dung, ít nhất 15 ký tự"
         />
       </div>
     </div>

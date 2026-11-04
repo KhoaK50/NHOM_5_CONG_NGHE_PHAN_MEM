@@ -64,8 +64,8 @@ export default function SavedBookmarks({ onSelectDoc, onToggleBookmark, onNaviga
     <section>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
         <div>
-          <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800, color: 'var(--text-primary)' }}>Tài liệu đã lưu</h2>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>{items.length} tài liệu trong tủ cá nhân của bạn.</p>
+          <h1 className="page-title">Tài liệu đã lưu</h1>
+          <p className="page-sub">{items.length} tài liệu</p>
         </div>
         <div style={{ position: 'relative' }}>
           <Search size={14} style={{ position: 'absolute', left: 10, top: 11, color: 'var(--text-tertiary)' }} />
@@ -74,7 +74,7 @@ export default function SavedBookmarks({ onSelectDoc, onToggleBookmark, onNaviga
       </header>
 
       {error && <div role="alert" className="empty-state-box" style={{ marginBottom: 12 }}>Có lỗi: {error} <button type="button" className="btn-ghost" onClick={() => setReloadKey((k) => k + 1)}>Tải lại</button></div>}
-      {loading ? <div className="empty-state-box">Đang tải tủ tài liệu từ cơ sở dữ liệu…</div> : filtered.length === 0 ? (
+      {loading ? <div className="empty-state-box">Đang tải danh sách…</div> : filtered.length === 0 ? (
         <div className="empty-state-box"><FolderOpen size={36} /><h3>{items.length ? 'Không tìm thấy tài liệu phù hợp' : 'Tủ tài liệu đang trống'}</h3><p>Lưu tài liệu đã phát hành để tìm lại và tải PDF gốc khi cần.</p>{!items.length && <button type="button" className="btn-solid-primary" onClick={onNavigateDiscovery}>Khám phá tài liệu</button>}</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 14 }}>

@@ -142,16 +142,13 @@ html, body {
 }
 
 /* Toàn bộ giao diện người dùng (UI) thống nhất dùng font Be Vietnam Pro */
-h1, h2, h3, h4, h5, h6, .card-title, .vec-topbar, .btn, input, button, select, textarea {
+h1, h2, h3, h4, h5, h6, .vec-topbar, input, button, select, textarea {
   font-family: var(--font-ui);
   letter-spacing: -0.015em;
   line-height: 1.28;
 }
 
 /* Dành riêng cho nội dung tài liệu học thuật & PDF preview */
-.academic-font, .article-content, .document-reader, .doc-body-preview {
-  font-family: var(--font-academic);
-}
 
 a {
   color: var(--primary-base);
