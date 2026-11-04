@@ -21,20 +21,13 @@ import CourseManagement from './components/admin/CourseManagement'
 import AdminDashboard from './components/admin/AdminDashboard'
 import UserManagement from './components/admin/UserManagement'
 import FeedbackModal from './components/document/FeedbackModal'
-import KiemThuTramHarness from './components/testing/KiemThuTramHarness'
 import { api, subscribeNotifications } from './api/notificationReportApi'
 import MyDocuments from './components/library/MyDocuments'
 import SavedBookmarks from './components/library/SavedBookmarks'
 import UserProfile from './components/profile/UserProfile'
-import BountyBoard from './components/bounty/BountyBoard'
 import { AuthGuard, getApiBaseUrl } from './utils/authGuard'
 import {
-  INITIAL_NOTIFICATIONS,
-  INITIAL_REPORTS,
-  INITIAL_BOUNTIES,
-  INITIAL_DOWNLOAD_HISTORY,
   INITIAL_USERS,
-  INITIAL_FEEDBACKS,
   INITIAL_COURSES
 } from './data/mockData'
 import { listPublicCourses, listModerationDocuments, listReports, uploadDocument } from './utils/documentCourseApi'
@@ -83,6 +76,13 @@ function normalizeCourse(apiCourse) {
 }
 
 export default function App() {
+  const [userSession, setUserSession] = useState(() => {
+    const saved = AuthGuard.getSavedUserProfile()
+    if (saved && AuthGuard.getAuthToken()) {
+      return saved
+    }
+    return null
+  })
   const [actorRole, setActorRole] = useState(() => {
     const saved = AuthGuard.getSavedUserProfile()
     if (saved && AuthGuard.getAuthToken()) {
@@ -106,19 +106,31 @@ export default function App() {
 
   const [courses, setCourses] = useState(() => INITIAL_COURSES.map(normalizeCourse))
   const [documents, setDocuments] = useState([])
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
+  const [notifications, setNotifications] = useState([])
+  const [reports, setReports] = useState([])
+  const [users, setUsers] = useState(INITIAL_USERS)
+  const [feedbacks, setFeedbacks] = useState([])
+  const [downloadHistory, setDownloadHistory] = useState([])
+  const [bookmarkedIds, setBookmarkedIds] = useState([])
+  const [selectedDocId, setSelectedDocId] = useState(null)
+  const [bannerNotice, setBannerNotice] = useState(null)
+  const [adminPendingCount, setAdminPendingCount] = useState(0)
+
+  const showNotice = useCallback((text) => {
+    setBannerNotice(text)
+    setTimeout(() => setBannerNotice(null), 4500)
+  }, [setBannerNotice])
 
   useEffect(() => {
+    if (!userSession) return undefined
     let isCancelled = false
-    if (userSession) {
-      api.getNotifications({ limit: 20 })
-        .then((res) => {
-          if (!isCancelled && res?.data?.items?.length) {
-            setNotifications(res.data.items)
-          }
-        })
-        .catch(() => {})
-    }
+    api.getNotifications({ limit: 20 })
+      .then((res) => {
+        if (!isCancelled && Array.isArray(res?.data?.items)) {
+          setNotifications(res.data.items)
+        }
+      })
+      .catch(() => {})
     const unsub = subscribeNotifications((data) => {
       if (data?.items) {
         setNotifications(data.items)
@@ -129,28 +141,6 @@ export default function App() {
       unsub()
     }
   }, [userSession])
-  const [reports, setReports] = useState(INITIAL_REPORTS)
-  const [users, setUsers] = useState(INITIAL_USERS)
-  const [feedbacks, setFeedbacks] = useState(INITIAL_FEEDBACKS)
-  const [bounties, setBounties] = useState(INITIAL_BOUNTIES)
-  const [downloadHistory, setDownloadHistory] = useState(INITIAL_DOWNLOAD_HISTORY)
-  const [bookmarkedIds, setBookmarkedIds] = useState([])
-  const [selectedDocId, setSelectedDocId] = useState('doc-1')
-  const [bannerNotice, setBannerNotice] = useState(null)
-  const [adminPendingCount, setAdminPendingCount] = useState(0)
-  const [studentPoints, setStudentPoints] = useState(140)
-  const [userSession, setUserSession] = useState(() => {
-    const saved = AuthGuard.getSavedUserProfile()
-    if (saved && AuthGuard.getAuthToken()) {
-      return saved
-    }
-    return null
-  })
-
-  const showNotice = useCallback((text) => {
-    setBannerNotice(text)
-    setTimeout(() => setBannerNotice(null), 4500)
-  }, [setBannerNotice])
 
   useEffect(() => {
     let cancelled = false
@@ -380,6 +370,7 @@ export default function App() {
     setUserSession(null)
     setActorRole('GUEST')
     setBookmarkedIds([])
+    setNotifications([])
     if (
       [
         'upload',
@@ -505,73 +496,6 @@ export default function App() {
     )
   }
 
-  const handleCreateBounty = ({ title, courseCode, courseName, rewardPoints, description }) => {
-    if (isCurrentUserLocked) {
-      showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể tạo yêu cầu treo thưởng.')
-      return
-    }
-    const pts = Number(rewardPoints) || 50
-    const currentPts = userSession?.points ?? studentPoints
-    if (currentPts < pts) {
-      showNotice(`Số dư điểm (${currentPts} điểm) không đủ để ký quỹ ${pts} điểm thưởng!`)
-      return
-    }
-
-    const nextPts = currentPts - pts
-    setStudentPoints(nextPts)
-    setUserSession((prev) => (prev ? { ...prev, points: nextPts } : prev))
-
-    const newBounty = {
-      id: `bty-${Date.now()}`,
-      title,
-      courseCode,
-      courseName,
-      rewardPoints: pts,
-      description,
-      status: 'OPEN',
-      creatorId: userSession?.id || 'vi',
-      creatorName: userSession?.fullName || 'Phan Triệu Vĩ',
-      createdAt: 'Vừa xong',
-      submissionsCount: 0
-    }
-
-    setBounties((prev) => [newBounty, ...prev])
-    showNotice(`Đã đăng yêu cầu treo thưởng thành công! Ký quỹ -${pts} điểm thưởng.`)
-  }
-
-  const handleFulfillBounty = (bountyId, submittedDocId) => {
-    if (isCurrentUserLocked) {
-      showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể nộp tài liệu giải thưởng.')
-      return
-    }
-    const targetBounty = bounties.find((b) => b.id === bountyId)
-    const targetDoc = documents.find((d) => d.id === submittedDocId)
-
-    setBounties((prev) =>
-      prev.map((b) =>
-        b.id === bountyId
-          ? {
-              ...b,
-              status: 'FULFILLED',
-              fulfilledDocId: submittedDocId,
-              fulfilledBy: userSession?.fullName || 'Phan Triệu Vĩ',
-              fulfilledAt: 'Vừa xong',
-              submissionsCount: (b.submissionsCount || 0) + 1
-            }
-          : b
-      )
-    )
-
-    const reward = targetBounty ? targetBounty.rewardPoints : 50
-    setStudentPoints((prevPts) => prevPts + reward)
-    setUserSession((prevUser) =>
-      prevUser ? { ...prevUser, points: (prevUser.points || 0) + reward } : prevUser
-    )
-
-    showNotice(
-      `Đã nộp học liệu "${targetDoc?.title || 'tài liệu'}" đáp ứng treo thưởng thành công! Nhận +${reward} điểm thưởng.`
-    )
-  }
 
   const handleToggleBookmark = async (docId) => {
     if (actorRole === 'GUEST') {
@@ -780,10 +704,14 @@ export default function App() {
     let cancelled = false
     Promise.all([
       listModerationDocuments({ status: 'PENDING', limit: 1 }),
-      listReports({ status: 'PENDING', limit: 1 })
+      listReports({ status: 'PENDING', limit: 50 })
     ])
       .then(([docResult, reportResult]) => {
-        if (!cancelled) setAdminPendingCount(docResult.pagination.total + reportResult.pagination.total)
+        if (cancelled) return
+        setAdminPendingCount((docResult?.pagination?.total || 0) + (reportResult?.pagination?.total || 0))
+        if (Array.isArray(reportResult?.data)) {
+          setReports(reportResult.data)
+        }
       })
       .catch(() => {})
     return () => {
@@ -1153,26 +1081,7 @@ export default function App() {
             />
           )}
 
-          {activeView === 'test-tram' && (
-            <KiemThuTramHarness
-              onClose={() => setActiveView('discovery')}
-            />
-          )}
 
-          {activeView === 'bounty' && (
-            <BountyBoard
-              currentUser={userSession}
-              actorRole={actorRole}
-              courses={courses}
-              documents={documents}
-              bounties={bounties}
-              onCreateBounty={handleCreateBounty}
-              onFulfillBounty={handleFulfillBounty}
-              onSelectDoc={handleSelectDocument}
-              onOpenUpload={handleOpenUpload}
-              onRequireLogin={() => handleOpenAuth('login')}
-            />
-          )}
         </main>
       )}
 
@@ -1184,34 +1093,6 @@ export default function App() {
         onSubmitFeedback={handleSubmitFeedback}
       />
 
-      {/* NÚT MỞ NHANH BỘ KIỂM THỬ 4 TEST CASES CỦA TRÂM (TASK 5S-048) */}
-      <button
-        type="button"
-        onClick={() => setActiveView(activeView === 'test-tram' ? 'discovery' : 'test-tram')}
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '190px',
-          zIndex: 100,
-          backgroundColor: activeView === 'test-tram' ? 'var(--brand-primary, #007A5E)' : 'var(--bg-surface, #ffffff)',
-          color: activeView === 'test-tram' ? '#ffffff' : 'var(--text-primary)',
-          border: '1px solid var(--border-strong, #cbd5e1)',
-          borderRadius: '999px',
-          padding: '9px 16px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '12.5px',
-          fontWeight: 700,
-          boxShadow: 'var(--shadow-card)',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease'
-        }}
-        aria-label="Kiểm thử Cụm Use Case Trâm (UC02, UC03, UC04)"
-      >
-        <ShieldCheck size={16} style={{ color: activeView === 'test-tram' ? '#ffffff' : 'var(--brand-primary, #007A5E)' }} />
-        <span>Kiểm thử UC02–04 (Trâm)</span>
-      </button>
 
       {/* NÚT NỔI GÓP Ý HỆ THỐNG TẠI GÓC PHẢI MÀN HÌNH (FLOATING PILL) */}
       <button
