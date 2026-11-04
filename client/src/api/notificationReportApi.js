@@ -1,29 +1,43 @@
 /**
- * API Service cho Cụm UC02, UC03, UC04 (5Share)
- * Khớp 100% với Bảng hợp đồng Endpoint RESTful API (Task 5S-024 | Trâm - 50.01.103.088)
- * 
- * 1. POST /api/auth/register (UC02)
- * 2. GET  /api/notifications (UC03)
- * 3. PATCH /api/notifications (UC03)
- * 4. POST /api/reports (UC04)
+ * ============================================================================
+ * API SERVICE: CỤM UC02 (ĐĂNG KÝ), UC03 (THÔNG BÁO), UC04 (BÁO CÁO VI PHẠM)
+ * Thành viên phụ trách: Lê Nguyễn Thùy Trâm (50.01.103.088)
+ * Tích hợp chuẩn RESTful API với Backend Express + Supabase PostgreSQL
+ * Tự động hỗ trợ Fallback an toàn khi offline hoặc chế độ kiểm thử nhanh
+ * ============================================================================
  */
 
-// Cấu hình URL cơ sở, có thể ghi đè qua biến môi trường VITE_API_BASE_URL
-const API_BASE_URL = typeof process !== 'undefined' && process.env?.VITE_API_BASE_URL
-  ? process.env.VITE_API_BASE_URL
-  : '/api';
+const API_BASE_URL =
+  typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
+    ? import.meta.env.VITE_API_BASE_URL
+    : '/api';
 
-// Lấy AccessToken từ localStorage
+/**
+ * Lấy AccessToken từ phiên làm việc thực tế của 5Share hoặc fallback sang mock token
+ */
 export function getAccessToken() {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('5share_access_token') || 'mock_jwt_student_token';
+  return (
+    localStorage.getItem('5share_auth_token') ||
+    sessionStorage.getItem('5share_auth_token') ||
+    localStorage.getItem('5share_access_token') ||
+    'mock_jwt_student_token'
+  );
 }
 
-// Lưu AccessToken và User
+/**
+ * Lưu phiên đăng nhập
+ */
 export function setAuthSession(token, user) {
   if (typeof window === 'undefined') return;
-  if (token) localStorage.setItem('5share_access_token', token);
-  if (user) localStorage.setItem('5share_current_user', JSON.stringify(user));
+  if (token) {
+    localStorage.setItem('5share_auth_token', token);
+    localStorage.setItem('5share_access_token', token);
+  }
+  if (user) {
+    localStorage.setItem('5share_user', JSON.stringify(user));
+    localStorage.setItem('5share_current_user', JSON.stringify(user));
+  }
 }
 
 // Event Emitter để thông báo thời gian thực khi có chuông mới (UC03)
@@ -36,12 +50,16 @@ export function subscribeNotifications(callback) {
 
 export function emitNotificationUpdate(data) {
   NOTIFICATION_LISTENERS.forEach((cb) => {
-    try { cb(data); } catch (e) { console.error(e); }
+    try {
+      cb(data);
+    } catch (e) {
+      console.error(e);
+    }
   });
 }
 
 // ============================================================================
-// DỮ LIỆU MOCK PHỤC VỤ TEST / STANDALONE (Tự động lưu LocalStorage)
+// DỮ LIỆU MOCK PHỤC VỤ TEST / STANDALONE OFFLINE
 // ============================================================================
 const STORAGE_KEYS = {
   USERS: '5share_users',
@@ -88,7 +106,7 @@ const DEFAULT_NOTIFS = [
 const DEFAULT_REPORTS = [
   {
     id: 10,
-    documentId: 99, // Đã báo cáo tài liệu 99
+    documentId: 99,
     reporterId: 2,
     reason: 'Trùng lặp',
     description: 'Tài liệu trùng lặp hoàn toàn với sách cũ',
@@ -102,7 +120,7 @@ function getLocal(key, defaultVal) {
   try {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : defaultVal;
-  } catch (e) {
+  } catch {
     return defaultVal;
   }
 }
@@ -117,15 +135,13 @@ function setLocal(key, val) {
 }
 
 // ============================================================================
-// ĐỐI TƯỢNG API CLIENT THỰC HIỆN ĐÚNG CONTRACT
+// ĐỐI TƯỢNG API CLIENT THỰC THI CHUẨN CONTRACT
 // ============================================================================
 export const api = {
   /**
    * 2.1 POST /api/auth/register – Đăng ký tài khoản Sinh viên (UC02)
-   * Quyền: Guest | Body: { fullName, email, password, cohort? }
    */
   async register({ fullName, email, password, cohort = 'K50' }) {
-    // Thử gọi endpoint thực tế nếu có server chạy
     try {
       const res = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
@@ -141,54 +157,63 @@ export const api = {
       }
       return data;
     } catch (networkOrMockErr) {
-      // Nếu không có backend server, chạy Mock Engine theo chuẩn 100% Contract
-      if (networkOrMockErr.status) throw networkOrMockErr; // Lỗi từ server trả về
+      if (networkOrMockErr.status) throw networkOrMockErr;
 
-      await new Promise((r) => setTimeout(r, 300));
-      const cleanEmail = (email || '').trim().toLowerCase();
+      await new Promise((r) => setTimeout(r, 200));
       const users = getLocal(STORAGE_KEYS.USERS, DEFAULT_USERS);
+      const isExist = users.some(
+        (u) => u.email.toLowerCase() === String(email).trim().toLowerCase()
+      );
 
-      // Kiểm tra trùng email (HTTP 409 Conflict)
-      if (users.some((u) => u.email.toLowerCase() === cleanEmail)) {
-        const err = new Error('Email này đã được đăng ký');
+      if (isExist) {
+        const err = new Error('Email này đã được sử dụng trong hệ thống.');
         err.status = 409;
         err.code = 'EMAIL_ALREADY_EXISTS';
         throw err;
       }
 
-      // Tạo user mới
       const newUser = {
         id: users.length + 1,
         fullName: fullName.trim(),
-        email: cleanEmail,
-        cohort: cohort || 'K50',
+        email: email.trim().toLowerCase(),
+        cohort,
         role: 'STUDENT',
         status: 'active',
       };
+
       setLocal(STORAGE_KEYS.USERS, [...users, newUser]);
-      setAuthSession(`jwt_mock_token_user_${newUser.id}`, newUser);
+      const mockToken = `mock_jwt_token_${newUser.id}_${Date.now()}`;
+      setAuthSession(mockToken, newUser);
 
       return {
         success: true,
+        status: 'success',
         message: 'Đăng ký tài khoản thành công',
-        data: newUser,
+        token: mockToken,
+        user: newUser,
       };
     }
   },
 
   /**
-   * 2.2 GET /api/notifications – Lấy danh sách thông báo (UC03)
-   * Quyền: STUDENT, ADMIN | Query: limit=20, unreadOnly=false
+   * 2.2 GET /api/notifications – Lấy danh sách thông báo của người dùng (UC03)
    */
   async getNotifications({ limit = 20, unreadOnly = false } = {}) {
     try {
       const token = getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/notifications?limit=${limit}&unreadOnly=${unreadOnly}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const query = new URLSearchParams();
+      if (limit) query.set('limit', String(limit));
+      if (unreadOnly) query.set('unreadOnly', 'true');
+
+      const res = await fetch(`${API_BASE_URL}/notifications?${query.toString()}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
       });
       const data = await res.json();
       if (!res.ok) {
-        const err = new Error(data.message || 'Không thể lấy thông báo');
+        const err = new Error(data.message || 'Lỗi tải danh sách thông báo');
         err.status = res.status;
         err.code = data.code;
         throw err;
@@ -197,17 +222,16 @@ export const api = {
     } catch (networkOrMockErr) {
       if (networkOrMockErr.status) throw networkOrMockErr;
 
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 100));
       const notifs = getLocal(STORAGE_KEYS.NOTIFS, DEFAULT_NOTIFS);
       const filtered = unreadOnly ? notifs.filter((n) => !n.isRead) : notifs;
       const unreadCount = notifs.filter((n) => !n.isRead).length;
 
       return {
         success: true,
-        message: 'Truy vấn thông báo thành công',
         data: {
-          unreadCount,
           items: filtered.slice(0, limit),
+          unreadCount,
         },
       };
     }
@@ -215,7 +239,6 @@ export const api = {
 
   /**
    * 2.3 PATCH /api/notifications – Đánh dấu thông báo đã đọc (UC03)
-   * Quyền: STUDENT, ADMIN | Body: { ids: [15] } hoặc { markAll: true }
    */
   async markNotificationsRead({ ids, markAll } = {}) {
     try {
@@ -235,11 +258,13 @@ export const api = {
         err.code = data.code;
         throw err;
       }
+
+      emitNotificationUpdate({ unreadCount: data.data?.unreadCount ?? 0 });
       return data;
     } catch (networkOrMockErr) {
       if (networkOrMockErr.status) throw networkOrMockErr;
 
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, 100));
       const notifs = getLocal(STORAGE_KEYS.NOTIFS, DEFAULT_NOTIFS);
       let updatedCount = 0;
 
@@ -272,7 +297,6 @@ export const api = {
 
   /**
    * 2.4 POST /api/reports – Gửi báo cáo tài liệu vi phạm (UC04)
-   * Quyền: STUDENT | Body: { documentId, reason, description }
    */
   async submitReport({ documentId, reason, description }) {
     try {
@@ -283,7 +307,7 @@ export const api = {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ documentId, reason, description }),
+        body: JSON.stringify({ documentId: Number(documentId), reason, description }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -296,11 +320,10 @@ export const api = {
     } catch (networkOrMockErr) {
       if (networkOrMockErr.status) throw networkOrMockErr;
 
-      await new Promise((r) => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 150));
       const reports = getLocal(STORAGE_KEYS.REPORTS, DEFAULT_REPORTS);
 
-      // Chặn tài liệu không hợp lệ (404)
-      if (documentId === 404 || documentId === '404') {
+      if (Number(documentId) === 404) {
         const err = new Error('Học liệu không tồn tại hoặc không còn khả dụng');
         err.status = 404;
         err.code = 'DOCUMENT_NOT_FOUND';
@@ -343,9 +366,32 @@ export const api = {
   },
 
   /**
-   * Giả lập bắn thông báo duyệt/từ chối từ UC08, UC09 (Test Case 3)
+   * Giả lập bắn thông báo duyệt/từ chối từ UC08, UC09 (TC3)
    */
-  async simulateModerationNotification(action, { documentTitle, documentId = 7, reason }) {
+  async simulateModerationNotification(action, { documentTitle, documentId = 11, reason } = {}) {
+    try {
+      const token = getAccessToken();
+      const res = await fetch(`${API_BASE_URL}/notifications/simulate-moderation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action, documentTitle, documentId, reason }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Cập nhật tới toàn bộ listeners chuông thông báo
+        const notifListRes = await this.getNotifications({ limit: 20 });
+        if (notifListRes?.data) {
+          emitNotificationUpdate(notifListRes.data);
+        }
+        return data.data;
+      }
+    } catch {
+      // Fallback offline
+    }
+
     const notifs = getLocal(STORAGE_KEYS.NOTIFS, DEFAULT_NOTIFS);
     const isApproved = action === 'APPROVED';
     const newNotif = {

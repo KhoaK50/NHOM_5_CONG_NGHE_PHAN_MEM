@@ -1,256 +1,364 @@
-import { useState } from 'react'
-import { Flag, X, AlertTriangle, CheckCircle2, MessageSquare } from 'lucide-react'
-import { REPORT_REASON_GROUPS } from '../../data/mockData'
+/**
+ * ============================================================================
+ * UC04: BÁO CÁO HỌC LIỆU VI PHẠM CHUẨN MỰC HỌC THUẬT (REPORT MODAL)
+ * Thành viên phụ trách: Lê Nguyễn Thùy Trâm (50.01.103.088)
+ * Nối API POST /api/reports chuẩn RESTful (Chống trùng lặp 409 & Chống rỗng)
+ * Tinh chỉnh UI tương thích Radix Colors & Dark/Light Theme của 5Share
+ * ============================================================================
+ */
 
-const COMMENT_REPORT_REASONS = [
-  'Ngôn từ thiếu chuẩn mực học thuật / Xúc phạm cá nhân',
-  'Nội dung quảng cáo, spam hoặc dẫn link ngoài không an toàn',
-  'Tiết lộ thông tin gian lận học thuật hoặc đề thi bảo mật',
-  'Thông tin sai lệch cố ý gây hiểu lầm cho người học'
-]
+import { useEffect, useState } from "react";
+import { api } from "../../api/notificationReportApi";
+
+const REASONS = [
+  { value: "Trùng lặp", hint: "Đã có tài liệu giống hệt trên hệ thống 5Share" },
+  { value: "Sai môn", hint: "Gắn sai mã môn học hoặc lệch chuyên ngành" },
+  { value: "Bản quyền", hint: "Sao chép giáo trình, sách hoặc tài liệu có bản quyền" },
+  { value: "Nội dung xấu", hint: "Nội dung phản cảm, sai lệch kiến thức hoặc spam" },
+];
+const MAX_DESC = 1000;
+
+const BANNER = {
+  warning: "border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300",
+  info: "border-sky-200 bg-sky-50 dark:border-sky-900/50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300",
+  error: "border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300",
+};
 
 export default function ReportModal({
-  targetType = 'DOCUMENT',
+  open = true,
+  documentId: propDocId,
+  documentTitle: propDocTitle,
   documentItem,
-  targetComment,
-  existingReports = [],
-  currentUser,
-  onClose,
-  onSubmitReport
+  targetType = "DOCUMENT",
+  targetComment = null,
+  errors: propErrors = {},
+  banner: propBanner = null,
+  submitting: propSubmitting,
+  success: propSuccess,
+  onClose = () => {},
+  onSubmit = null,
+  onSubmitReport = null,
 }) {
-  const isComment = targetType === 'COMMENT'
-  const reasonList = isComment ? COMMENT_REPORT_REASONS : REPORT_REASON_GROUPS
+  const activeDocId = propDocId || documentItem?.id || 11;
+  const activeDocTitle = propDocTitle || documentItem?.title || "Tài liệu học tập";
 
-  const [reasonGroup, setReasonGroup] = useState(reasonList[0])
-  const [details, setDetails] = useState('')
-  const [errorMsg, setErrorMsg] = useState('')
+  const [reason, setReason] = useState("");
+  const [description, setDescription] = useState("");
+  const [internalErrors, setInternalErrors] = useState({});
+  const [internalBanner, setInternalBanner] = useState(null);
+  const [internalSubmitting, setInternalSubmitting] = useState(false);
+  const [internalSuccess, setInternalSuccess] = useState(false);
 
-  if (!documentItem) return null
+  const errors = { ...internalErrors, ...propErrors };
+  const banner = propBanner || internalBanner;
+  const submitting = propSubmitting !== undefined ? propSubmitting : internalSubmitting;
+  const success = propSuccess !== undefined ? propSuccess : internalSuccess;
 
-  const alreadyReported = existingReports.some(
-    (r) =>
-      r.docId === documentItem.id &&
-      (isComment ? r.commentId === targetComment?.id : r.targetType !== 'COMMENT') &&
-      r.status === 'PENDING' &&
-      r.reporterName?.includes(currentUser?.fullName || 'Sinh viên')
-  )
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === "Escape" && !submitting && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, submitting, onClose]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (alreadyReported) {
-      setErrorMsg('Báo cáo trước đó của bạn đang được Ban Kiểm duyệt xem xét.')
-      return
-    }
-    if (!reasonGroup || !details.trim() || details.trim().length < 10) {
-      setErrorMsg('Vui lòng chọn lý do và mô tả chi tiết dấu hiệu vi phạm (tối thiểu 10 ký tự).')
-      return
-    }
-    setErrorMsg('')
-    onSubmitReport({
-      targetType: isComment ? 'COMMENT' : 'DOCUMENT',
-      targetId: isComment ? targetComment?.id : documentItem.id,
-      docId: documentItem.id,
-      docTitle: documentItem.title,
-      courseCode: documentItem.courseCode,
-      commentId: isComment ? targetComment?.id : undefined,
-      commentAuthor: isComment ? targetComment?.authorName : undefined,
-      reasonGroup,
-      details: details.trim()
-    })
+  // Điều chỉnh state khi đổi sang documentId mới theo mẫu React chuẩn
+  const [prevDocId, setPrevDocId] = useState(activeDocId);
+  if (activeDocId !== prevDocId) {
+    setPrevDocId(activeDocId);
+    setReason("");
+    setDescription("");
+    setInternalErrors({});
+    setInternalBanner(null);
+    setInternalSuccess(false);
   }
 
+  if (!open) return null;
+
+  // Kiểm tra tính hợp lệ dữ liệu báo cáo (Chống rỗng - Activity Diagram UC04 bước 4)
+  const validateForm = () => {
+    const errs = {};
+    if (!reason) {
+      errs.reason = "Yêu cầu chọn nhóm lý do vi phạm.";
+    }
+
+    const cleanDesc = description.trim();
+    if (!cleanDesc) {
+      errs.description = "Yêu cầu nhập mô tả cụ thể về vi phạm.";
+    } else if (cleanDesc.length < 10) {
+      errs.description = "Mô tả vi phạm quá ngắn! Vui lòng nhập tối thiểu 10 ký tự.";
+    }
+
+    setInternalErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  // Nối API POST /api/reports (Sequence Diagram UC04)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setInternalBanner(null);
+
+    // Chặn báo cáo rỗng
+    if (!validateForm()) return;
+
+    const payload = {
+      documentId: Number(activeDocId),
+      reason,
+      description: description.trim(),
+      targetType,
+      commentId: targetComment?.id,
+    };
+
+    // Nếu caller truyền custom onSubmit handler, ưu tiên gọi
+    const customSubmit = onSubmitReport || onSubmit;
+    if (customSubmit) {
+      try {
+        setInternalSubmitting(true);
+        // Gọi API backend trước
+        await api.submitReport(payload);
+        customSubmit(payload);
+        setInternalSuccess(true);
+      } catch (err) {
+        if (err.status === 409 || err.code === "REPORT_ALREADY_EXISTS") {
+          setInternalBanner({
+            tone: "warning",
+            text: "Báo cáo trước đó đang được Quản trị viên xem xét.",
+          });
+        } else if (err.status === 404 || err.code === "DOCUMENT_NOT_FOUND") {
+          setInternalBanner({
+            tone: "error",
+            text: "Học liệu không tồn tại hoặc không còn khả dụng trên hệ thống.",
+          });
+        } else {
+          setInternalBanner({
+            tone: "error",
+            text: err.message || "Không thể gửi báo cáo vi phạm vào lúc này. Vui lòng thử lại sau.",
+          });
+        }
+      } finally {
+        setInternalSubmitting(false);
+      }
+      return;
+    }
+
+    // Thực thi luồng gọi API mặc định
+    setInternalSubmitting(true);
+    setInternalErrors({});
+
+    try {
+      // POST /api/reports
+      const res = await api.submitReport(payload);
+      if (res.success) {
+        setInternalSuccess(true);
+      }
+    } catch (err) {
+      // Chặn báo cáo trùng (HTTP 409 Conflict - Test Case 4 & Activity Diagram bước 5)
+      if (err.status === 409 || err.code === "REPORT_ALREADY_EXISTS") {
+        setInternalBanner({
+          tone: "warning",
+          text: "Báo cáo trước đó đang được Quản trị viên xem xét.",
+        });
+      } else if (err.status === 404 || err.code === "DOCUMENT_NOT_FOUND") {
+        setInternalBanner({
+          tone: "error",
+          text: "Học liệu không tồn tại hoặc không còn khả dụng trên hệ thống.",
+        });
+      } else {
+        setInternalBanner({
+          tone: "error",
+          text: err.message || "Không thể gửi báo cáo vi phạm vào lúc này. Vui lòng thử lại sau.",
+        });
+      }
+    } finally {
+      setInternalSubmitting(false);
+    }
+  };
+
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Báo cáo vi phạm chuẩn mực học thuật">
-      <div className="modal-panel">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <span className="status-badge red">
-            <Flag size={12} />
-            <span>{isComment ? 'Phản ánh bình luận vi phạm' : 'Phản ánh chất lượng học thuật'}</span>
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-tertiary)',
-              cursor: 'pointer',
-              padding: '4px'
-            }}
-            aria-label="Đóng hộp thoại"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
-          {isComment ? 'Báo cáo Bình luận Không Phù hợp' : 'Báo cáo Học liệu Vi phạm Chuẩn mực Học thuật'}
-        </h3>
-        <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
-          Học liệu: <strong>{documentItem.title}</strong> ({documentItem.courseCode})
-        </p>
-
-        {isComment && targetComment && (
-          <div
-            style={{
-              padding: '10px 14px',
-              borderRadius: '8px',
-              backgroundColor: 'var(--bg-muted)',
-              border: '1px solid var(--border-subtle)',
-              marginBottom: '14px',
-              fontSize: '12.5px'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-primary)', fontWeight: 700, marginBottom: '4px' }}>
-              <MessageSquare size={13} style={{ color: 'var(--primary-base)' }} />
-              <span>Bình luận của: {targetComment.authorName}</span>
-            </div>
-            <p style={{ margin: 0, color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: 1.45 }}>
-              &ldquo;{targetComment.content}&rdquo;
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:items-center sm:p-4 backdrop-blur-sm transition-all"
+      onMouseDown={(e) => e.target === e.currentTarget && !submitting && onClose()}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="report-title"
+        className="max-h-full w-full max-w-lg overflow-y-auto rounded-t-2xl bg-[var(--bg-surface,#ffffff)] border border-[var(--border-subtle,#e2e8f0)] dark:border-slate-800 shadow-2xl sm:rounded-2xl"
+      >
+        {success ? (
+          <div role="status" className="px-6 py-10 text-center sm:px-8">
+            <span
+              className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 20 20" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 10.5l3.2 3.2L15 6.8" />
+              </svg>
+            </span>
+            <h2 id="report-title" className="mt-4 text-xl font-bold text-[var(--text-primary,#0f172a)]">
+              Cảm ơn bạn đã phản hồi!
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary,#475569)]">
+              Báo cáo vi phạm đã được chuyển tới Ban Kiểm duyệt Khoa CNTT. Chúng tôi sẽ thẩm tra và xử lý tài liệu nếu phát hiện vi phạm.
             </p>
-          </div>
-        )}
-
-        {alreadyReported ? (
-          <div
-            style={{
-              padding: '14px',
-              borderRadius: '10px',
-              backgroundColor: 'var(--amber-1)',
-              border: '1px solid var(--amber-2)',
-              color: 'var(--amber-7)',
-              fontSize: '13px',
-              marginBottom: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
-            }}
-          >
-            <CheckCircle2 size={18} />
-            <span>Báo cáo trước đó của bạn đang được Ban Kiểm duyệt xem xét.</span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-6 rounded-xl bg-[var(--brand-primary,#007A5E)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary,#007A5E)] focus-visible:ring-offset-2 transition"
+            >
+              Đóng hộp thoại
+            </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '14px' }}>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
-                  marginBottom: '8px'
-                }}
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--border-subtle,#e2e8f0)] dark:border-slate-800 px-6 py-5 bg-[var(--bg-muted,#f8fafc)]">
+              <div>
+                <h2 id="report-title" className="text-lg font-bold text-[var(--text-primary,#0f172a)]">
+                  Báo cáo tài liệu vi phạm
+                </h2>
+                <p className="mt-0.5 text-xs text-[var(--text-secondary,#475569)]">
+                  Giúp cộng đồng giữ gìn nguồn học liệu chuẩn mực, chất lượng cao.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={submitting}
+                aria-label="Đóng"
+                className="-mr-2 -mt-1 rounded-full p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary,#007A5E)] transition"
               >
-                Chọn nhóm lý do phản ánh:
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {reasonList.map((group) => (
-                  <label
-                    key={group}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      border: reasonGroup === group ? '1.5px solid var(--red-6)' : '1px solid var(--border-subtle)',
-                      backgroundColor: reasonGroup === group ? 'var(--red-1)' : 'var(--bg-surface)',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: reasonGroup === group ? 600 : 400
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="report-reason"
-                      value={group}
-                      checked={reasonGroup === group}
-                      onChange={() => setReasonGroup(group)}
-                    />
-                    <span>{group}</span>
+                <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M5 5l10 10M15 5L5 15" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4 px-6 py-5">
+              <div className="rounded-xl bg-[var(--bg-muted,#f8fafc)] px-4 py-3 border border-[var(--border-subtle,#e2e8f0)] dark:border-slate-800">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary,#64748b)]">
+                  Học liệu phản ánh (Mã #{activeDocId})
+                </p>
+                <p className="mt-0.5 text-sm font-semibold text-[var(--text-primary,#0f172a)]">
+                  {activeDocTitle}
+                </p>
+              </div>
+
+              {banner && (
+                <div role="alert" className={`rounded-xl border px-4 py-3 text-xs leading-relaxed font-medium ${BANNER[banner.tone] || BANNER.error}`}>
+                  {banner.text}
+                </div>
+              )}
+
+              <fieldset aria-describedby={errors.reason ? "reason-error" : undefined}>
+                <legend className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary,#475569)]">
+                  Nhóm lý do vi phạm
+                </legend>
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {REASONS.map((r) => (
+                    <label
+                      key={r.value}
+                      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-xs transition ${
+                        reason === r.value
+                          ? "border-[var(--brand-primary,#007A5E)] bg-[var(--brand-primary,#007A5E)]/5 ring-1 ring-[var(--brand-primary,#007A5E)]"
+                          : "border-[var(--border-subtle,#e2e8f0)] dark:border-slate-700 hover:bg-[var(--bg-muted,#f8fafc)]"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="reason"
+                        value={r.value}
+                        checked={reason === r.value}
+                        onChange={() => {
+                          setReason(r.value);
+                          if (internalErrors.reason) {
+                            setInternalErrors((prev) => {
+                              const n = { ...prev };
+                              delete n.reason;
+                              return n;
+                            });
+                          }
+                        }}
+                        disabled={submitting}
+                        className="mt-0.5 h-4 w-4 flex-none text-[var(--brand-primary,#007A5E)] focus:ring-0"
+                      />
+                      <span>
+                        <span className="block font-semibold text-[var(--text-primary,#0f172a)]">
+                          {r.value}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] leading-snug text-[var(--text-secondary,#475569)]">
+                          {r.hint}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {errors.reason && (
+                  <p id="reason-error" role="alert" className="mt-1.5 text-xs text-rose-600">
+                    {errors.reason}
+                  </p>
+                )}
+              </fieldset>
+
+              <div>
+                <div className="mb-1.5 flex items-baseline justify-between">
+                  <label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary,#475569)]">
+                    Nội dung giải trình cụ thể
                   </label>
-                ))}
+                  <span className="text-[11px] text-[var(--text-tertiary,#64748b)]">
+                    {description.length}/{MAX_DESC}
+                  </span>
+                </div>
+                <textarea
+                  id="description"
+                  rows={4}
+                  maxLength={MAX_DESC}
+                  value={description}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    if (internalErrors.description) {
+                      setInternalErrors((prev) => {
+                        const n = { ...prev };
+                        delete n.description;
+                        return n;
+                      });
+                    }
+                    if (internalBanner) setInternalBanner(null);
+                  }}
+                  disabled={submitting}
+                  placeholder="Ví dụ: Trang 12–18 trùng lặp hoàn toàn với tài liệu đã đăng, hoặc có dấu hiệu sao chép sách có bản quyền..."
+                  aria-invalid={!!errors.description}
+                  aria-describedby={errors.description ? "description-error" : undefined}
+                  className={`block w-full resize-y rounded-xl border bg-[var(--bg-surface,#ffffff)] px-3.5 py-2.5 text-sm text-[var(--text-primary,#0f172a)] placeholder-slate-400 focus:border-[var(--brand-primary,#007A5E)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary,#007A5E)] transition ${
+                    errors.description ? "border-rose-500" : "border-[var(--border-subtle,#e2e8f0)] dark:border-slate-700"
+                  }`}
+                />
+                {errors.description && (
+                  <p id="description-error" role="alert" className="mt-1.5 text-xs text-rose-600">
+                    {errors.description}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div style={{ marginBottom: '14px' }}>
-              <label
-                htmlFor="report-details-input"
-                style={{
-                  display: 'block',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
-                  marginBottom: '6px'
-                }}
+            <div className="flex flex-col-reverse gap-3 border-t border-[var(--border-subtle,#e2e8f0)] dark:border-slate-800 bg-[var(--bg-muted,#f8fafc)] px-6 py-4 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={submitting}
+                className="rounded-xl border border-[var(--border-subtle,#e2e8f0)] dark:border-slate-700 bg-[var(--bg-surface,#ffffff)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary,#007A5E)] transition"
               >
-                Mô tả chi tiết vị trí hoặc nội dung sai phạm (Tối thiểu 10 ký tự):
-              </label>
-              <textarea
-                id="report-details-input"
-                rows={3}
-                value={details}
-                onChange={(e) => setDetails(e.target.value)}
-                placeholder={
-                  isComment
-                    ? 'Ví dụ: Bình luận chứa ngôn từ công kích cá nhân, xúc phạm hoặc dẫn đường link độc hại...'
-                    : 'Ví dụ: Tại trang 4 mục Hoạt động 3, nội dung đáp án chia mạng con VLSM tính sai địa chỉ Broadcast...'
-                }
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1.5px solid var(--border-subtle)',
-                  backgroundColor: 'var(--bg-surface)',
-                  color: 'var(--text-primary)',
-                  resize: 'vertical'
-                }}
-              />
-            </div>
-
-            {errorMsg && (
-              <div
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--red-1)',
-                  border: '1px solid var(--red-2)',
-                  color: 'var(--red-6)',
-                  fontSize: '12.5px',
-                  marginBottom: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <AlertTriangle size={16} />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button type="button" className="btn-ghost" onClick={onClose}>
                 Hủy
               </button>
               <button
                 type="submit"
-                style={{
-                  backgroundColor: 'var(--red-9, #e5484d)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '9px 18px',
-                  fontWeight: 700,
-                  fontSize: '13px',
-                  cursor: 'pointer'
-                }}
+                disabled={submitting}
+                className="rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition"
               >
-                Gửi báo cáo
+                {submitting ? "Đang gửi báo cáo..." : "Gửi báo cáo"}
               </button>
             </div>
           </form>
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -16,8 +16,8 @@ export default function NotificationList({
   const unreadCount = notifications.filter((n) => !n.isRead).length
 
   const renderIcon = (type) => {
-    if (type === 'APPROVED') return <CheckCircle2 size={16} style={{ color: 'var(--green-7)', flexShrink: 0 }} />
-    if (type === 'REJECTED') return <XCircle size={16} style={{ color: 'var(--red-6)', flexShrink: 0 }} />
+    if (type === 'APPROVED' || type === 'DOC_APPROVED' || type === 'DOCUMENT_APPROVED') return <CheckCircle2 size={16} style={{ color: 'var(--green-7)', flexShrink: 0 }} />
+    if (type === 'REJECTED' || type === 'DOC_REJECTED' || type === 'DOCUMENT_REJECTED') return <XCircle size={16} style={{ color: 'var(--red-6)', flexShrink: 0 }} />
     return <MessageSquare size={16} style={{ color: 'var(--primary-base)', flexShrink: 0 }} />
   }
 
