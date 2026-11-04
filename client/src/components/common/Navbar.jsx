@@ -8,7 +8,6 @@ import {
   FolderKanban,
   Bookmark,
   Plus,
-  MessageSquare,
   Menu,
   X,
   Trash2,
@@ -336,10 +335,7 @@ export default function Navbar({
                       <div className="nav-menu-head">
                         <strong>{displayName}</strong>
                         <span>{userSession?.email}</span>
-                        <span>
-                          {roleLabel}
-                          {!isAdmin && ` · ${userSession?.points ?? 0} điểm`}
-                        </span>
+                        <span>{roleLabel}</span>
                       </div>
 
                       <div className="vec-dropdown-divider" />
@@ -355,17 +351,10 @@ export default function Navbar({
                       </button>
 
                       {!isAdmin && (
-                        <>
-                          <button type="button" className="vec-dropdown-item" onClick={() => handleTabClick('bookmarks')}>
-                            <Bookmark size={15} />
-                            <span>Tài liệu đã lưu</span>
-                          </button>
-
-                          <button type="button" className="vec-dropdown-item" onClick={() => handleTabClick('feedback')}>
-                            <MessageSquare size={15} />
-                            <span>Góp ý & báo lỗi</span>
-                          </button>
-                        </>
+                        <button type="button" className="vec-dropdown-item" onClick={() => handleTabClick('bookmarks')}>
+                          <Bookmark size={15} />
+                          <span>Tài liệu đã lưu</span>
+                        </button>
                       )}
 
                       <div className="vec-dropdown-divider" />

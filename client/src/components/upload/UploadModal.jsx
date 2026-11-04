@@ -130,7 +130,7 @@ export default function UploadModal({
       <header>
         <h1 className="page-title">Đóng góp tài liệu</h1>
         <p className="page-sub">
-          Tài liệu được quản trị viên kiểm duyệt trước khi xuất bản. Được duyệt, bạn nhận +20 điểm.
+          Tài liệu sẽ được quản trị viên thẩm định theo 8 tiêu chí chuyên môn trước khi xuất bản.
         </p>
       </header>
 

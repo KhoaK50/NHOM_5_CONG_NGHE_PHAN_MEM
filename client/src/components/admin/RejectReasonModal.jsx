@@ -174,7 +174,7 @@ export default function RejectReasonModal({ documentItem, submitting = false, se
               }}
             >
               <Info size={15} style={{ color: 'var(--blue-11)', flexShrink: 0 }} />
-              <span>Tác giả nhận lý do này trong thông báo và mục Tài liệu của tôi. Tài liệu không được cộng điểm.</span>
+              <span>Tác giả sẽ nhận lý do này trong chuông thông báo và mục Tài liệu của tôi.</span>
             </div>
           )}
 

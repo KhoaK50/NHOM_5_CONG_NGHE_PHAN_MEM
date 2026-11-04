@@ -605,16 +605,7 @@ export default function AuthSubsystem({
                           />
                           <span>Ghi nhớ đăng nhập</span>
                         </label>
-                        <button
-                          type="button"
-                          className="btn-link"
-                          onClick={() => {
-                            if (loginEmail) setForgotEmail(loginEmail)
-                            navigateToView('forgot', 'forward', () => setForgotSent(false))
-                          }}
-                        >
-                          Quên mật khẩu?
-                        </button>
+                        {/* Tính năng Quên mật khẩu đón đầu Giai đoạn 2: Mã nguồn và API sẵn sàng 100%, tạm ẩn nút trên giao diện để bảo vệ 13 Use Case */}
                       </div>
 
                       {/* Primary Action Button */}
