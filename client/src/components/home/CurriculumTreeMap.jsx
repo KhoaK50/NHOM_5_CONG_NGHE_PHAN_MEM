@@ -1,23 +1,7 @@
 import {
-  useState,
-  useRef,
-  useLayoutEffect,
-  useMemo,
-  useCallback
-} from 'react'
-import {
-  GitBranch,
-  ChevronDown,
-  ChevronUp,
-  RotateCcw,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  Minimize2,
-  Move
-} from 'lucide-react'
-import {
   CURRICULUM_SEMESTERS_META,
+  CURRICULUM_COURSES,
+  CURRICULUM_OFFICIAL_CONNECTIONS,
   MANDATORY_GRADUATION_CONDITIONS,
   KNOWLEDGE_BLOCKS,
   SEMESTERS
@@ -281,34 +265,31 @@ export default function CurriculumTreeMap({
       }
     }
 
-    // Gom danh sách tất cả các liên kết tiên quyết
+    // Gom danh sách tất cả các liên kết theo 40 đường nối chuẩn pháp lệnh Sơ đồ Khoa CNTT
     const rawConnections = []
     const outgoingByCourse = {}
     const incomingByCourse = {}
 
-    for (const targetCourse of activeCourses) {
-      const prereqs = targetCourse.prerequisites || []
-      const toBox = nodeBoxByCode[targetCourse.code]
-      if (!toBox) continue
+    for (const rel of CURRICULUM_OFFICIAL_CONNECTIONS) {
+      const fromBox = nodeBoxByCode[rel.from]
+      const toBox = nodeBoxByCode[rel.to]
+      if (!fromBox || !toBox) continue
 
-      for (const preCode of prereqs) {
-        const fromBox = nodeBoxByCode[preCode]
-        if (!fromBox) continue
-
-        const conn = {
-          id: `${preCode}->${targetCourse.code}`,
-          from: preCode,
-          to: targetCourse.code,
-          fromBox,
-          toBox
-        }
-        rawConnections.push(conn)
-        if (!outgoingByCourse[preCode]) outgoingByCourse[preCode] = []
-        outgoingByCourse[preCode].push(conn)
-
-        if (!incomingByCourse[targetCourse.code]) incomingByCourse[targetCourse.code] = []
-        incomingByCourse[targetCourse.code].push(conn)
+      const conn = {
+        id: `${rel.from}->${rel.to}`,
+        from: rel.from,
+        to: rel.to,
+        connType: rel.type || 'precursor',
+        busLane: rel.busLane || null,
+        fromBox,
+        toBox
       }
+      rawConnections.push(conn)
+      if (!outgoingByCourse[rel.from]) outgoingByCourse[rel.from] = []
+      outgoingByCourse[rel.from].push(conn)
+
+      if (!incomingByCourse[rel.to]) incomingByCourse[rel.to] = []
+      incomingByCourse[rel.to].push(conn)
     }
 
     // Tách chân cực ra / vào theo tọa độ Y
@@ -354,9 +335,45 @@ export default function CurriculumTreeMap({
 
       let waypoints
 
-      // TH1: Cùng học kỳ / cùng cột (như POLI2002 -> POLI2003 trong HK2)
+      // Ưu tiên 1: Song hành nội bộ (Corequisite) - COMP1828 <-> COMP1705
+      if (conn.connType === 'corequisite') {
+        const mx = (fromBox.left + fromBox.right) / 2
+        waypoints = [
+          { x: mx, y: fromBox.bottom },
+          { x: mx, y: toBox.top }
+        ]
+      }
+      // Ưu tiên 2: Rãnh bus dưới đáy - COMP1805 -> COMP1712 (Cơ sở toán CNTT -> Học máy)
+      else if (conn.busLane === 'bottom' || (preCode === 'COMP1805' && targetCode === 'COMP1712')) {
+        const allBoxes = Object.values(nodeBoxByCode)
+        const maxBottom = allBoxes.length ? Math.max(...allBoxes.map((b) => b.bottom)) : fromBox.bottom
+        const busY = maxBottom + 26
+        const fromX = (fromBox.left + fromBox.right) / 2
+        const toX = (toBox.left + toBox.right) / 2
+        waypoints = [
+          { x: fromX, y: fromBox.bottom },
+          { x: fromX, y: busY },
+          { x: toX, y: busY },
+          { x: toX, y: toBox.bottom }
+        ]
+      }
+      // Ưu tiên 3: Rãnh bus trên đỉnh - EDUC2802 -> EDUC2803 (Giáo dục học -> Khởi nghiệp & GD KH)
+      else if (conn.busLane === 'top' || (preCode === 'EDUC2802' && targetCode === 'EDUC2803')) {
+        const allBoxes = Object.values(nodeBoxByCode)
+        const minTop = allBoxes.length ? Math.min(...allBoxes.map((b) => b.top)) : fromBox.top
+        const busY = Math.max(12, minTop - 22)
+        const fromX = (fromBox.left + fromBox.right) / 2
+        const toX = (toBox.left + toBox.right) / 2
+        waypoints = [
+          { x: fromX, y: fromBox.top },
+          { x: fromX, y: busY },
+          { x: toX, y: busY },
+          { x: toX, y: toBox.top }
+        ]
+      }
+      // TH1: Cùng học kỳ / cùng cột (dự phòng)
       // Chuẩn hóa: đi thẳng đứng từ đáy môn trên xuống đỉnh môn dưới (TUYỆT ĐỐI KHÔNG DÙNG ĐƯỜNG CHIM BAY)
-      if (c1 === c2) {
+      else if (c1 === c2) {
         if (fromBox.bottom <= toBox.top) {
           const mx = (fromBox.left + fromBox.right) / 2
           waypoints = [
@@ -461,6 +478,7 @@ export default function CurriculumTreeMap({
         id,
         from: preCode,
         to: targetCode,
+        connType: conn.connType || 'precursor',
         x1: waypoints[0].x,
         y1: waypoints[0].y,
         x2: waypoints[waypoints.length - 1].x,
@@ -787,7 +805,40 @@ export default function CurriculumTreeMap({
                       markerHeight="5"
                       orient="auto"
                     >
-                      <path d="M 0 1.2 L 6.5 4 L 0 6.8 z" fill="var(--slate-8)" />
+                      <path d="M 0 1.2 L 6.5 4 L 0 6.8 z" fill="var(--slate-10, #64748b)" />
+                    </marker>
+                    <marker
+                      id="vec-ortho-arrow-prereq"
+                      viewBox="0 0 8 8"
+                      refX="6.5"
+                      refY="4"
+                      markerWidth="5.5"
+                      markerHeight="5.5"
+                      orient="auto"
+                    >
+                      <path d="M 0 1.2 L 6.5 4 L 0 6.8 z" fill="var(--slate-12, #0f172a)" />
+                    </marker>
+                    <marker
+                      id="vec-ortho-arrow-coreq-end"
+                      viewBox="0 0 8 8"
+                      refX="6.5"
+                      refY="4"
+                      markerWidth="5.5"
+                      markerHeight="5.5"
+                      orient="auto"
+                    >
+                      <path d="M 0 1.2 L 6.5 4 L 0 6.8 z" fill="#dc2626" />
+                    </marker>
+                    <marker
+                      id="vec-ortho-arrow-coreq-start"
+                      viewBox="0 0 8 8"
+                      refX="1.5"
+                      refY="4"
+                      markerWidth="5.5"
+                      markerHeight="5.5"
+                      orient="auto"
+                    >
+                      <path d="M 6.5 1.2 L 0 4 L 6.5 6.8 z" fill="#dc2626" />
                     </marker>
                     <marker
                       id="vec-ortho-arrow-pre"
@@ -798,7 +849,7 @@ export default function CurriculumTreeMap({
                       markerHeight="6"
                       orient="auto"
                     >
-                      <path d="M 0 1 L 6.8 4 L 0 7 z" fill="var(--status-warning)" />
+                      <path d="M 0 1 L 6.8 4 L 0 7 z" fill="var(--status-warning, #d97706)" />
                     </marker>
                     <marker
                       id="vec-ortho-arrow-next"
@@ -809,7 +860,7 @@ export default function CurriculumTreeMap({
                       markerHeight="6"
                       orient="auto"
                     >
-                      <path d="M 0 1 L 6.8 4 L 0 7 z" fill="var(--blue-9)" />
+                      <path d="M 0 1 L 6.8 4 L 0 7 z" fill="var(--blue-9, #2563eb)" />
                     </marker>
                     <marker
                       id="vec-ortho-arrow-chain"
@@ -820,28 +871,41 @@ export default function CurriculumTreeMap({
                       markerHeight="5.5"
                       orient="auto"
                     >
-                      <path d="M 0 1 L 6.8 4 L 0 7 z" fill="var(--primary-base)" />
+                      <path d="M 0 1 L 6.8 4 L 0 7 z" fill="var(--primary-base, #0d74ce)" />
                     </marker>
                   </defs>
 
                   {edges.map((edge) => {
                     const role = edge.wireRole
-                    const markerUrl =
-                      role === 'direct-pre'
-                        ? 'url(#vec-ortho-arrow-pre)'
-                        : role === 'direct-next'
-                          ? 'url(#vec-ortho-arrow-next)'
-                          : role === 'chain'
-                            ? 'url(#vec-ortho-arrow-chain)'
-                            : 'url(#vec-ortho-arrow-idle)'
+                    const isCoreq = edge.connType === 'corequisite'
+                    const isPrereq = edge.connType === 'prerequisite'
+
+                    let markerEndUrl = 'url(#vec-ortho-arrow-idle)'
+                    let markerStartUrl = undefined
+
+                    if (role === 'direct-pre') {
+                      markerEndUrl = 'url(#vec-ortho-arrow-pre)'
+                    } else if (role === 'direct-next') {
+                      markerEndUrl = 'url(#vec-ortho-arrow-next)'
+                    } else if (role === 'chain') {
+                      markerEndUrl = 'url(#vec-ortho-arrow-chain)'
+                    } else if (isCoreq) {
+                      markerEndUrl = 'url(#vec-ortho-arrow-coreq-end)'
+                      markerStartUrl = 'url(#vec-ortho-arrow-coreq-start)'
+                    } else if (isPrereq) {
+                      markerEndUrl = 'url(#vec-ortho-arrow-prereq)'
+                    }
 
                     return (
-                      <g key={edge.id} className={`vec-tree-wire-group ${role}`}>
+                      <g key={edge.id} className={`vec-tree-wire-group ${role} ${isCoreq ? 'is-coreq' : ''} ${isPrereq ? 'is-prereq' : ''}`}>
                         <path
                           d={edge.d}
                           fill="none"
-                          className={`vec-tree-edge ${role}`}
-                          markerEnd={markerUrl}
+                          className={`vec-tree-edge ${role} type-${edge.connType || 'precursor'}`}
+                          strokeDasharray={isCoreq ? '4 3' : isPrereq ? '5 4' : undefined}
+                          stroke={isCoreq ? '#dc2626' : undefined}
+                          markerStart={markerStartUrl}
+                          markerEnd={markerEndUrl}
                         />
                         <circle
                           cx={edge.x1}
@@ -923,8 +987,9 @@ export default function CurriculumTreeMap({
                               type="button"
                               className={[
                                 'vec-tree-node',
-                                `group-${crs.treeGroup || 'general'}`,
-                                crs.isElective ? 'is-elective' : '',
+                                `group-${crs.treeGroup || 'foundation'}`,
+                                `scope-${crs.courseScope || 'major'}`,
+                                crs.isElective ? 'is-elective' : 'is-mandatory',
                                 isSelected ? 'selected' : '',
                                 isFocused ? 'focused' : '',
                                 isDirectPre ? 'direct-pre' : '',
@@ -937,13 +1002,13 @@ export default function CurriculumTreeMap({
                               onMouseEnter={() => setHoveredCode(crs.code)}
                               onMouseLeave={() => setHoveredCode(null)}
                               onClick={() => handleCourseClick(crs)}
-                              title={`${crs.code} (${crs.credits} TC) – ${crs.name} • ${
+                              title={`${crs.displayCode || crs.code} (${crs.credits} TC) – ${crs.name} • ${
                                 crs.isElective ? 'Học phần tự chọn' : 'Học phần bắt buộc'
                               } • ${crs.knowledgeBlock}`}
                             >
                               <div className="vec-tree-node-top">
-                                <span className="vec-tree-node-code">
-                                  {crs.code} ({crs.credits})
+                                <span className={`vec-tree-node-code scope-${crs.courseScope || 'major'}`}>
+                                  {crs.displayCode || crs.code} ({crs.credits})
                                 </span>
                                 <span
                                   className={`vec-tree-node-docs ${
@@ -954,7 +1019,9 @@ export default function CurriculumTreeMap({
                                 </span>
                               </div>
 
-                              <div className="vec-tree-node-name">{crs.name}</div>
+                              <div className={`vec-tree-node-name scope-${crs.courseScope || 'major'}`}>
+                                {crs.shortName || crs.name}
+                              </div>
 
                               <div className="vec-tree-node-meta">
                                 <span className="vec-tree-node-block">
@@ -1015,6 +1082,8 @@ export default function CurriculumTreeMap({
                                     type="button"
                                     className={[
                                       'vec-tree-stack-item',
+                                      `scope-${crs.courseScope || 'school'}`,
+                                      'is-elective',
                                       isSelected ? 'selected' : '',
                                       isFocused ? 'focused' : '',
                                       isDimmed ? 'dimmed' : ''
@@ -1024,11 +1093,11 @@ export default function CurriculumTreeMap({
                                     onMouseEnter={() => setHoveredCode(crs.code)}
                                     onMouseLeave={() => setHoveredCode(null)}
                                     onClick={() => handleCourseClick(crs)}
-                                    title={`${crs.code} (${crs.credits} TC) – ${crs.name} (Học phần tự chọn Học kỳ 2)`}
+                                    title={`${crs.displayCode || crs.code} (${crs.credits} TC) – ${crs.name} (Học phần tự chọn Học kỳ 2)`}
                                   >
                                     <div className="vec-tree-stack-top">
-                                      <span className="vec-tree-stack-code">
-                                        {crs.code} ({crs.credits})
+                                      <span className={`vec-tree-stack-code scope-${crs.courseScope || 'school'}`}>
+                                        {crs.displayCode || crs.code} ({crs.credits})
                                       </span>
                                       {docCount > 0 && (
                                         <span className="vec-tree-stack-docs">
@@ -1036,8 +1105,8 @@ export default function CurriculumTreeMap({
                                         </span>
                                       )}
                                     </div>
-                                    <div className="vec-tree-stack-name">
-                                      {crs.name}
+                                    <div className={`vec-tree-stack-name scope-${crs.courseScope || 'school'}`}>
+                                      {crs.shortName || crs.name}
                                     </div>
                                   </button>
                                 )
@@ -1050,46 +1119,84 @@ export default function CurriculumTreeMap({
                   )
                 })}
 
-                {/* 3 Thanh Học phần Điều kiện Tốt nghiệp trải ngang cuối sơ đồ (Giáo dục thể chất, GDQPAN, Chứng chỉ ngoại ngữ) */}
+                {/* 3 Thanh Học phần Điều kiện Tốt nghiệp trải ngang cuối sơ đồ đúng chuẩn Pháp lệnh Sơ đồ Khoa CNTT */}
                 <div className="vec-tree-graduation-bars" aria-label="Học phần điều kiện tốt nghiệp">
-                  {MANDATORY_GRADUATION_CONDITIONS.map((cond) => (
-                    <div key={cond.id} className="vec-tree-grad-bar" title={cond.note}>
-                      <span className="vec-tree-grad-title">{cond.title}</span>
-                      <span className="vec-tree-grad-note">{cond.note}</span>
-                    </div>
-                  ))}
+                  <div className="vec-tree-grad-bar col-span-3" title="Giáo dục thể chất: Điều kiện bắt buộc (*)">
+                    <span className="vec-tree-grad-title">Giáo dục thể chất (*)</span>
+                  </div>
+                  <div className="vec-tree-grad-bar col-span-4" title="Giáo dục quốc phòng, an ninh: Điều kiện bắt buộc (*)">
+                    <span className="vec-tree-grad-title">Giáo dục quốc phòng, an ninh (*)</span>
+                  </div>
+                  <div className="vec-tree-grad-bar col-span-8" title="Chứng chỉ ngoại ngữ: Chuẩn đầu ra ngoại ngữ">
+                    <span className="vec-tree-grad-title">Chứng chỉ ngoại ngữ</span>
+                  </div>
+                  <div className="vec-tree-condition-footnote">
+                    <strong className="vec-tree-footnote-star">(*):</strong> Là điều kiện bắt buộc. Không tính vào số tín chỉ tích lũy của học kỳ hay toàn khóa.
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Thanh CHÚ THÍCH chính thức dưới chân Sơ đồ Chương trình Đào tạo */}
-          <footer className="vec-tree-official-legend" aria-label="Chú thích ký hiệu sơ đồ chương trình đào tạo">
-            <span className="vec-official-legend-title">CHÚ THÍCH:</span>
-            <span className="vec-official-legend-chip">
-              <span className="vec-swatch-box mandatory" />
-              <span>Học phần bắt buộc</span>
-            </span>
-            <span className="vec-official-legend-chip">
-              <span className="vec-swatch-box elective" />
-              <span>Học phần tự chọn</span>
-            </span>
-            <span className="vec-official-legend-chip">
-              <span className="vec-swatch-box group-foundation" />
-              <span>Nhóm HP Nền tảng</span>
-            </span>
-            <span className="vec-official-legend-chip">
-              <span className="vec-swatch-box group-pedagogy" />
-              <span>Nhóm HP Nghiệp vụ sư phạm</span>
-            </span>
-            <span className="vec-official-legend-chip">
-              <span className="vec-swatch-box group-practice" />
-              <span>Nhóm HP Thực hành, thực tập nghề nghiệp</span>
-            </span>
-            <span className="vec-official-legend-chip">
-              <span className="vec-swatch-box group-graduation" />
-              <span>Nhóm Tốt nghiệp</span>
-            </span>
+          {/* Bảng CHÚ THÍCH chính thức theo Pháp lệnh Sơ đồ Cây CTĐT Khoa CNTT */}
+          <footer className="vec-tree-official-decree-legend" aria-label="Bảng chú thích chính thức Sơ đồ Cây Chương trình Đào tạo">
+            <div className="decree-legend-col title-col">
+              <span className="decree-legend-badge">CHÚ THÍCH</span>
+            </div>
+
+            {/* Khối 1: 4 Màu nhóm học phần */}
+            <div className="decree-legend-col groups-col">
+              <div className="decree-swatch-card group-foundation">Nhóm HP Nền tảng</div>
+              <div className="decree-swatch-card group-practice">Nhóm HP: Thực hành, thực tập nghề nghiệp</div>
+              <div className="decree-swatch-card group-pedagogy">Nhóm HP Nghiệp vụ sư phạm</div>
+              <div className="decree-swatch-card group-graduation">Nhóm Tốt nghiệp</div>
+            </div>
+
+            {/* Khối 2: Mẫu thông tin ô HP & Khung Bắt buộc / Tự chọn */}
+            <div className="decree-legend-col box-sample-col">
+              <div className="decree-sample-header">
+                <span>THÔNG TIN Ô HP</span>
+                <strong>Mã HP (Số tín chỉ)</strong>
+                <span>Tên HP</span>
+              </div>
+              <div className="decree-sample-borders">
+                <div className="sample-box-border mandatory">Bắt buộc</div>
+                <div className="sample-box-border elective">Tự chọn</div>
+              </div>
+            </div>
+
+            {/* Khối 3: Màu chữ phân cấp phạm vi HP */}
+            <div className="decree-legend-col scopes-col">
+              <div className="decree-scope-tag scope-school">HP chung toàn trường</div>
+              <div className="decree-scope-tag scope-field">HP chung cho lĩnh vực/nhóm ngành</div>
+              <div className="decree-scope-tag scope-major">HP riêng của ngành</div>
+            </div>
+
+            {/* Khối 4: 3 Loại đường nối */}
+            <div className="decree-legend-col lines-col">
+              <div className="decree-line-entry">
+                <svg width="48" height="12" aria-hidden="true">
+                  <line x1="0" y1="6" x2="38" y2="6" stroke="var(--slate-11)" strokeWidth="2" />
+                  <polygon points="38,2 48,6 38,10" fill="var(--slate-11)" />
+                </svg>
+                <span>Học trước</span>
+              </div>
+              <div className="decree-line-entry">
+                <svg width="48" height="12" aria-hidden="true">
+                  <line x1="8" y1="6" x2="40" y2="6" stroke="#dc2626" strokeWidth="2" strokeDasharray="3 2" />
+                  <polygon points="8,2 0,6 8,10" fill="#dc2626" />
+                  <polygon points="40,2 48,6 40,10" fill="#dc2626" />
+                </svg>
+                <span>Song hành</span>
+              </div>
+              <div className="decree-line-entry">
+                <svg width="48" height="12" aria-hidden="true">
+                  <line x1="0" y1="6" x2="38" y2="6" stroke="var(--slate-12)" strokeWidth="2" strokeDasharray="5 3" />
+                  <polygon points="38,2 48,6 38,10" fill="var(--slate-12)" />
+                </svg>
+                <span>Tiên quyết</span>
+              </div>
+            </div>
           </footer>
         </>
       )}
