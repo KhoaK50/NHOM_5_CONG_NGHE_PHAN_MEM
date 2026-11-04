@@ -8,7 +8,6 @@ const DREAM_MS = 2000
 const BLINK_MS = 700
 const SCENE_MS = 3800
 const FINALE_MS = 3500
-const FILM_MS = DREAM_MS + BLINK_MS + SCENE_MS + FINALE_MS
 const FINALE_SPEED = 1.9
 
 const DREAM_THOUGHTS = [
@@ -524,7 +523,6 @@ export default function IntroFilm({ onFinish }) {
 
   const [progress, setProgress] = useState(SCENE_BEATS[0].p)
   const [finaleTime, setFinaleTime] = useState(0)
-  const [isLeaving, setIsLeaving] = useState(false)
 
   const currentProgressRef = useRef(SCENE_BEATS[0].p)
   const pointerRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 })
@@ -539,9 +537,7 @@ export default function IntroFilm({ onFinish }) {
     const timers = [
       setTimeout(() => setDreamStep(1), DREAM_MS / 2),
       setTimeout(() => setDreamPhase('blinking'), DREAM_MS),
-      setTimeout(() => setDreamPhase('awake'), DREAM_MS + BLINK_MS),
-      setTimeout(() => setIsLeaving(true), FILM_MS - 300),
-      setTimeout(() => onFinishRef.current?.(), FILM_MS)
+      setTimeout(() => setDreamPhase('awake'), DREAM_MS + BLINK_MS)
     ]
 
     const handleKeyDown = (e) => {
@@ -1427,7 +1423,7 @@ export default function IntroFilm({ onFinish }) {
   }
 
   return (
-    <div className={`intro-film ${isLeaving ? 'is-leaving' : ''}`} role="region" aria-label="Giới thiệu 5share">
+    <div className="intro-film" role="region" aria-label="Giới thiệu 5share">
       <div className="scrolly-viewport">
         {/* SÂN KHẤU THREE.JS WEBGL 3D CHÍNH */}
         <div
@@ -1577,9 +1573,6 @@ export default function IntroFilm({ onFinish }) {
         </div>
 
         <div className="intro-film-controls">
-          <div className="intro-film-track" aria-hidden="true">
-            <div className="intro-film-bar" style={{ animationDuration: `${FILM_MS}ms` }} />
-          </div>
           <button type="button" className="btn-ghost intro-film-skip" onClick={() => onFinishRef.current?.()}>
             Bỏ qua
           </button>

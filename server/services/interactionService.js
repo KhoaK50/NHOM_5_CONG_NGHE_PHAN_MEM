@@ -1,4 +1,5 @@
 const repo = require('../repositories/interactionRepository');
+const { detectDocumentFormat } = require('../utils/documentFormat');
 
 class ApiError extends Error {
   constructor(statusCode, code, message) { super(message); this.statusCode = statusCode; this.code = code; }
@@ -52,7 +53,7 @@ async function listDocuments(query) {
     courseId: row.course_id, courseCode: row.course_code, courseName: row.course_name,
     uploaderName: row.uploader_name, viewCount: row.total_views, downloadCount: row.total_downloads,
     ratingAvg: Number(row.rating_avg), ratingCount: Number(row.rating_count),
-    createdAt: row.created_at, format: 'PDF', comments: []
+    createdAt: row.created_at, format: (detectDocumentFormat(row.file_name) || 'pdf').toUpperCase(), comments: []
   }));
 }
 
@@ -138,9 +139,9 @@ async function preview(rawId, user) {
   }
   const upstream = await fetch(url, { signal: AbortSignal.timeout(20000), redirect: 'error' }).catch(() => null);
   if (!upstream?.ok || !upstream.body) throw new ApiError(502, 'FILE_STORAGE_UNAVAILABLE', 'Không thể tải tệp từ kho lưu trữ.');
-  let fileName = String(document.file_name || `document-${documentId}.pdf`).replace(/[\r\n"\\]/g, '_');
-  if (!fileName.toLowerCase().endsWith('.pdf')) fileName += '.pdf';
-  return { upstream, fileName };
+  const fileName = String(document.file_name || `document-${documentId}.pdf`);
+  const format = detectDocumentFormat(fileName);
+  return { upstream, fileName: format ? fileName : `${fileName}.pdf`, format: format || 'pdf' };
 }
 
 async function download(rawId, user, ipAddress) {
@@ -155,9 +156,9 @@ async function download(rawId, user, ipAddress) {
   const upstream = await fetch(url, { signal: AbortSignal.timeout(20000), redirect: 'error' }).catch(() => null);
   if (!upstream?.ok || !upstream.body) throw new ApiError(502, 'FILE_STORAGE_UNAVAILABLE', 'Không thể tải tệp từ kho lưu trữ.');
   await repo.recordDownload(documentId, user.id, ipAddress);
-  let fileName = String(document.file_name || `document-${documentId}.pdf`).replace(/[\r\n"\\]/g, '_');
-  if (!fileName.toLowerCase().endsWith('.pdf')) fileName += '.pdf';
-  return { upstream, fileName };
+  const fileName = String(document.file_name || `document-${documentId}.pdf`);
+  const format = detectDocumentFormat(fileName);
+  return { upstream, fileName: format ? fileName : `${fileName}.pdf`, format: format || 'pdf' };
 }
 
 async function recordView(rawId, user, ipAddress) {

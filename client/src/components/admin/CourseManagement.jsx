@@ -514,7 +514,7 @@ export default function CourseManagement({ onNotice }) {
                 type="button"
                 disabled={dialogBusy}
                 onClick={handleConfirmDelete}
-                style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--red-9)', color: '#ffffff', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--red-9)', color: 'var(--text-on-brand)', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
               >
                 {dialogBusy ? 'Đang xóa...' : 'Xác nhận xóa'}
               </button>

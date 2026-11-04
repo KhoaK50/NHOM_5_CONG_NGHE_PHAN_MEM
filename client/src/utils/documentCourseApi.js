@@ -133,6 +133,7 @@ export const KNOWLEDGE_BLOCK_LABELS = {
 }
 
 export const DOC_TYPE_LABELS = {
+  TAI_LIEU: 'Tài liệu',
   KHBD_5512: 'KHBD Công văn 5512',
   SLIDE_BAI_GIANG: 'Slide bài giảng',
   DE_THI_DAP_AN: 'Đề thi & Đáp án',

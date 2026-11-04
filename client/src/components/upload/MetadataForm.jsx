@@ -1,6 +1,8 @@
 import { DOCUMENT_TYPES } from '../../data/curriculum'
+import { CourseFilter } from '../home/FilterSidebar'
 
 const DESCRIPTION_TEMPLATES = {
+  'Tài liệu': 'Tài liệu học tập phục vụ học phần, gồm nội dung chính, ví dụ và nguồn tham khảo khi có.',
   'KHBD Công văn 5512':
     'Kế hoạch bài dạy gồm: Mục tiêu bài học, tiến trình các hoạt động dạy học, phiếu học tập và tiêu chí đánh giá theo chuẩn CV 5512.',
   'Slide bài giảng':
@@ -70,18 +72,7 @@ export default function MetadataForm({
               Môn học
             </label>
           </div>
-          <select
-            id="upload-course-select"
-            className="vec-form-select"
-            value={courseCode}
-            onChange={(e) => onChangeCourseCode(e.target.value)}
-          >
-            {activeCourses.map((crs) => (
-              <option key={crs.id} value={crs.code}>
-                {crs.code} – {crs.name}
-              </option>
-            ))}
-          </select>
+          <CourseFilter id="upload-course-select" courses={activeCourses} value={courseCode} onChange={onChangeCourseCode} includeAll={false} />
         </div>
 
         <div className="vec-form-field">

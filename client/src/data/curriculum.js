@@ -58,6 +58,7 @@ export const MANDATORY_GRADUATION_CONDITIONS = [
 
 export const DOCUMENT_TYPES = [
   'Tất cả loại học liệu',
+  'Tài liệu',
   'KHBD Công văn 5512',
   'Slide bài giảng',
   'Đề thi & Đáp án',

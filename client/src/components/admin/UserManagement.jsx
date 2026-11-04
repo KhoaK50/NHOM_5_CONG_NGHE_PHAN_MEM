@@ -20,7 +20,8 @@ export default function UserManagement({
   currentUser = null,
   onToggleUserStatus,
   onToggleUserActive,
-  onToggleUserRole
+  onToggleUserRole,
+  onNotice
 }) {
   const toggleUser = onToggleUserStatus || onToggleUserActive
   // Bộ lọc và tìm kiếm
@@ -36,8 +37,8 @@ export default function UserManagement({
   // Modal Mở khóa tài khoản
   const [unlockingUser, setUnlockingUser] = useState(null)
 
-  // Banner thông báo nội bộ
-  const [bannerNotice, setBannerNotice] = useState('')
+  // Thông báo dùng chung của hệ thống
+  const setBannerNotice = (text) => onNotice?.(text)
 
   // Lọc người dùng
   const filteredUsers = users.filter((u) => {
@@ -121,38 +122,6 @@ export default function UserManagement({
           </p>
         </div>
       </div>
-
-      {/* Thông báo thao tác */}
-      {bannerNotice && (
-        <div
-          style={{
-            padding: '12px 16px',
-            borderRadius: '10px',
-            backgroundColor: 'var(--green-1)',
-            border: '1px solid var(--green-3)',
-            color: 'var(--green-12)',
-            fontSize: '13px',
-            fontWeight: 600,
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckCircle2 size={16} style={{ color: 'var(--green-9)' }} />
-            <span>{bannerNotice}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setBannerNotice('')}
-            style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}
-          >
-            <X size={15} />
-          </button>
-        </div>
-      )}
 
       {/* Thanh tìm kiếm & Bộ lọc */}
       <div
@@ -264,14 +233,14 @@ export default function UserManagement({
 
       {/* Bảng danh sách người dùng */}
       <div className="data-table-wrap">
-        <table className="data-table">
+        <table className="data-table user-data-table">
           <thead>
             <tr>
               <th>Người dùng</th>
-              <th style={{ width: '190px' }}>MSSV · Khóa</th>
-              <th style={{ width: '120px' }}>Vai trò</th>
-              <th style={{ width: '100px' }}>Trạng thái</th>
-              <th style={{ width: '210px' }}>Thao tác</th>
+              <th>MSSV · Khóa</th>
+              <th>Vai trò</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -337,7 +306,7 @@ export default function UserManagement({
 
                     {/* Thao tác Phân quyền & Khóa / Mở khóa */}
                     <td>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap' }}>
+                      <div className="user-table-actions">
                         {onToggleUserRole && (
                           <button
                             type="button"
@@ -516,7 +485,7 @@ export default function UserManagement({
                     borderRadius: '8px',
                     border: 'none',
                     backgroundColor: 'var(--red-9)',
-                    color: '#ffffff',
+                    color: 'var(--text-on-brand)',
                     fontWeight: 600,
                     fontSize: '13px',
                     cursor: 'pointer'

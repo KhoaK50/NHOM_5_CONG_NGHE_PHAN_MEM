@@ -148,7 +148,6 @@ export default function DiscoveryPage({
           <h1 className="page-title">
             {activeCourseObj ? `${activeCourseObj.code} – ${activeCourseObj.name}` : 'Kho học liệu'}
           </h1>
-          <p className="page-sub">{filteredDocs.length} tài liệu đã được kiểm duyệt</p>
         </div>
 
         {onOpenUpload && (
@@ -196,8 +195,8 @@ export default function DiscoveryPage({
         selectedDocType={selectedDocType}
         selectedFormat={selectedFormat}
         sortBy={sortBy}
-        onChangeBlock={withPageReset(setSelectedBlock)}
-        onChangeSemester={withPageReset(setSelectedSemester)}
+        onChangeBlock={(value) => { setSelectedBlock(value); setSelectedCourseCode('ALL'); setCurrentPage(1) }}
+        onChangeSemester={(value) => { setSelectedSemester(value); setSelectedCourseCode('ALL'); setCurrentPage(1) }}
         onChangeCourseCode={withPageReset(setSelectedCourseCode)}
         onChangeDocType={withPageReset(setSelectedDocType)}
         onChangeFormat={withPageReset(setSelectedFormat)}

@@ -64,7 +64,7 @@ export function deleteDocumentComment(documentId, commentId) {
 export async function downloadDocument(documentId, suggestedName = `5share-${documentId}.pdf`) {
   const blob = await request(`/api/documents/${encodeURIComponent(documentId)}/download`, { binary: true })
   let cleanName = String(suggestedName || `5share-${documentId}.pdf`).replace(/[\\/:*?"<>|]/g, '_')
-  if (!cleanName.toLowerCase().endsWith('.pdf')) {
+  if (!/\.(pdf|docx|pptx)$/i.test(cleanName)) {
     cleanName += '.pdf'
   }
   const url = URL.createObjectURL(blob)

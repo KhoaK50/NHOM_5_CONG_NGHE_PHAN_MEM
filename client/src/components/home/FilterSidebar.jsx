@@ -1,8 +1,68 @@
+import { useEffect, useRef, useState } from 'react'
+import { ChevronDown, Search } from 'lucide-react'
 import {
   KNOWLEDGE_BLOCKS,
   SEMESTERS,
   DOCUMENT_TYPES
 } from '../../data/curriculum'
+
+export function CourseFilter({ courses, value, onChange, id, includeAll = true }) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const wrapRef = useRef(null)
+  const selected = courses.find((course) => course.code === value)
+  const filtered = courses.filter((course) =>
+    `${course.code} ${course.name}`.toLocaleLowerCase('vi-VN').includes(query.trim().toLocaleLowerCase('vi-VN'))
+  )
+
+  useEffect(() => {
+    if (!open) return undefined
+    const closeOutside = (event) => {
+      if (!wrapRef.current?.contains(event.target)) setOpen(false)
+    }
+    const closeEscape = (event) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', closeOutside)
+    document.addEventListener('keydown', closeEscape)
+    return () => {
+      document.removeEventListener('mousedown', closeOutside)
+      document.removeEventListener('keydown', closeEscape)
+    }
+  }, [open])
+
+  const select = (code) => {
+    onChange(code)
+    setOpen(false)
+    setQuery('')
+  }
+
+  return (
+    <div className="course-filter" ref={wrapRef}>
+      <button id={id} type="button" className="filter-select course-filter-trigger" aria-label="Môn học" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+        <span title={selected ? `${selected.code} – ${selected.name}` : includeAll ? 'Tất cả môn học' : 'Chọn môn học'}>{selected ? `${selected.code} – ${selected.name}` : includeAll ? 'Tất cả môn học' : 'Chọn môn học'}</span>
+        <ChevronDown size={15} aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="course-filter-popover">
+          <label className="course-filter-search">
+            <Search size={15} aria-hidden="true" />
+            <input autoFocus type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm mã hoặc tên môn" aria-label="Tìm môn học" />
+          </label>
+          <div role="listbox" aria-label="Chọn môn học" className="course-filter-options">
+            {includeAll && !query && <button type="button" role="option" aria-selected={value === 'ALL'} onClick={() => select('ALL')}>Tất cả môn học</button>}
+            {filtered.map((course) => (
+              <button key={course.id} type="button" role="option" aria-selected={value === course.code} onClick={() => select(course.code)} title={`${course.code} – ${course.name}`}>
+                <strong>{course.code}</strong><span>{course.name}</span>
+              </button>
+            ))}
+            {filtered.length === 0 && <p className="course-filter-empty">Không tìm thấy môn học.</p>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Hàng bộ lọc đa tiêu chí của Kho học liệu (FR-03, FR-04)
 export default function FilterSidebar({
@@ -41,19 +101,7 @@ export default function FilterSidebar({
         ))}
       </select>
 
-      <select
-        className="filter-select"
-        aria-label="Môn học"
-        value={selectedCourseCode}
-        onChange={(e) => onChangeCourseCode(e.target.value)}
-      >
-        <option value="ALL">Tất cả môn học</option>
-        {visibleCourses.map((crs) => (
-          <option key={crs.id} value={crs.code}>
-            {crs.code} – {crs.name}
-          </option>
-        ))}
-      </select>
+      <CourseFilter courses={visibleCourses} value={selectedCourseCode} onChange={onChangeCourseCode} />
 
       <select
         className="filter-select"

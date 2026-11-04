@@ -27,7 +27,6 @@ function markIntroSeen() {
 
 export default function LandingPage({
   documents = [],
-  canUpload = false,
   onSearch,
   onExploreDiscovery,
   onOpenUpload,
@@ -63,7 +62,7 @@ export default function LandingPage({
       )}
 
       <section className="home-hero" aria-label="Giới thiệu 5share">
-        <h1 className="home-title">Tài liệu học tập ngành Sư phạm Tin học, ở cùng một nơi</h1>
+        <h1 className="home-title">Tài liệu học tập ngành Sư phạm Tin học</h1>
         <p className="home-subtitle">
           Tra cứu theo môn học, đọc thử trực tuyến và tải về tài liệu đã được kiểm duyệt.
         </p>
@@ -86,14 +85,14 @@ export default function LandingPage({
         </form>
 
         <div className="home-secondary-actions">
-          {canUpload && (
+          {onOpenUpload && (
             <button type="button" className="btn-ghost" onClick={onOpenUpload}>
               Đóng góp tài liệu
             </button>
           )}
           <button type="button" className="btn-ghost nav-auth-link" onClick={() => setIsIntroOpen(true)}>
             <Play size={14} />
-            <span>Xem giới thiệu (10 giây)</span>
+            <span>Xem giới thiệu</span>
           </button>
         </div>
       </section>

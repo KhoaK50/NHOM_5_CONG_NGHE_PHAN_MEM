@@ -12,25 +12,33 @@ import {
   Menu,
   X,
   Trash2,
-  Repeat2
+  Repeat2,
+  Sun,
+  Moon,
+  House,
+  BookOpen,
+  Upload,
+  ShieldCheck
 } from 'lucide-react'
 import BrandLogo from './BrandLogo'
 import NotificationList from '../notifications/NotificationList'
 import { AuthGuard } from '../../utils/authGuard'
+import { useTheme } from '../../utils/theme'
 
 // Mục điều hướng theo vai trò, bám sát nghiệp vụ 5Share
 const NAV_ITEMS = {
-  landing: { label: 'Trang chủ', views: ['landing'] },
-  discovery: { label: 'Kho học liệu', views: ['discovery', 'detail'] },
-  upload: { label: 'Đóng góp', views: ['upload'] },
+  landing: { label: 'Trang chủ', icon: House, views: ['landing'] },
+  discovery: { label: 'Kho học liệu', icon: BookOpen, views: ['discovery', 'detail'] },
+  upload: { label: 'Đóng góp', icon: Upload, views: ['upload'] },
   admin: {
     label: 'Quản trị',
+    icon: ShieldCheck,
     views: ['admin', 'admin-dashboard', 'admin-moderation', 'admin-courses', 'admin-users']
   }
 }
 
 const NAV_BY_ROLE = {
-  GUEST: ['landing', 'discovery'],
+  GUEST: ['landing', 'discovery', 'upload'],
   USER: ['landing', 'discovery', 'upload'],
   ADMIN: ['landing', 'discovery', 'upload', 'admin']
 }
@@ -84,6 +92,8 @@ export default function Navbar({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [savedAccounts, setSavedAccounts] = useState(() => AuthGuard.getSavedAccounts())
 
+  const { theme, setTheme } = useTheme()
+
   const avatarRef = useRef(null)
   const notifRef = useRef(null)
 
@@ -106,6 +116,27 @@ export default function Navbar({
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Menu điện thoại: khóa cuộn trang, đóng bằng Esc và khi chuyển sang màn hình rộng
+  useEffect(() => {
+    if (!isMobileMenuOpen) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setIsMobileMenuOpen(false)
+    }
+    const desktop = window.matchMedia('(min-width: 769px)')
+    const onResize = () => {
+      if (desktop.matches) setIsMobileMenuOpen(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    desktop.addEventListener('change', onResize)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', onKeyDown)
+      desktop.removeEventListener('change', onResize)
+    }
+  }, [isMobileMenuOpen])
 
   const handleTabClick = (viewId) => {
     if (onNavigate) onNavigate(viewId)
@@ -207,15 +238,6 @@ export default function Navbar({
   return (
     <header className="vec-topbar" id="appHeader" role="banner">
       <div className="vec-topbar-left">
-        <button
-          type="button"
-          className="vec-icon-btn vec-mobile-menu-btn"
-          onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-          aria-label="Mở menu điều hướng"
-        >
-          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
-
         <div
           className="vec-brand-group"
           onClick={() => handleTabClick('landing')}
@@ -230,23 +252,61 @@ export default function Navbar({
         </div>
 
         <nav
+          id="main-navigation"
           className={`vec-nav-links ${isMobileMenuOpen ? 'show-mobile' : ''}`}
           aria-label="Điều hướng chính"
         >
-          {NAV_BY_ROLE[roleKey].map((id) => (
-            <button
-              key={id}
-              type="button"
-              className={`vec-nav-link ${NAV_ITEMS[id].views.includes(activeView) ? 'active' : ''}`}
-              onClick={() => handleTabClick(id)}
-            >
-              <span>{NAV_ITEMS[id].label}</span>
-            </button>
-          ))}
+          {NAV_BY_ROLE[roleKey].map((id) => {
+            const Icon = NAV_ITEMS[id].icon
+            const isActive = NAV_ITEMS[id].views.includes(activeView)
+            return (
+              <button
+                key={id}
+                type="button"
+                className={`vec-nav-link ${isActive ? 'active' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
+                onClick={() => handleTabClick(id)}
+              >
+                <Icon size={20} aria-hidden="true" />
+                <span>{NAV_ITEMS[id].label}</span>
+              </button>
+            )
+          })}
+
+          <div className="vec-nav-menu-footer">
+            <div className="vec-nav-menu-theme">
+              <span>Giao diện</span>
+              <div className="theme-switch" role="group" aria-label="Chọn giao diện">
+                <button type="button" aria-pressed={theme === 'light'} onClick={() => setTheme('light')}>
+                  <Sun size={16} aria-hidden="true" />
+                  <span>Sáng</span>
+                </button>
+                <button type="button" aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}>
+                  <Moon size={16} aria-hidden="true" />
+                  <span>Tối</span>
+                </button>
+              </div>
+            </div>
+            {isGuest && (
+              <button type="button" className="btn-solid-primary" onClick={() => handleOpenAuth('register')}>
+                Đăng ký tài khoản
+              </button>
+            )}
+          </div>
         </nav>
       </div>
 
       <div className="vec-topbar-right">
+        <button
+          type="button"
+          className="vec-icon-btn nav-theme-btn"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          title={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+          aria-label={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+        >
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+
         {isGuest ? (
           <>
             {savedAccounts.length > 0 && (
@@ -273,7 +333,7 @@ export default function Navbar({
             <button type="button" className="btn-ghost nav-auth-link" onClick={() => handleOpenAuth('login')}>
               Đăng nhập
             </button>
-            <button type="button" className="btn-solid-primary" onClick={() => handleOpenAuth('register')}>
+            <button type="button" className="btn-solid-primary nav-register-btn" onClick={() => handleOpenAuth('register')}>
               Đăng ký
             </button>
           </>
@@ -287,6 +347,7 @@ export default function Navbar({
                 title="Thông báo"
                 onClick={() => setIsNotifOpen((prev) => !prev)}
                 aria-label="Xem thông báo"
+                aria-expanded={isNotifOpen}
               >
                 <Bell size={18} />
                 {unreadCount > 0 && (
@@ -297,7 +358,7 @@ export default function Navbar({
               </button>
 
               {isNotifOpen && (
-                <div className="vec-dropdown-menu" style={{ width: '340px', minWidth: '340px', padding: 0 }}>
+                <div className="vec-dropdown-menu vec-notification-menu">
                   <NotificationList
                     notifications={notifications}
                     onMarkOneRead={onMarkOneRead}
@@ -400,6 +461,17 @@ export default function Navbar({
             </div>
           </>
         )}
+
+        <button
+          type="button"
+          className="vec-icon-btn vec-mobile-menu-btn"
+          onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+          aria-label={isMobileMenuOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng'}
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="main-navigation"
+        >
+          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
     </header>
   )

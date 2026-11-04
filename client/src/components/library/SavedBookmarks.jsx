@@ -92,7 +92,7 @@ export default function SavedBookmarks({ onSelectDoc, onToggleBookmark, onNaviga
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 16 }}>
                 <button type="button" className="btn-solid-primary" onClick={() => onSelectDoc?.(doc)}><BookOpen size={14} /> Đọc tài liệu</button>
-                <button type="button" className="btn-ghost" disabled={downloadingId === doc.id} onClick={() => handleDownload(doc)}><Download size={14} /> {downloadingId === doc.id ? 'Đang tải…' : 'Tải PDF gốc'}</button>
+                <button type="button" className="btn-ghost" disabled={downloadingId === doc.id} onClick={() => handleDownload(doc)}><Download size={14} /> {downloadingId === doc.id ? 'Đang tải…' : 'Tải tệp gốc'}</button>
               </div>
             </article>
           ))}

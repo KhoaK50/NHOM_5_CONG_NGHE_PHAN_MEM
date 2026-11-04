@@ -91,11 +91,11 @@ export default function AdminDashboard({
   }))
 
   const radixBarColors = [
-    'var(--blue-9, #0090ff)',
-    'var(--blue-8, #5eb1ef)',
-    'var(--blue-7, #8ec8f6)',
-    'var(--blue-6, #acd8fc)',
-    'var(--blue-5, #c2e5ff)'
+    'var(--blue-9)',
+    'var(--blue-8)',
+    'var(--blue-7)',
+    'var(--blue-6)',
+    'var(--blue-5)'
   ]
 
   return (
@@ -133,7 +133,7 @@ export default function AdminDashboard({
         </div>
 
         <div
-          className="kpi-card"
+          className={`kpi-card ${totalPendingRequests > 0 ? 'is-attention' : ''}`}
           style={{ cursor: onNavigateTab ? 'pointer' : 'default' }}
           onClick={() => onNavigateTab && onNavigateTab('moderation')}
           title="Mở trang Kiểm duyệt"
@@ -147,7 +147,7 @@ export default function AdminDashboard({
       </div>
 
       {/* 2 KHUNG BIỂU ĐỒ SVG CHUẨN RADIX LIGHT MODE */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(460px, 100%), 1fr))', gap: '20px' }}>
         {/* BIỂU ĐỒ 1: TOP 5 HỌC PHẦN (PURE SVG HORIZONTAL BAR CHART) */}
         <div
           style={{
@@ -219,8 +219,7 @@ export default function AdminDashboard({
                       height="18"
                       rx="4"
                       fill={barColor}
-                      opacity={isHovered ? 1 : 0.9}
-                      filter={isHovered ? 'drop-shadow(0 2px 4px rgba(0, 144, 255, 0.25))' : 'none'}
+                      filter="none"
                       style={{ transition: 'all 0.2s ease' }}
                     />
 
@@ -251,7 +250,7 @@ export default function AdminDashboard({
                         <text
                           x="100"
                           y={y - 10}
-                          fill="#ffffff"
+                          fill="var(--bg-surface)"
                           fontSize="10.5"
                           fontWeight="500"
                           fontFamily="var(--font-ui)"
@@ -298,8 +297,8 @@ export default function AdminDashboard({
               <defs>
                 {/* Gradient vùng bóng dưới biểu đồ */}
                 <linearGradient id="downloadAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--blue-9)" stopOpacity="0.22" />
-                  <stop offset="100%" stopColor="var(--blue-9)" stopOpacity="0.01" />
+                  <stop offset="0%" stopColor="var(--blue-4)" />
+                  <stop offset="100%" stopColor="var(--bg-surface)" />
                 </linearGradient>
               </defs>
 
@@ -398,7 +397,7 @@ export default function AdminDashboard({
                       cx={pt.x}
                       cy={pt.y}
                       r={isHovered ? 6 : 4}
-                      fill="#ffffff"
+                      fill="var(--bg-surface)"
                       stroke="var(--blue-9)"
                       strokeWidth={isHovered ? 3 : 2}
                       style={{ transition: 'all 0.15s ease' }}
@@ -414,13 +413,13 @@ export default function AdminDashboard({
                           height="28"
                           rx="6"
                           fill="var(--slate-12)"
-                          filter="drop-shadow(0 4px 8px rgba(0,0,0,0.15))"
+                          filter="none"
                         />
                         <text
                           x={Math.max(padLeft, Math.min(chartWidth - 140, pt.x - 65)) + 65}
                           y={pt.y - 20}
                           textAnchor="middle"
-                          fill="#ffffff"
+                          fill="var(--bg-surface)"
                           fontSize="11"
                           fontWeight="700"
                           fontFamily="var(--font-ui)"

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Upload } from 'lucide-react'
 import MetadataForm from './MetadataForm'
 import Sha256Verifier from './Sha256Verifier'
 import { checkDocumentHash } from '../../utils/documentCourseApi'
@@ -42,8 +42,10 @@ export default function UploadModal({
       setDocType('Slide bài giảng')
     } else if (/DO\s*AN|KHOA\s*LUAN|BTL|PROJECT|THESIS/i.test(clean)) {
       setDocType('Đồ án & Khóa luận')
-    } else if (/GIAO\s*TRINH|SACH|EBOOK|DE\s*CUONG|BAI\s*TAP|TAI\s*LIEU/i.test(clean)) {
+    } else if (/GIAO\s*TRINH|SACH|EBOOK/i.test(clean)) {
       setDocType('Giáo trình & Sách học liệu')
+    } else if (/DE\s*CUONG|BAI\s*TAP|TAI\s*LIEU/i.test(clean)) {
+      setDocType('Tài liệu')
     }
 
     if (!title.trim()) {
@@ -53,7 +55,6 @@ export default function UploadModal({
 
   // Máy chủ kiểm tra bytes gốc và đối chiếu kho thật
   const confirmWithServer = async (file, clientResult) => {
-    if (clientResult.format !== 'pdf') return clientResult
     try {
       const { data } = await checkDocumentHash(file)
       return { ...clientResult, sha256Hash: data.fileHash, isDuplicate: false, duplicateDoc: null }
@@ -144,6 +145,7 @@ export default function UploadModal({
           onDrop={handleDrop}
           className={`vec-dropzone ${isDragging ? 'dragging' : ''}`}
         >
+          <Upload size={22} color="var(--primary-base)" aria-hidden="true" />
           <strong className="vec-dropzone-title">Kéo thả tệp vào đây</strong>
           <span className="vec-dropzone-sub">PDF, Word hoặc PowerPoint, tối đa 25 MB</span>
           <label className="vec-file-picker-btn">

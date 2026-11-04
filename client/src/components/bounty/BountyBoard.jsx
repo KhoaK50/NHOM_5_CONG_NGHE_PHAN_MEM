@@ -209,8 +209,8 @@ export default function BountyBoard({
             style={{
               padding: '10px 16px',
               borderRadius: '10px',
-              backgroundColor: 'var(--amber-1, #fff9ed)',
-              border: '1.5px solid var(--amber-3, #ffe3a2)',
+              backgroundColor: 'var(--amber-1)',
+              border: '1.5px solid var(--amber-3)',
               display: 'flex',
               alignItems: 'center',
               gap: '10px'
@@ -389,9 +389,9 @@ export default function BountyBoard({
                       {/* Reward points pill */}
                       <span
                         style={{
-                          backgroundColor: 'var(--amber-1, #fff9ed)',
-                          color: 'var(--amber-11, #ad5700)',
-                          border: '1px solid var(--amber-3, #ffe3a2)',
+                          backgroundColor: 'var(--amber-1)',
+                          color: 'var(--amber-11)',
+                          border: '1px solid var(--amber-3)',
                           padding: '4px 10px',
                           borderRadius: '999px',
                           fontWeight: 800,
@@ -545,7 +545,7 @@ export default function BountyBoard({
             aria-label="Bảng vàng top 10 cống hiến"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <Trophy size={18} style={{ color: 'var(--amber-9, #ffb224)' }} />
+              <Trophy size={18} style={{ color: 'var(--amber-9)' }} />
               <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
                 Bảng Vàng Top 10 Cống Hiến
               </h2>
@@ -568,8 +568,8 @@ export default function BountyBoard({
                     style={{
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      backgroundColor: isTop1 ? 'var(--amber-1, #fff9ed)' : 'var(--bg-muted)',
-                      border: isTop1 ? '1px solid var(--amber-3, #ffe3a2)' : '1px solid transparent',
+                      backgroundColor: isTop1 ? 'var(--amber-1)' : 'var(--bg-muted)',
+                      border: isTop1 ? '1px solid var(--amber-3)' : '1px solid transparent',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -957,7 +957,7 @@ export default function BountyBoard({
                   type="submit"
                   className="btn-solid-primary"
                   disabled={!selectedDocId}
-                  style={{ padding: '8px 20px', opacity: !selectedDocId ? 0.5 : 1 }}
+                  style={{ padding: '8px 20px' }}
                 >
                   <span>Xác nhận nộp giải thưởng</span>
                 </button>

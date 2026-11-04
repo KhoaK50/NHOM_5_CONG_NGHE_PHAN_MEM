@@ -31,7 +31,9 @@ function buildLimiter(max, windowMinutes) {
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_PDF_BYTES, files: 1 }
+  limits: { fileSize: MAX_PDF_BYTES, files: 1 },
+  // Giữ đúng tên tệp tiếng Việt
+  defParamCharset: 'utf8'
 });
 
 function acceptSinglePdf(req, res, next) {
@@ -40,7 +42,7 @@ function acceptSinglePdf(req, res, next) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return next(new ApiError(413, 'FILE_TOO_LARGE', 'Tệp vượt quá giới hạn 25 MB.'));
     }
-    return next(new ApiError(400, 'FILE_REQUIRED', 'Vui lòng gửi đúng một tệp PDF trong trường "file".'));
+    return next(new ApiError(400, 'FILE_REQUIRED', 'Vui lòng gửi đúng một tệp tài liệu trong trường "file".'));
   });
 }
 

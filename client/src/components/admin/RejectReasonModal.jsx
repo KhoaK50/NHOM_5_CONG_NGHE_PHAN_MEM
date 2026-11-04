@@ -186,15 +186,14 @@ export default function RejectReasonModal({ documentItem, submitting = false, se
               type="submit"
               disabled={submitting}
               style={{
-                backgroundColor: 'var(--red-9, #e5484d)',
-                color: '#ffffff',
+                backgroundColor: 'var(--red-9)',
+                color: 'var(--text-on-brand)',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '9px 18px',
                 fontWeight: 700,
                 fontSize: '13px',
-                cursor: submitting ? 'wait' : 'pointer',
-                opacity: submitting ? 0.7 : 1
+                cursor: submitting ? 'wait' : 'pointer'
               }}
             >
               {submitting ? 'Đang xử lý...' : 'Xác nhận từ chối'}

@@ -16,8 +16,8 @@ import SavedBookmarks from './components/library/SavedBookmarks'
 import UserProfile from './components/profile/UserProfile'
 import { AuthGuard, getApiBaseUrl } from './utils/authGuard'
 import { CURRICULUM_COURSES } from './data/curriculum'
-import { INITIAL_USERS } from './data/mockData'
 import { api, subscribeNotifications } from './api/notificationReportApi'
+import ToastStack from './components/common/ToastStack'
 import { listPublicCourses, listModerationDocuments, listReports, uploadDocument } from './utils/documentCourseApi'
 import {
   addBookmark,
@@ -68,6 +68,13 @@ function normalizeCourse(apiCourse) {
   }
 }
 
+function inferNoticeTone(text = '') {
+  if (/vui lòng|tạm khóa|bị khóa|hết hạn|không còn/i.test(text)) return 'warning'
+  if (/không thể|không tải|không gửi|lỗi|thất bại/i.test(text)) return 'error'
+  if (/^đang |^thông báo mới/i.test(text)) return 'info'
+  return 'success'
+}
+
 export default function App() {
   const [actorRole, setActorRole] = useState(() => {
     const saved = AuthGuard.getSavedUserProfile()
@@ -87,6 +94,7 @@ export default function App() {
     return 'landing'
   })
   const [authTab, setAuthTab] = useState('login')
+  const [afterAuthView, setAfterAuthView] = useState(null)
   const [adminSubTab, setAdminSubTab] = useState('dashboard') // 'dashboard' | 'moderation' | 'courses' | 'users'
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
   const [discoveryQuery, setDiscoveryQuery] = useState('')
@@ -94,11 +102,11 @@ export default function App() {
   const [courses, setCourses] = useState(() => CURRICULUM_COURSES.map(normalizeCourse))
   const [documents, setDocuments] = useState([])
   const [notifications, setNotifications] = useState([])
-  const [users, setUsers] = useState(INITIAL_USERS)
+  const [users, setUsers] = useState([])
   const [downloadHistory, setDownloadHistory] = useState([])
   const [bookmarkedIds, setBookmarkedIds] = useState([])
   const [selectedDocId, setSelectedDocId] = useState(null)
-  const [bannerNotice, setBannerNotice] = useState(null)
+  const [toasts, setToasts] = useState([])
   const [adminPendingCount, setAdminPendingCount] = useState(0)
   const [userSession, setUserSession] = useState(() => {
     const saved = AuthGuard.getSavedUserProfile()
@@ -108,10 +116,18 @@ export default function App() {
     return null
   })
 
-  const showNotice = useCallback((text) => {
-    setBannerNotice(text)
-    setTimeout(() => setBannerNotice(null), 4500)
+  const closeToast = useCallback((id) => {
+    setToasts((items) => items.filter((item) => item.id !== id))
   }, [])
+
+  // Một kiểu thông báo cho toàn hệ thống. Lỗi giữ lại đến khi đóng, loại khác tự ẩn sau 5 giây.
+  const showNotice = useCallback((text, tone) => {
+    if (!text) return
+    const resolvedTone = tone || inferNoticeTone(text)
+    const id = `${Date.now()}-${Math.random()}`
+    setToasts((items) => [...items.filter((item) => item.text !== text), { id, text, tone: resolvedTone }].slice(-3))
+    if (resolvedTone !== 'error') setTimeout(() => closeToast(id), 5000)
+  }, [closeToast])
 
   // Nạp danh mục môn học
   useEffect(() => {
@@ -146,7 +162,7 @@ export default function App() {
       .catch((error) => {
         if (!cancelled) {
           setDocuments([])
-          showNotice(`Không tải được danh sách tài liệu từ máy chủ: ${error.message}`)
+          showNotice(`Không tải được danh sách tài liệu từ máy chủ: ${error.message}`, 'error')
         }
       })
     return () => {
@@ -165,7 +181,7 @@ export default function App() {
         if (!cancelled) setBookmarkedIds(items.map((item) => item.id))
       })
       .catch((error) => {
-        if (!cancelled) showNotice(`Không tải được tài liệu đã lưu: ${error.message}`)
+        if (!cancelled) showNotice(`Không tải được tài liệu đã lưu: ${error.message}`, 'error')
       })
     return () => {
       cancelled = true
@@ -191,7 +207,7 @@ export default function App() {
       if (isCancelled) return
       if (newEvent?.type === 'NOTIFICATION_CREATED' && newEvent.data) {
         setNotifications((prev) => [newEvent.data, ...prev])
-        showNotice(`Thông báo mới: ${newEvent.data.title || 'Bạn có thông báo mới'}`)
+        showNotice(`Thông báo mới: ${newEvent.data.title || 'Bạn có thông báo mới'}`, 'info')
       }
     })
 
@@ -270,7 +286,7 @@ export default function App() {
 
   const handleOpenUpload = () => {
     if (actorRole === 'GUEST') {
-      handleOpenAuth('login')
+      handleOpenAuth('login', 'upload')
       return
     }
     if (isCurrentUserLocked) {
@@ -339,7 +355,7 @@ export default function App() {
       return
     }
     if (actorRole === 'GUEST' && ['upload', 'my-docs', 'bookmarks', 'profile'].includes(view)) {
-      handleOpenAuth('login')
+      handleOpenAuth('login', view)
       return
     }
     if (view === 'upload' && isCurrentUserLocked) {
@@ -360,7 +376,8 @@ export default function App() {
     setActiveView('discovery')
   }
 
-  const handleOpenAuth = (tab = 'login') => {
+  const handleOpenAuth = (tab = 'login', destination = null) => {
+    setAfterAuthView(destination)
     setAuthTab(tab)
     setActiveView('auth')
   }
@@ -379,7 +396,8 @@ export default function App() {
     const nextRole = profile.role === 'ADMIN' ? 'ADMIN' : 'USER'
     setUserSession(profile)
     setActorRole(nextRole)
-    setActiveView('discovery')
+    setActiveView(afterAuthView || 'discovery')
+    setAfterAuthView(null)
     if (nextRole === 'ADMIN') {
       fetchAdminUsersList(AuthGuard.getAuthToken())
     }
@@ -450,14 +468,14 @@ export default function App() {
           docId: doc.id,
           title: doc.title,
           fileName: doc.fileName,
-          format: 'PDF',
+          format: doc.format || 'PDF',
           downloadedAt: new Date().toISOString()
         },
         ...prev
       ])
       showNotice(`Đã tải "${doc.fileName}".`)
     } catch (error) {
-      showNotice(error.message)
+      showNotice(error.message, 'error')
       if (error.status === 401 || error.status === 403) handleOpenAuth('login')
     }
   }
@@ -479,19 +497,14 @@ export default function App() {
         showNotice('Đã lưu tài liệu vào Tủ cá nhân.')
       }
     } catch (error) {
-      showNotice(error.message)
+      showNotice(error.message, 'error')
       throw error
     }
   }
 
-  // UC04: Báo cáo tài liệu vi phạm chuẩn mực học thuật
-  const handleSubmitReport = async (payload) => {
-    try {
-      await api.submitReport(payload)
-      showNotice('Báo cáo vi phạm đã được ghi nhận và gửi tới Ban Quản trị.')
-    } catch (err) {
-      showNotice(err.message || 'Không thể gửi báo cáo vi phạm.')
-    }
+  // UC04: ReportModal đã gửi báo cáo lên máy chủ, ở đây chỉ báo kết quả cho người dùng
+  const handleSubmitReport = () => {
+    showNotice('Báo cáo vi phạm đã được ghi nhận và gửi tới Ban Quản trị.')
   }
 
   const handleUpdateProfile = async (updatedFields) => {
@@ -589,7 +602,7 @@ export default function App() {
     }
 
     try {
-      showNotice('Đang tải tệp lên...')
+      showNotice('Đang tải tệp lên...', 'info')
       const res = await uploadDocument({
         title: newDocPayload.title,
         courseCode: newDocPayload.courseCode,
@@ -686,7 +699,7 @@ export default function App() {
 
   const handleMarkOneRead = async (notifId) => {
     try {
-      await api.markAsRead(notifId)
+      await api.markNotificationsRead({ ids: [notifId] })
     } catch {
       // Bỏ qua lỗi mạng cục bộ khi đánh dấu thông báo
     }
@@ -697,26 +710,34 @@ export default function App() {
 
   const handleMarkAllRead = async () => {
     try {
-      await api.markAllAsRead()
-    } catch {
-      // Bỏ qua lỗi mạng cục bộ khi đánh dấu tất cả thông báo
+      await api.markNotificationsRead({ markAll: true })
+    } catch (error) {
+      showNotice(error.message, 'error')
+      return
     }
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
     showNotice('Đã đánh dấu toàn bộ thông báo là đã đọc.')
   }
 
   const handleSelectNotification = (notif) => {
-    if (notif.targetDocId) {
-      handleSelectDocument(notif.targetDocId)
-    }
     if (notif.targetScreen) {
       setActiveView(notif.targetScreen)
+      return
+    }
+    if (['REJECTED', 'DOC_REJECTED', 'DOCUMENT_REJECTED'].includes(notif.type)) {
+      setActiveView('my-docs')
+      return
+    }
+    const documentId = notif.targetDocId || notif.documentId
+    if (documentId) {
+      const documentItem = documents.find((item) => Number(item.id) === Number(documentId))
+      if (documentItem) handleSelectDocument(documentItem)
+      else showNotice('Tài liệu liên quan không còn trong Kho học liệu.')
     }
   }
 
   const selectedDocument =
     documents.find((d) => d.id === selectedDocId) || documents[0]
-  const canContribute = actorRole !== 'GUEST'
   const isStudent = actorRole === 'USER'
 
   const isAuthorizedAdmin = Boolean(
@@ -787,11 +808,7 @@ export default function App() {
       />
 
       {/* Thông báo phản hồi thao tác */}
-      {bannerNotice && (
-        <div className="app-notice" role="status">
-          <span>{bannerNotice}</span>
-        </div>
-      )}
+      <ToastStack toasts={toasts} onClose={closeToast} />
 
       {/* Vùng hiển thị màn hình chính */}
       {isAdminView ? (
@@ -866,6 +883,7 @@ export default function App() {
                   currentUser={userSession}
                   onToggleUserStatus={handleToggleUserStatus}
                   onToggleUserRole={handleToggleUserRole}
+                  onNotice={showNotice}
                 />
               )}
             </main>
@@ -894,7 +912,6 @@ export default function App() {
           {activeView === 'landing' && (
             <LandingPage
               documents={documents}
-              canUpload={canContribute}
               onSearch={handleSearchFromHome}
               onExploreDiscovery={() => handleNavigate('discovery')}
               onOpenUpload={handleOpenUpload}
@@ -911,7 +928,7 @@ export default function App() {
               bookmarkedIds={bookmarkedIds}
               onSelectDoc={handleSelectDocument}
               onToggleBookmark={isStudent ? handleToggleBookmark : undefined}
-              onOpenUpload={canContribute ? handleOpenUpload : undefined}
+              onOpenUpload={handleOpenUpload}
             />
           )}
 
