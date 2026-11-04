@@ -32,7 +32,13 @@ if (process.env.TRUST_PROXY_HOPS) {
 }
 
 // Middlewares
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false
+  })
+);
 app.use(
   cors({
     origin: allowedOrigins,

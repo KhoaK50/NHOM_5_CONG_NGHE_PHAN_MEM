@@ -31,6 +31,12 @@ async function previewDocument(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Accept-Ranges', 'bytes');
   res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.removeHeader('X-Frame-Options');
+  res.setHeader('Content-Security-Policy', 'frame-ancestors *');
   const length = upstream.headers.get('content-length');
   if (length && /^\d+$/.test(length)) res.setHeader('Content-Length', length);
   try { await pipeline(Readable.fromWeb(upstream.body), res); }

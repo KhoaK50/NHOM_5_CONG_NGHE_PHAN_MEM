@@ -7,10 +7,9 @@
  * ============================================================================
  */
 
-const API_BASE_URL =
-  typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
-    ? import.meta.env.VITE_API_BASE_URL
-    : '/api';
+import { getApiBaseUrl } from '../utils/authGuard';
+
+const API_BASE_URL = `${getApiBaseUrl()}/api`;
 
 /**
  * Lấy AccessToken từ phiên làm việc thực tế của 5Share hoặc fallback sang mock token
