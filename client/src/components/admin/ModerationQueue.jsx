@@ -5,10 +5,8 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   EyeOff,
   FileCheck,
-  FileText,
   Flag,
   Hash,
   ShieldCheck,
@@ -18,7 +16,7 @@ import {
 import CriteriaChecklist from './CriteriaChecklist'
 import RejectReasonModal from './RejectReasonModal'
 import ResolveReportModal from './ResolveReportModal'
-import { getApiBaseUrl } from '../../utils/authGuard'
+import PdfPreviewViewer from '../document/PdfPreviewViewer'
 import {
   AUTO_CRITERIA,
   DOC_TYPE_LABELS,
@@ -91,63 +89,9 @@ function PageControls({ page, total, onChange }) {
 }
 
 function DocumentReader({ detail }) {
-  const streamUrl = `${getApiBaseUrl()}/api/documents/${detail.id}/preview`
   return (
-    <section
-      aria-label="Xem toàn văn tài liệu"
-      style={{
-        backgroundColor: 'var(--bg-surface)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 'var(--radius-lg)',
-        overflow: 'hidden',
-        minWidth: 0
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '12px 16px',
-          backgroundColor: 'var(--bg-muted)',
-          borderBottom: '1px solid var(--border-subtle)'
-        }}
-      >
-        <FileText size={16} style={{ color: 'var(--primary-base)', flexShrink: 0 }} />
-        <strong
-          title={detail.fileName}
-          style={{ flex: 1, minWidth: 0, fontSize: '12.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}
-        >
-          {detail.fileName}
-        </strong>
-        <span className="status-badge green">Toàn văn • {detail.pageCount} trang</span>
-      </div>
-
-      <object
-        data={`${streamUrl}#toolbar=1`}
-        type="application/pdf"
-        style={{ width: '100%', height: '640px', border: 'none', display: 'block', backgroundColor: '#525659' }}
-      >
-        <iframe
-          src={`${streamUrl}#toolbar=1`}
-          title={`Nội dung tài liệu ${detail.title}`}
-          referrerPolicy="no-referrer"
-          style={{ width: '100%', height: '640px', border: 'none', display: 'block', backgroundColor: '#eef0f3' }}
-        />
-      </object>
-
-      <div style={{ padding: '10px 16px', backgroundColor: 'var(--bg-muted)', borderTop: '1px solid var(--border-subtle)', fontSize: '12px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-        Đọc tài liệu thuận tiện hơn?{' '}
-        <a
-          href={streamUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: 'var(--primary-base)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-        >
-          <span>Mở tệp ở tab mới</span>
-          <ExternalLink size={12} />
-        </a>
-      </div>
+    <section aria-label="Xem toàn văn tài liệu" style={{ minWidth: 0 }}>
+      <PdfPreviewViewer documentItem={detail} isAuthenticated={true} />
     </section>
   )
 }
