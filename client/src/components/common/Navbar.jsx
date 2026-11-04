@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   FolderKanban,
   Bookmark,
-  Award,
   Plus,
   MessageSquare,
   Menu,
@@ -183,15 +182,6 @@ export default function Navbar({
             <span>Kho học liệu</span>
           </button>
 
-          {/* Tab 3: Treo thưởng (Study Bounty Board & Leaderboard FR-12) */}
-          <button
-            type="button"
-            className={`vec-nav-link ${activeView === 'bounty' ? 'active' : ''}`}
-            onClick={() => handleTabClick('bounty')}
-          >
-            <Award size={15} />
-            <span>Treo thưởng</span>
-          </button>
 
           {/* Tab 4: Đóng góp (Upload Workspace UC07) */}
           <button
