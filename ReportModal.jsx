@@ -1,24 +1,4 @@
 import { useEffect, useState } from "react";
-
-/**
- * ReportModal.jsx – UC04: Báo cáo tài liệu vi phạm (GIAI ĐOẠN 5: giao diện tĩnh, chưa gắn logic API)
- * Task 5S-035 | Trâm
- *
- * Bám theo Activity Diagram UC04 và Sequence Diagram UC04:
- *  - Hộp thoại mở từ nút "Báo cáo vi phạm" ở trang chi tiết học liệu (bước 1–2).
- *  - Nhóm lý do: Trùng lặp, Sai môn, Bản quyền, Nội dung xấu + ô nhập nội dung giải trình (3a).
- *  - Nút "Hủy" đóng hộp thoại và hủy gửi (3b); nút "Gửi báo cáo".
- *  - Cảnh báo thiếu thông tin: "yêu cầu chọn lý do và mô tả vi phạm".
- *  - Báo cáo trùng: "báo cáo trước đó đang được Quản trị viên xem xét" (banner).
- *  - Thành công: thông báo cảm ơn sinh viên.
- *
- * Body ở Giai đoạn 6 (POST /api/reports): { documentId, reason, description }
- *
- * Props (tùy chọn): open (mặc định true), documentId, documentTitle,
- *   errors { reason, description }, banner { tone: "warning" | "info" | "error", text },
- *   submitting, success, onClose(), onSubmit({ documentId, reason, description })
- */
-
 const REASONS = [
   { value: "Trùng lặp", hint: "Đã có tài liệu giống hệt trên hệ thống" },
   { value: "Sai môn", hint: "Gắn sai môn học hoặc sai thông tin" },

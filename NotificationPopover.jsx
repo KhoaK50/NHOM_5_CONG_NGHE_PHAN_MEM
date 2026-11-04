@@ -1,22 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-/**
- * NotificationPopover.jsx – UC03: Xem thông báo (GIAI ĐOẠN 5: giao diện tĩnh, chưa gắn logic API)
- * Task 5S-035 | Trâm
- *
- * Bám theo Activity Diagram UC03 và Sequence Diagram UC03:
- *  - Biểu tượng chuông trên thanh điều hướng, nhãn đếm số thông báo chưa đọc (ẩn khi bằng 0).
- *  - Khung thả xuống: danh sách thông báo từ mới nhất đến cũ nhất, kèm số chưa đọc (bước 3).
- *  - Danh sách trống: "Bạn chưa có thông báo mới nào".
- *  - Nút "Đánh dấu đã đọc tất cả" (4b) và chọn một thông báo (4a).
- *  - Học liệu liên kết đã bị gỡ: hiện thông báo "Học liệu không còn tồn tại" (truyền qua prop notice).
- *
- * Dữ liệu mẫu theo response GET /api/notifications: { id, type, title, message, documentId, isRead, createdAt }
- *
- * Props (tùy chọn): notifications, unreadCount, defaultOpen, notice,
- *   onMarkAllRead(), onSelect(notification)
- */
-
 const SAMPLE = [
   { id: 15, type: "DOCUMENT_REJECTED", title: "Tài liệu bị từ chối", message: "Giáo trình Cấu trúc dữ liệu – Chương 3. Lý do: nội dung trùng lặp với tài liệu đã có.", documentId: 7, isRead: false, createdAt: "10 phút trước" },
   { id: 14, type: "DOCUMENT_APPROVED", title: "Tài liệu đã được duyệt", message: "Đề cương ôn tập Lập trình hướng đối tượng đã hiển thị cho mọi người.", documentId: 6, isRead: false, createdAt: "2 giờ trước" },

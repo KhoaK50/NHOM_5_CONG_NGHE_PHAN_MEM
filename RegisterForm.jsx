@@ -1,22 +1,6 @@
 import { useEffect, useState } from "react";
 
-/**
- * RegisterForm.jsx – UC02: Đăng ký tài khoản (GIAI ĐOẠN 5: giao diện tĩnh, chưa gắn logic API)
- * Task 5S-035 | Trâm
- *
- * Bám theo Activity Diagram UC02 và Sequence Diagram UC02:
- *  - Hộp thoại (Auth Modal) mở từ thanh điều hướng hoặc từ cửa sổ Đăng nhập, có nút Hủy để đóng biểu mẫu (3b).
- *  - Biểu mẫu: Họ và tên, Email, Khóa học (cohort), Mật khẩu, Xác nhận mật khẩu, nút "Tạo tài khoản" (3a).
- *  - Trạng thái lỗi: dữ liệu không hợp lệ / mật khẩu không khớp / email đã tồn tại (hiện dưới từng ô).
- *  - Trạng thái thành công: thông báo đăng ký thành công và đưa người dùng vào Trang chủ (tự đăng nhập).
- *
- * Props (đều tùy chọn, để Giai đoạn 6 nối POST /api/auth/register):
- *  open, errors { fullName, email, cohort, password, confirmPassword, form }, submitting, success,
- *  onSubmit(values), onClose(), onGoToLogin(), onGoHome()
- */
-
-const COHORTS = ["K47", "K48", "K49", "K50"]; // TODO: xác nhận danh sách khóa với nhóm (ERD: cohort mặc định 'K50')
-
+const COHORTS = ["K47", "K48", "K49", "K50"]; 
 const inputBase =
   "block w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 " +
   "focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600 disabled:bg-slate-100";
