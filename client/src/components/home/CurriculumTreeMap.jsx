@@ -21,7 +21,7 @@ import {
   MANDATORY_GRADUATION_CONDITIONS,
   KNOWLEDGE_BLOCKS,
   SEMESTERS
-} from '../../data/mockData'
+} from '../../data/curriculum'
 
 /**
  * Dựng đường dẫn SVG vuông góc (Orthogonal Manhattan / PCB Bus Routing)

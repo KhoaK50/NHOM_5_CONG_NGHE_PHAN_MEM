@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
-  FileCheck2,
-  Download,
-  Users,
-  ShieldAlert,
   BarChart3,
   TrendingUp,
   Award,
-  Sparkles
 } from 'lucide-react'
 import { getDashboardStats } from '../../utils/interactionApi'
 
@@ -109,167 +104,44 @@ export default function AdminDashboard({
         <div role="alert" className="empty-state-box">Không tải được thống kê từ máy chủ: {dashboardError}</div>
       )}
       {!dashboardData && !dashboardError && <div role="status" style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Đang tải thống kê từ cơ sở dữ liệu…</div>}
-      {/* Tiêu đề trang & Bộ lọc thời gian */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}
-      >
-        <div>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '11px',
-              fontWeight: 700,
-              color: 'var(--primary-base)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              marginBottom: '4px'
-            }}
-          >
-            <Sparkles size={13} />
-            <span>TRUNG TÂM PHÂN TÍCH & BÁO CÁO HỌC THUẬT</span>
-          </div>
-          <h1
-            style={{
-              margin: '0 0 4px 0',
-              fontSize: '22px',
-              fontWeight: 800,
-              color: 'var(--text-primary)',
-              letterSpacing: '-0.02em'
-            }}
-          >
-            Tổng quan hệ thống 5Share
-          </h1>
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Số liệu được tổng hợp từ hoạt động và dữ liệu đã lưu trong cơ sở dữ liệu.
-          </p>
-        </div>
+      <header className="page-head">
+        <h1 className="page-title">Tổng quan</h1>
+        <span className="page-sub">Số liệu 7 ngày gần nhất</span>
+      </header>
 
-        <span className="status-badge blue">Số liệu 7 ngày gần nhất</span>
-      </div>
-
-      {/* 4 THẺ KPI METRIC CARDS ĐƯỢC TÍNH TOÁN TỰ ĐỘNG TỪ DỮ LIỆU SỐNG */}
       <div className="kpi-4-grid">
-        {/* KPI 1: Tổng số học liệu */}
         <div className="kpi-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--blue-11)',
-                backgroundColor: 'var(--blue-3)',
-                padding: '3px 8px',
-                borderRadius: '999px',
-                letterSpacing: '0.04em'
-              }}
-            >
-              TỔNG SỐ HỌC LIỆU
-            </span>
-            <FileCheck2 size={18} style={{ color: 'var(--blue-9)' }} />
-          </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            {totalDocs}{' '}
-            <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>tài liệu</span>
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: 1.4 }}>
-            <span style={{ color: 'var(--green-9)', fontWeight: 700 }}>+{approvedDocsCount}</span> đã xuất bản •{' '}
-            <span style={{ color: 'var(--amber-11)', fontWeight: 600 }}>{pendingDocsCount}</span> chờ duyệt •{' '}
-            <span style={{ color: 'var(--red-9)', fontWeight: 600 }}>{rejectedDocsCount}</span> từ chối
+          <div className="kpi-label">Tổng tài liệu</div>
+          <div className="kpi-value">{totalDocs}</div>
+          <div className="kpi-detail">
+            {approvedDocsCount} đã duyệt · {pendingDocsCount} chờ duyệt · {rejectedDocsCount} từ chối
           </div>
         </div>
 
-        {/* KPI 2: Lượt tải về trong tuần */}
         <div className="kpi-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--green-11)',
-                backgroundColor: 'var(--green-3)',
-                padding: '3px 8px',
-                borderRadius: '999px',
-                letterSpacing: '0.04em'
-              }}
-            >
-              LƯỢT TẢI TRONG TUẦN
-            </span>
-            <Download size={18} style={{ color: 'var(--green-9)' }} />
-          </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            {weeklyDownloadsSum.toLocaleString('vi-VN')}{' '}
-            <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>lượt tải</span>
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: 1.4 }}>
-            Tích lũy hệ thống:{' '}
-            <strong style={{ color: 'var(--text-primary)' }}>{totalDownloadsAll.toLocaleString('vi-VN')}</strong> lượt tải gốc
+          <div className="kpi-label">Lượt tải trong tuần</div>
+          <div className="kpi-value">{weeklyDownloadsSum.toLocaleString('vi-VN')}</div>
+          <div className="kpi-detail">Tổng cộng {totalDownloadsAll.toLocaleString('vi-VN')} lượt tải</div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-label">Người dùng hoạt động</div>
+          <div className="kpi-value">{activeUsersCount}</div>
+          <div className="kpi-detail">
+            {studentUsersCount} sinh viên · {adminUsersCount} quản trị viên · tổng {totalUsersCount}
           </div>
         </div>
 
-        {/* KPI 3: Thành viên hoạt động */}
-        <div className="kpi-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--amber-11)',
-                backgroundColor: 'var(--amber-3)',
-                padding: '3px 8px',
-                borderRadius: '999px',
-                letterSpacing: '0.04em'
-              }}
-            >
-              THÀNH VIÊN HOẠT ĐỘNG
-            </span>
-            <Users size={18} style={{ color: 'var(--amber-9)' }} />
-          </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            {activeUsersCount}{' '}
-            <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>người dùng</span>
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: 1.4 }}>
-            {studentUsersCount} Sinh viên SPTH • {adminUsersCount} Quản trị viên (Tổng {totalUsersCount})
-          </div>
-        </div>
-
-        {/* KPI 4: Yêu cầu chờ duyệt */}
         <div
           className="kpi-card"
           style={{ cursor: onNavigateTab ? 'pointer' : 'default' }}
           onClick={() => onNavigateTab && onNavigateTab('moderation')}
-          title="Nhấn để mở Hàng đợi kiểm duyệt"
+          title="Mở trang Kiểm duyệt"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: totalPendingRequests > 0 ? 'var(--red-11)' : 'var(--green-11)',
-                backgroundColor: totalPendingRequests > 0 ? 'var(--red-3)' : 'var(--green-3)',
-                padding: '3px 8px',
-                borderRadius: '999px',
-                letterSpacing: '0.04em'
-              }}
-            >
-              YÊU CẦU CHỜ DUYỆT
-            </span>
-            <ShieldAlert size={18} style={{ color: totalPendingRequests > 0 ? 'var(--red-9)' : 'var(--green-9)' }} />
-          </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            {totalPendingRequests}{' '}
-            <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>hồ sơ</span>
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: 1.4 }}>
-            {pendingDocsCount} tài liệu mới • {pendingReportsCount} báo cáo vi phạm
+          <div className="kpi-label">Cần xử lý</div>
+          <div className="kpi-value">{totalPendingRequests}</div>
+          <div className="kpi-detail">
+            {pendingDocsCount} tài liệu · {pendingReportsCount} báo cáo vi phạm
           </div>
         </div>
       </div>
@@ -290,10 +162,10 @@ export default function AdminDashboard({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <BarChart3 size={18} style={{ color: 'var(--primary-base)' }} />
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Top 5 Học phần có lượt tải nhiều nhất
+                Môn học có lượt tải nhiều nhất
               </h3>
             </div>
-            <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>Xếp theo tổng lượt tải</span>
+            
           </div>
 
           {/* Khung SVG Bar Chart */}
@@ -409,7 +281,7 @@ export default function AdminDashboard({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <TrendingUp size={18} style={{ color: 'var(--green-9)' }} />
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Xu hướng Lượt tải về theo ngày (Tuần này)
+                Lượt tải 7 ngày gần nhất
               </h3>
             </div>
             <span style={{ fontSize: '11.5px', color: 'var(--green-11)', fontWeight: 600 }}>
@@ -579,10 +451,10 @@ export default function AdminDashboard({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Award size={18} style={{ color: 'var(--amber-9)' }} />
             <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              Học liệu nổi bật có lượt tải cao nhất toàn hệ thống
+              Tài liệu được tải nhiều
             </h3>
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Bấm vào để xem trước trực tuyến</span>
+          
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
@@ -729,7 +601,7 @@ export default function AdminDashboard({
           }}
         >
           <h3 style={{ margin: '0 0 14px 0', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-            Hoạt động quản trị gần đây
+            Hoạt động gần đây
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {recentActivities.map((act, idx) => (

@@ -1,15 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  CheckCircle2,
-  ShieldAlert,
-  BookOpen,
-  BarChart3,
-  ArrowLeft,
-  ShieldCheck,
-  Users,
-  Lock,
-  MessageSquarePlus
-} from 'lucide-react'
+import { ArrowLeft, Lock } from 'lucide-react'
 import Navbar from './components/common/Navbar'
 import AuthSubsystem from './components/auth/AuthSubsystem'
 import LandingPage from './components/home/LandingPage'
@@ -21,15 +11,13 @@ import CourseManagement from './components/admin/CourseManagement'
 import AdminDashboard from './components/admin/AdminDashboard'
 import UserManagement from './components/admin/UserManagement'
 import FeedbackModal from './components/document/FeedbackModal'
-import { api, subscribeNotifications } from './api/notificationReportApi'
 import MyDocuments from './components/library/MyDocuments'
 import SavedBookmarks from './components/library/SavedBookmarks'
 import UserProfile from './components/profile/UserProfile'
 import { AuthGuard, getApiBaseUrl } from './utils/authGuard'
-import {
-  INITIAL_USERS,
-  INITIAL_COURSES
-} from './data/mockData'
+import { CURRICULUM_COURSES } from './data/curriculum'
+import { INITIAL_USERS } from './data/mockData'
+import { api, subscribeNotifications } from './api/notificationReportApi'
 import { listPublicCourses, listModerationDocuments, listReports, uploadDocument } from './utils/documentCourseApi'
 import {
   addBookmark,
@@ -45,15 +33,20 @@ const KNOWLEDGE_BLOCK_LABEL_MAP = {
   CO_SO_NGANH: 'Cơ sở ngành',
   CHUYEN_NGANH: 'Chuyên ngành',
   NGHIEP_VU_SU_PHAM: 'Nghiệp vụ Sư phạm'
-};
+}
 
 function normalizeCourse(apiCourse) {
-  const code = apiCourse.courseCode || apiCourse.code;
-  const meta = INITIAL_COURSES.find((c) => c.code === code) || {};
-  const semStr = typeof apiCourse.semester === 'number'
-    ? `Học kỳ ${apiCourse.semester}`
-    : (apiCourse.semester || meta.semester || 'Học kỳ 1');
-  const blockStr = KNOWLEDGE_BLOCK_LABEL_MAP[apiCourse.knowledgeBlock] || apiCourse.knowledgeBlock || meta.knowledgeBlock || 'Cơ sở ngành';
+  const code = apiCourse.courseCode || apiCourse.code
+  const meta = CURRICULUM_COURSES.find((c) => c.code === code) || {}
+  const semStr =
+    typeof apiCourse.semester === 'number'
+      ? `Học kỳ ${apiCourse.semester}`
+      : apiCourse.semester || meta.semester || 'Học kỳ 1'
+  const blockStr =
+    KNOWLEDGE_BLOCK_LABEL_MAP[apiCourse.knowledgeBlock] ||
+    apiCourse.knowledgeBlock ||
+    meta.knowledgeBlock ||
+    'Cơ sở ngành'
 
   return {
     ...meta,
@@ -72,17 +65,10 @@ function normalizeCourse(apiCourse) {
     isActive: apiCourse.isActive !== undefined ? apiCourse.isActive : true,
     documentCount: apiCourse.documentCount ?? meta.documentCount ?? 0,
     prerequisites: meta.prerequisites || []
-  };
+  }
 }
 
 export default function App() {
-  const [userSession, setUserSession] = useState(() => {
-    const saved = AuthGuard.getSavedUserProfile()
-    if (saved && AuthGuard.getAuthToken()) {
-      return saved
-    }
-    return null
-  })
   const [actorRole, setActorRole] = useState(() => {
     const saved = AuthGuard.getSavedUserProfile()
     if (saved && AuthGuard.getAuthToken()) {
@@ -103,45 +89,31 @@ export default function App() {
   const [authTab, setAuthTab] = useState('login')
   const [adminSubTab, setAdminSubTab] = useState('dashboard') // 'dashboard' | 'moderation' | 'courses' | 'users'
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
+  const [discoveryQuery, setDiscoveryQuery] = useState('')
 
-  const [courses, setCourses] = useState(() => INITIAL_COURSES.map(normalizeCourse))
+  const [courses, setCourses] = useState(() => CURRICULUM_COURSES.map(normalizeCourse))
   const [documents, setDocuments] = useState([])
   const [notifications, setNotifications] = useState([])
-  const [reports, setReports] = useState([])
   const [users, setUsers] = useState(INITIAL_USERS)
-  const [feedbacks, setFeedbacks] = useState([])
   const [downloadHistory, setDownloadHistory] = useState([])
   const [bookmarkedIds, setBookmarkedIds] = useState([])
   const [selectedDocId, setSelectedDocId] = useState(null)
   const [bannerNotice, setBannerNotice] = useState(null)
   const [adminPendingCount, setAdminPendingCount] = useState(0)
+  const [userSession, setUserSession] = useState(() => {
+    const saved = AuthGuard.getSavedUserProfile()
+    if (saved && AuthGuard.getAuthToken()) {
+      return saved
+    }
+    return null
+  })
 
   const showNotice = useCallback((text) => {
     setBannerNotice(text)
     setTimeout(() => setBannerNotice(null), 4500)
-  }, [setBannerNotice])
+  }, [])
 
-  useEffect(() => {
-    if (!userSession) return undefined
-    let isCancelled = false
-    api.getNotifications({ limit: 20 })
-      .then((res) => {
-        if (!isCancelled && Array.isArray(res?.data?.items)) {
-          setNotifications(res.data.items)
-        }
-      })
-      .catch(() => {})
-    const unsub = subscribeNotifications((data) => {
-      if (data?.items) {
-        setNotifications(data.items)
-      }
-    })
-    return () => {
-      isCancelled = true
-      unsub()
-    }
-  }, [userSession])
-
+  // Nạp danh mục môn học
   useEffect(() => {
     let cancelled = false
     Promise.all([
@@ -155,36 +127,79 @@ export default function App() {
         const combined = [...list1, ...list2]
         const apiCourses = combined.map(normalizeCourse)
         const apiCodes = new Set(apiCourses.map((c) => c.code))
-        const fallbackCourses = INITIAL_COURSES.filter((c) => !apiCodes.has(c.code)).map(normalizeCourse)
+        const fallbackCourses = CURRICULUM_COURSES.filter((c) => !apiCodes.has(c.code)).map(normalizeCourse)
         setCourses([...apiCourses, ...fallbackCourses])
       })
       .catch(() => {})
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [])
 
+  // Nạp kho tài liệu công khai
   useEffect(() => {
     let cancelled = false
     listPublicDocuments({ page: 1, limit: 100 })
-      .then((items) => { if (!cancelled) setDocuments(items || []) })
+      .then((items) => {
+        if (!cancelled) setDocuments(items || [])
+      })
       .catch((error) => {
         if (!cancelled) {
           setDocuments([])
           showNotice(`Không tải được danh sách tài liệu từ máy chủ: ${error.message}`)
         }
       })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [showNotice])
 
+  // Nạp danh sách bookmark của tài khoản sinh viên
   useEffect(() => {
     if (actorRole === 'GUEST' || !userSession?.id) {
       return undefined
     }
     let cancelled = false
     listBookmarks()
-      .then((items) => { if (!cancelled) setBookmarkedIds(items.map((item) => item.id)) })
-      .catch((error) => { if (!cancelled) showNotice(`Không tải được tủ tài liệu: ${error.message}`) })
-    return () => { cancelled = true }
+      .then((items) => {
+        if (!cancelled) setBookmarkedIds(items.map((item) => item.id))
+      })
+      .catch((error) => {
+        if (!cancelled) showNotice(`Không tải được tài liệu đã lưu: ${error.message}`)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [actorRole, userSession?.id, showNotice])
+
+  // UC03: Lấy thông báo thời gian thực kết nối PostgreSQL API
+  useEffect(() => {
+    if (!userSession) {
+      return undefined
+    }
+    let isCancelled = false
+    api
+      .getNotifications({ limit: 20 })
+      .then((res) => {
+        if (!isCancelled && Array.isArray(res?.data?.items)) {
+          setNotifications(res.data.items)
+        }
+      })
+      .catch(() => {})
+
+    const unsubscribe = subscribeNotifications((newEvent) => {
+      if (isCancelled) return
+      if (newEvent?.type === 'NOTIFICATION_CREATED' && newEvent.data) {
+        setNotifications((prev) => [newEvent.data, ...prev])
+        showNotice(`Thông báo mới: ${newEvent.data.title || 'Bạn có thông báo mới'}`)
+      }
+    })
+
+    return () => {
+      isCancelled = true
+      if (typeof unsubscribe === 'function') unsubscribe()
+    }
+  }, [userSession, showNotice])
 
   const fetchAdminUsersList = useCallback((authToken) => {
     const tokenToUse = authToken || AuthGuard.getAuthToken()
@@ -199,9 +214,9 @@ export default function App() {
         }
       })
       .catch(() => {})
-  }, [setUsers])
+  }, [])
 
-  // Đối chiếu phiên JWT (token_version) trực tiếp với bảng public.users trên Supabase
+  // Đối chiếu phiên JWT trực tiếp với máy chủ xác thực
   useEffect(() => {
     const token = AuthGuard.getAuthToken()
     if (!token) return
@@ -299,6 +314,9 @@ export default function App() {
       ) {
         setActiveView('discovery')
       }
+      if (nextRole === 'ADMIN' && ['bookmarks'].includes(activeView)) {
+        setActiveView('discovery')
+      }
 
       showNotice(
         `Đã chuyển sang tài khoản "${verifiedUser.fullName}" (${
@@ -312,7 +330,8 @@ export default function App() {
 
   const handleNavigate = (view) => {
     if (view === 'feedback') {
-      setIsFeedbackOpen(true)
+      if (actorRole === 'GUEST') handleOpenAuth('login')
+      else setIsFeedbackOpen(true)
       return
     }
     if (view === 'admin') {
@@ -327,12 +346,18 @@ export default function App() {
       showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể thực hiện đóng góp học liệu.')
       return
     }
+    if (view === 'discovery') setDiscoveryQuery('')
     setActiveView(view)
     try {
       window.scrollTo({ top: 0, behavior: 'instant' })
     } catch {
       // ignore
     }
+  }
+
+  const handleSearchFromHome = (query) => {
+    setDiscoveryQuery(query)
+    setActiveView('discovery')
   }
 
   const handleOpenAuth = (tab = 'login') => {
@@ -386,15 +411,24 @@ export default function App() {
     ) {
       setActiveView('discovery')
     }
-    showNotice('Đã đăng xuất khỏi tài khoản. Bạn đang tra cứu học liệu với vai trò Khách vãng lai.')
+    showNotice('Đã đăng xuất.')
   }
 
-  const handleSelectDocument = (doc) => {
-    setSelectedDocId(doc.id)
-    setDocuments((previous) => previous.some((item) => item.id === doc.id) ? previous : [doc, ...previous])
+  const handleSelectDocument = (docOrId) => {
+    const id = typeof docOrId === 'object' ? docOrId.id : docOrId
+    setSelectedDocId(id)
+    if (typeof docOrId === 'object' && !documents.some((item) => item.id === id)) {
+      setDocuments((prev) => [docOrId, ...prev])
+    }
     setActiveView('detail')
-    recordDocumentView(doc.id)
-      .then(() => setDocuments((previous) => previous.map((item) => item.id === doc.id ? { ...item, viewCount: (item.viewCount || 0) + 1 } : item)))
+    recordDocumentView(id)
+      .then(() => {
+        setDocuments((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, viewCount: (item.viewCount || 0) + 1 } : item
+          )
+        )
+      })
       .catch(() => {})
   }
 
@@ -405,12 +439,58 @@ export default function App() {
     }
     try {
       await downloadDocument(doc.id, doc.fileName)
-      setDocuments((prev) => prev.map((item) => item.id === doc.id ? { ...item, downloadCount: (item.downloadCount || 0) + 1 } : item))
-      setDownloadHistory((prev) => [{ id: `dl-${Date.now()}`, docId: doc.id, title: doc.title, fileName: doc.fileName, format: 'PDF', downloadedAt: new Date().toISOString() }, ...prev])
-      showNotice(`Đã tải tệp gốc "${doc.fileName}" từ máy chủ.`)
+      setDocuments((prev) =>
+        prev.map((item) =>
+          item.id === doc.id ? { ...item, downloadCount: (item.downloadCount || 0) + 1 } : item
+        )
+      )
+      setDownloadHistory((prev) => [
+        {
+          id: `dl-${Date.now()}`,
+          docId: doc.id,
+          title: doc.title,
+          fileName: doc.fileName,
+          format: 'PDF',
+          downloadedAt: new Date().toISOString()
+        },
+        ...prev
+      ])
+      showNotice(`Đã tải "${doc.fileName}".`)
     } catch (error) {
       showNotice(error.message)
       if (error.status === 401 || error.status === 403) handleOpenAuth('login')
+    }
+  }
+
+  const handleToggleBookmark = async (docId) => {
+    if (actorRole === 'GUEST') {
+      handleOpenAuth('login')
+      return
+    }
+    const exists = bookmarkedIds.includes(docId)
+    try {
+      if (exists) {
+        await removeBookmark(docId)
+        setBookmarkedIds((prev) => prev.filter((id) => id !== docId))
+        showNotice('Đã bỏ lưu tài liệu.')
+      } else {
+        await addBookmark(docId)
+        setBookmarkedIds((prev) => (prev.includes(docId) ? prev : [...prev, docId]))
+        showNotice('Đã lưu tài liệu vào Tủ cá nhân.')
+      }
+    } catch (error) {
+      showNotice(error.message)
+      throw error
+    }
+  }
+
+  // UC04: Báo cáo tài liệu vi phạm chuẩn mực học thuật
+  const handleSubmitReport = async (payload) => {
+    try {
+      await api.submitReport(payload)
+      showNotice('Báo cáo vi phạm đã được ghi nhận và gửi tới Ban Quản trị.')
+    } catch (err) {
+      showNotice(err.message || 'Không thể gửi báo cáo vi phạm.')
     }
   }
 
@@ -462,7 +542,7 @@ export default function App() {
     setUsers((prev) =>
       prev.map((u) => (u.id === mergedUser.id ? { ...u, ...mergedUser } : u))
     )
-    showNotice('Đã tải ảnh đại diện lên Cloudinary và đồng bộ hồ sơ thành công!')
+    showNotice('Đã cập nhật ảnh đại diện.')
   }
 
   const handleChangePassword = async ({ oldPassword, newPassword, confirmPassword }) => {
@@ -496,55 +576,12 @@ export default function App() {
     )
   }
 
-
-  const handleToggleBookmark = async (docId) => {
-    if (actorRole === 'GUEST') {
-      handleOpenAuth('login')
-      return
-    }
-    const exists = bookmarkedIds.includes(docId)
-    try {
-      if (exists) {
-        await removeBookmark(docId)
-        setBookmarkedIds((previous) => previous.filter((id) => id !== docId))
-        showNotice('Đã gỡ học liệu khỏi tủ tài liệu cá nhân.')
-      } else {
-        await addBookmark(docId)
-        setBookmarkedIds((previous) => previous.includes(docId) ? previous : [...previous, docId])
-        showNotice('Đã lưu học liệu vào tủ tài liệu cá nhân.')
-      }
-    } catch (error) {
-      showNotice(error.message)
-      throw error
-    }
-  }
-
-  const handleSubmitReport = async (reportPayload) => {
-    try {
-      await api.submitReport({
-        documentId: reportPayload.docId || reportPayload.documentId || 11,
-        reason: reportPayload.reasonGroup || reportPayload.reason || 'Trùng lặp',
-        description: reportPayload.details || reportPayload.description || 'Báo cáo vi phạm từ người dùng'
-      })
-    } catch (e) {
-      console.warn('[Report] Backend response:', e.message)
-    }
-    const newReport = {
-      id: `rep-${Date.now()}`,
-      ...reportPayload,
-      reporterName: `${userSession?.fullName || 'Sinh viên SPTH'} (K50 SPTH)`,
-      createdAt: 'Vừa xong',
-      status: 'PENDING'
-    }
-    setReports((prev) => [newReport, ...prev])
-    showNotice('Đã gửi báo cáo chất lượng học liệu về Ban quản trị Khoa CNTT.')
-  }
-
   const handleSubmitNewDocument = async (newDocPayload) => {
     if (isCurrentUserLocked) {
       showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể thực hiện đóng góp học liệu.')
       return
     }
+
     if (actorRole === 'GUEST' || !userSession?.id) {
       showNotice('Vui lòng đăng nhập tài khoản sinh viên hoặc giảng viên để tải học liệu lên hệ thống.')
       handleOpenAuth('login')
@@ -552,7 +589,7 @@ export default function App() {
     }
 
     try {
-      showNotice('Đang tải tệp lên Cloudinary và lưu vào cơ sở dữ liệu...')
+      showNotice('Đang tải tệp lên...')
       const res = await uploadDocument({
         title: newDocPayload.title,
         courseCode: newDocPayload.courseCode,
@@ -563,7 +600,7 @@ export default function App() {
       })
 
       if (res?.success) {
-        showNotice(res.message || 'Tải học liệu lên thành công! Tài liệu đang ở hàng đợi chờ Admin phê duyệt.')
+        showNotice(res.message || 'Đã gửi tài liệu. Tài liệu đang chờ quản trị viên kiểm duyệt.')
         setActiveView('my-docs')
       } else {
         showNotice(res?.message || 'Không thể tải tài liệu lên. Vui lòng thử lại.')
@@ -595,7 +632,7 @@ export default function App() {
         return
       }
     } catch {
-      // Nếu chạy ngoại tuyến thì vẫn cập nhật state cục bộ
+      // Nếu ngoại tuyến thì vẫn cập nhật state cục bộ
     }
 
     setUsers((prev) =>
@@ -636,7 +673,7 @@ export default function App() {
         return
       }
     } catch {
-      // Nếu chạy ngoại tuyến thì vẫn cập nhật state cục bộ
+      // Nếu ngoại tuyến thì vẫn cập nhật state cục bộ
     }
 
     const canonicalUiRole = nextRole === 'ADMIN' ? 'ADMIN' : 'USER'
@@ -647,25 +684,30 @@ export default function App() {
     )
   }
 
-  const handleSubmitFeedback = (feedbackPayload) => {
-    setFeedbacks((prev) => [feedbackPayload, ...prev])
-    showNotice('Cảm ơn bạn! Đã gửi ý kiến đóng góp thành công tới Ban Quản trị.')
-  }
-
-  const handleMarkOneRead = (notifId) => {
+  const handleMarkOneRead = async (notifId) => {
+    try {
+      await api.markAsRead(notifId)
+    } catch {
+      // Bỏ qua lỗi mạng cục bộ khi đánh dấu thông báo
+    }
     setNotifications((prev) =>
       prev.map((n) => (n.id === notifId ? { ...n, isRead: true } : n))
     )
   }
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
+    try {
+      await api.markAllAsRead()
+    } catch {
+      // Bỏ qua lỗi mạng cục bộ khi đánh dấu tất cả thông báo
+    }
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
     showNotice('Đã đánh dấu toàn bộ thông báo là đã đọc.')
   }
 
   const handleSelectNotification = (notif) => {
     if (notif.targetDocId) {
-      setSelectedDocId(notif.targetDocId)
+      handleSelectDocument(notif.targetDocId)
     }
     if (notif.targetScreen) {
       setActiveView(notif.targetScreen)
@@ -674,8 +716,8 @@ export default function App() {
 
   const selectedDocument =
     documents.find((d) => d.id === selectedDocId) || documents[0]
-  const pendingDocsCount = documents.filter((d) => d.status === 'PENDING').length
-  const pendingCount = pendingDocsCount
+  const canContribute = actorRole !== 'GUEST'
+  const isStudent = actorRole === 'USER'
 
   const isAuthorizedAdmin = Boolean(
     userSession &&
@@ -698,19 +740,19 @@ export default function App() {
       ? 'users'
       : adminSubTab
 
-  // Số trên sidebar Admin lấy từ CSDL thật, không phải dữ liệu mẫu
+  // Đếm số lượng tài liệu & báo cáo chờ duyệt từ CSDL thật
   useEffect(() => {
     if (!isAdminView || !AuthGuard.getAuthToken()) return undefined
     let cancelled = false
     Promise.all([
       listModerationDocuments({ status: 'PENDING', limit: 1 }),
-      listReports({ status: 'PENDING', limit: 50 })
+      listReports({ status: 'PENDING', limit: 1 })
     ])
       .then(([docResult, reportResult]) => {
-        if (cancelled) return
-        setAdminPendingCount((docResult?.pagination?.total || 0) + (reportResult?.pagination?.total || 0))
-        if (Array.isArray(reportResult?.data)) {
-          setReports(reportResult.data)
+        if (!cancelled) {
+          const docTotal = docResult?.pagination?.total || 0
+          const repTotal = reportResult?.pagination?.total || 0
+          setAdminPendingCount(docTotal + repTotal)
         }
       })
       .catch(() => {})
@@ -741,26 +783,12 @@ export default function App() {
         onMarkOneRead={handleMarkOneRead}
         onMarkAllRead={handleMarkAllRead}
         onSelectNotification={handleSelectNotification}
-        pendingCount={pendingCount}
         logoVariant="loops-weave"
       />
 
       {/* Thông báo phản hồi thao tác */}
       {bannerNotice && (
-        <div
-          style={{
-            backgroundColor: 'var(--green-1)',
-            borderBottom: '1px solid var(--green-2)',
-            color: 'var(--green-7)',
-            padding: '10px 28px',
-            fontSize: '13px',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <CheckCircle2 size={16} />
+        <div className="app-notice" role="status">
           <span>{bannerNotice}</span>
         </div>
       )}
@@ -768,184 +796,53 @@ export default function App() {
       {/* Vùng hiển thị màn hình chính */}
       {isAdminView ? (
         !isAuthorizedAdmin ? (
-          /* THẺ TỪ CHỐI TRUY CẬP (ACCESS DENIED CARD) CHO GUEST / STUDENT */
-          <div
-            style={{
-              minHeight: 'calc(100vh - 64px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '32px 16px',
-              backgroundColor: 'var(--bg-app)'
-            }}
-          >
-            <div
-              style={{
-                maxWidth: '520px',
-                width: '100%',
-                backgroundColor: 'var(--bg-surface)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-xl)',
-                padding: '36px 32px',
-                textAlign: 'center',
-                boxShadow: 'var(--shadow-modal)'
-              }}
-            >
-              <div
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--amber-2)',
-                  color: 'var(--amber-9)',
-                  border: '1px solid var(--amber-4)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 18px'
-                }}
-              >
-                <Lock size={30} />
+          <div className="admin-lock-screen">
+            <div className="admin-lock-card">
+              <div className="admin-lock-icon">
+                <Lock size={22} />
               </div>
-
-              <h2
-                style={{
-                  margin: '0 0 8px 0',
-                  fontSize: '20px',
-                  fontWeight: 800,
-                  color: 'var(--text-primary)'
-                }}
-              >
-                Khu vực Yêu cầu Quyền Quản trị viên
-              </h2>
-
-              <p
-                style={{
-                  margin: '0 0 24px 0',
-                  fontSize: '13.5px',
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.5
-                }}
-              >
-                Bạn đang đăng nhập với vai trò{' '}
-                <strong style={{ color: 'var(--text-primary)' }}>
-                  {actorRole === 'GUEST' ? 'Khách vãng lai' : 'Sinh viên'}
-                </strong>{' '}
-                ({userSession?.fullName || 'Chưa đăng nhập'}). Chỉ tài khoản Quản trị viên thuộc Ban Quản trị Khoa CNTT mới có
-                quyền truy cập không gian này.
+              <h2 className="admin-lock-title">Yêu cầu quyền Quản trị viên</h2>
+              <p className="admin-lock-desc">
+                Bạn cần đăng nhập bằng tài khoản Quản trị viên để truy cập không gian này.
               </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="admin-lock-actions">
                 <button
                   type="button"
                   className="btn-solid-primary"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    fontSize: '13.5px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
                   onClick={() => handleOpenAuth('login')}
                 >
-                  <ShieldCheck size={16} />
-                  <span>Đăng nhập bằng tài khoản Quản trị viên</span>
+                  Đăng nhập tài khoản quản trị
                 </button>
-
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    fontSize: '13px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                  onClick={() => setActiveView('discovery')}
-                >
+                <button type="button" className="btn-ghost" onClick={() => setActiveView('discovery')}>
                   <ArrowLeft size={16} />
-                  <span>Quay lại Kho học liệu</span>
+                  <span>Về Kho học liệu</span>
                 </button>
               </div>
             </div>
           </div>
         ) : (
           <div className="admin-workspace-shell">
-            {/* Radix Light Left Sidebar cho Admin */}
-            <aside className="admin-sidebar" aria-label="Điều hướng Quản trị học thuật">
-              <div className="admin-sidebar-brand">
-                <div className="admin-sidebar-kicker">
-                  <ShieldCheck size={13} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '4px' }} />
-                  5SHARE ADMIN WORKSPACE
-                </div>
-                <p className="admin-sidebar-title">Quản trị Học liệu Khoa CNTT</p>
-              </div>
-
-              <button
-                type="button"
-                className={`admin-nav-btn ${currentAdminTab === 'dashboard' ? 'active' : ''}`}
-                onClick={() => handleSelectAdminSubTab('dashboard')}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                  <BarChart3 size={16} />
-                  <span>Tổng quan hệ thống</span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className={`admin-nav-btn ${currentAdminTab === 'moderation' ? 'active' : ''}`}
-                onClick={() => handleSelectAdminSubTab('moderation')}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                  <ShieldAlert size={16} />
-                  <span>Hàng đợi kiểm duyệt</span>
-                </span>
-                {adminPendingCount > 0 && (
-                  <span className="admin-nav-badge">{adminPendingCount}</span>
-                )}
-              </button>
-
-              <button
-                type="button"
-                className={`admin-nav-btn ${currentAdminTab === 'courses' ? 'active' : ''}`}
-                onClick={() => handleSelectAdminSubTab('courses')}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                  <BookOpen size={16} />
-                  <span>Quản lý danh mục</span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className={`admin-nav-btn ${currentAdminTab === 'users' ? 'active' : ''}`}
-                onClick={() => handleSelectAdminSubTab('users')}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                  <Users size={16} />
-                  <span>Quản trị người dùng</span>
-                </span>
-              </button>
-
-              <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
+            <nav className="admin-tabs" aria-label="Điều hướng quản trị">
+              {[
+                { id: 'dashboard', label: 'Tổng quan' },
+                {
+                  id: 'moderation',
+                  label: adminPendingCount > 0 ? `Kiểm duyệt (${adminPendingCount})` : 'Kiểm duyệt'
+                },
+                { id: 'courses', label: 'Môn học' },
+                { id: 'users', label: 'Người dùng' }
+              ].map((tab) => (
                 <button
+                  key={tab.id}
                   type="button"
-                  className="admin-nav-btn"
-                  onClick={() => setActiveView('discovery')}
+                  className={`admin-tab ${currentAdminTab === tab.id ? 'active' : ''}`}
+                  aria-current={currentAdminTab === tab.id ? 'page' : undefined}
+                  onClick={() => handleSelectAdminSubTab(tab.id)}
                 >
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                    <ArrowLeft size={16} />
-                    <span>Quay lại Kho học liệu</span>
-                  </span>
+                  {tab.label}
                 </button>
-              </div>
-            </aside>
+              ))}
+            </nav>
 
             <main className="admin-workspace-content">
               {currentAdminTab === 'moderation' && (
@@ -958,12 +855,6 @@ export default function App() {
 
               {currentAdminTab === 'dashboard' && (
                 <AdminDashboard
-                  documents={documents}
-                  courses={courses}
-                  users={users}
-                  reports={reports}
-                  feedbacks={feedbacks}
-                  downloadHistory={downloadHistory}
                   onSelectDoc={handleSelectDocument}
                   onNavigateTab={handleSelectAdminSubTab}
                 />
@@ -1002,22 +893,25 @@ export default function App() {
 
           {activeView === 'landing' && (
             <LandingPage
-              onNavigate={handleNavigate}
-              onExploreDiscovery={() => setActiveView('discovery')}
+              documents={documents}
+              canUpload={canContribute}
+              onSearch={handleSearchFromHome}
+              onExploreDiscovery={() => handleNavigate('discovery')}
               onOpenUpload={handleOpenUpload}
-              userSession={userSession}
-              actorRole={actorRole}
+              onSelectDoc={handleSelectDocument}
             />
           )}
 
           {activeView === 'discovery' && (
             <DiscoveryPage
+              key={discoveryQuery}
+              initialQuery={discoveryQuery}
               documents={documents}
               courses={courses}
               bookmarkedIds={bookmarkedIds}
               onSelectDoc={handleSelectDocument}
-              onToggleBookmark={handleToggleBookmark}
-              onOpenUpload={handleOpenUpload}
+              onToggleBookmark={isStudent ? handleToggleBookmark : undefined}
+              onOpenUpload={canContribute ? handleOpenUpload : undefined}
             />
           )}
 
@@ -1027,7 +921,6 @@ export default function App() {
               isAuthenticated={actorRole !== 'GUEST'}
               currentUser={userSession}
               isBookmarked={bookmarkedIds.includes(selectedDocument?.id)}
-              existingReports={reports}
               onBackToDiscovery={() => setActiveView('discovery')}
               onDownload={handleDownloadDocument}
               onToggleBookmark={handleToggleBookmark}
@@ -1047,7 +940,6 @@ export default function App() {
 
           {activeView === 'my-docs' && (
             <MyDocuments
-              documents={documents}
               currentUser={userSession}
               onSelectDoc={handleSelectDocument}
               onOpenUpload={handleOpenUpload}
@@ -1056,8 +948,6 @@ export default function App() {
 
           {activeView === 'bookmarks' && (
             <SavedBookmarks
-              documents={documents}
-              bookmarkedIds={bookmarkedIds}
               onSelectDoc={handleSelectDocument}
               onToggleBookmark={handleToggleBookmark}
               onNavigateDiscovery={() => setActiveView('discovery')}
@@ -1069,19 +959,13 @@ export default function App() {
               key={userSession?.id || userSession?.email || 'guest-profile'}
               currentUser={userSession}
               documents={documents}
-              bookmarkedIds={bookmarkedIds}
               downloadHistory={downloadHistory}
               onSelectDoc={handleSelectDocument}
-              onToggleBookmark={handleToggleBookmark}
-              onOpenUpload={handleOpenUpload}
               onUpdateProfile={handleUpdateProfile}
               onAvatarUploaded={handleAvatarUploaded}
               onChangePassword={handleChangePassword}
-              onNavigateDiscovery={() => setActiveView('discovery')}
             />
           )}
-
-
         </main>
       )}
 
@@ -1090,46 +974,7 @@ export default function App() {
         isOpen={isFeedbackOpen}
         onClose={() => setIsFeedbackOpen(false)}
         currentUser={userSession}
-        onSubmitFeedback={handleSubmitFeedback}
       />
-
-
-      {/* NÚT NỔI GÓP Ý HỆ THỐNG TẠI GÓC PHẢI MÀN HÌNH (FLOATING PILL) */}
-      <button
-        type="button"
-        onClick={() => setIsFeedbackOpen(true)}
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          zIndex: 100,
-          backgroundColor: '#ffffff',
-          color: 'var(--text-primary)',
-          border: '1px solid var(--border-strong)',
-          borderRadius: '999px',
-          padding: '9px 16px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '12.5px',
-          fontWeight: 700,
-          boxShadow: 'var(--shadow-card)',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px)'
-          e.currentTarget.style.boxShadow = 'var(--shadow-card-hover)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)'
-          e.currentTarget.style.boxShadow = 'var(--shadow-card)'
-        }}
-        aria-label="Mở hòm thư góp ý hệ thống"
-      >
-        <MessageSquarePlus size={16} style={{ color: 'var(--green-9)' }} />
-        <span>Góp ý & Báo lỗi</span>
-      </button>
     </div>
   )
 }

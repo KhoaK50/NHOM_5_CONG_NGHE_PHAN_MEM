@@ -5,13 +5,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Edit3,
-  FileText,
   Info,
   Lock,
   Plus,
   Power,
   Search,
-  ShieldCheck,
   Trash2,
   X
 } from 'lucide-react'
@@ -39,28 +37,6 @@ const selectStyle = {
 }
 
 const iconButtonStyle = { padding: '5px 8px', display: 'inline-flex', alignItems: 'center' }
-
-function KpiCard({ label, value, color, icon: Icon }) {
-  return (
-    <div
-      style={{
-        backgroundColor: 'var(--bg-surface)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '12px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}
-    >
-      <div>
-        <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</div>
-        <div style={{ fontSize: '20px', fontWeight: 800, color }}>{value}</div>
-      </div>
-      <Icon size={22} style={{ color }} />
-    </div>
-  )
-}
 
 export default function CourseManagement({ onNotice }) {
   const [courses, setCourses] = useState([])
@@ -206,9 +182,9 @@ export default function CourseManagement({ onNotice }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
         <div style={{ flex: '1 1 420px' }}>
-          <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>Quản lý danh mục học phần</h2>
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Cấu hình môn học theo khung chương trình Sư phạm Tin học. Môn đã có tài liệu chỉ có thể tạm ẩn, không xóa được.
+          <h1 className="page-title">Môn học</h1>
+          <p className="page-sub">
+            {stats.totalCourses} môn · {stats.activeCourses} đang mở · {stats.totalDocuments} tài liệu
           </p>
         </div>
         <button
@@ -221,14 +197,8 @@ export default function CourseManagement({ onNotice }) {
           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
           <Plus size={16} />
-          <span>Thêm học phần</span>
+          <span>Thêm môn học</span>
         </button>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-        <KpiCard label="TỔNG HỌC PHẦN" value={stats.totalCourses} color="var(--text-primary)" icon={BookOpen} />
-        <KpiCard label="ĐANG MỞ ĐÀO TẠO" value={stats.activeCourses} color="var(--green-9)" icon={ShieldCheck} />
-        <KpiCard label="TÀI LIỆU GẮN KÈM" value={stats.totalDocuments} color="var(--blue-9)" icon={FileText} />
       </div>
 
       {loadError && (
@@ -255,10 +225,6 @@ export default function CourseManagement({ onNotice }) {
 
       <div
         style={{
-          backgroundColor: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '12px 14px',
           marginBottom: '16px',
           display: 'flex',
           flexWrap: 'wrap',
@@ -271,10 +237,10 @@ export default function CourseManagement({ onNotice }) {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            backgroundColor: 'var(--bg-muted)',
+            backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-strong)',
             borderRadius: '8px',
-            padding: '6px 12px',
+            padding: '8px 12px',
             flex: '1 1 280px',
             minWidth: '220px'
           }}
@@ -286,7 +252,7 @@ export default function CourseManagement({ onNotice }) {
             maxLength={100}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Tìm theo mã học phần hoặc tên môn..."
+            placeholder="Tìm theo mã hoặc tên môn"
             style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '13px', width: '100%', color: 'var(--text-primary)' }}
           />
         </div>
@@ -357,11 +323,11 @@ export default function CourseManagement({ onNotice }) {
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: '110px' }}>Mã HP</th>
-              <th>Tên học phần</th>
-              <th style={{ width: '50px' }}>TC</th>
+              <th style={{ width: '110px' }}>Mã môn</th>
+              <th>Tên môn</th>
+              <th style={{ width: '64px' }}>Tín chỉ</th>
               <th style={{ width: '160px' }}>Khối kiến thức</th>
-              <th style={{ width: '70px' }}>HK</th>
+              <th style={{ width: '70px' }}>Học kỳ</th>
               <th style={{ width: '76px' }}>Tài liệu</th>
               <th style={{ width: '104px' }}>Trạng thái</th>
               <th style={{ width: '132px' }}>Thao tác</th>
@@ -387,17 +353,17 @@ export default function CourseManagement({ onNotice }) {
                 const isLocked = course.documentCount > 0
                 return (
                   <tr key={course.id}>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '12px', color: 'var(--blue-11)' }}>{course.courseCode}</td>
-                    <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{course.courseName}</td>
+                    <td>{course.courseCode}</td>
+                    <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{course.courseName}</td>
                     <td>{course.credits}</td>
                     <td>
-                      <span className="status-badge blue">{KNOWLEDGE_BLOCK_LABELS[course.knowledgeBlock] || course.knowledgeBlock}</span>
+                      {KNOWLEDGE_BLOCK_LABELS[course.knowledgeBlock] || course.knowledgeBlock}
                     </td>
                     <td>
-                      <span className="status-badge slate">HK{course.semester}</span>
+                      {course.semester}
                     </td>
                     <td>
-                      <strong style={{ color: isLocked ? 'var(--blue-11)' : 'var(--text-tertiary)' }}>{course.documentCount}</strong>
+                      {course.documentCount}
                     </td>
                     <td>
                       {course.isActive ? <span className="status-badge green">Đang mở</span> : <span className="status-badge slate">Tạm ẩn</span>}

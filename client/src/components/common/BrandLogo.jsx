@@ -41,7 +41,7 @@ export default function BrandLogo({
         lineHeight: 1,
         textDecoration: 'none'
       }}
-      aria-label="5Share - Nền tảng chia sẻ học liệu Sư phạm Tin học"
+      aria-label="5Share - Nền tảng quản lý và chia sẻ tài liệu học tập dành cho ngành Sư phạm Tin học"
     >
       {/* Google Drive-Style Interlocking Ribbon Loops Mark */}
       <svg
