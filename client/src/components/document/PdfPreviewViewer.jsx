@@ -151,6 +151,25 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
   const [error, setError] = useState(null)
   const [pptxThumbnail, setPptxThumbnail] = useState(null)
 
+  const onDownloadClick = async () => {
+    if (documentItem?.fileUrl && documentItem.status !== 'APPROVED') {
+      const link = document.createElement('a')
+      link.href = documentItem.fileUrl
+      link.download = documentItem.fileName || `document-${documentItem.id}`
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      return
+    }
+    if (handleDownload) {
+      await handleDownload()
+    } else if (documentItem?.fileUrl) {
+      window.open(documentItem.fileUrl, '_blank')
+    }
+  }
+
   useEffect(() => {
     let isCancelled = false
 
@@ -163,16 +182,37 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
         const headers = {}
         if (token) headers['Authorization'] = `Bearer ${token}`
 
-        const fetchUrl = streamUrl || documentItem?.fileUrl
-        if (!fetchUrl) throw new Error('Không tìm thấy đường dẫn tệp.')
+        // Thử cả fileUrl lưu trữ trực tiếp (dành cho Admin thẩm định) và streamUrl
+        const candidateUrls = [documentItem?.fileUrl, streamUrl].filter(Boolean)
+        if (candidateUrls.length === 0) throw new Error('Không tìm thấy đường dẫn tệp.')
 
-        const resp = await fetch(fetchUrl, { headers })
-        if (!resp.ok) throw new Error(`Máy chủ phản hồi HTTP ${resp.status}`)
-        const arrayBuffer = await resp.arrayBuffer()
+        let arrayBuffer = null
+        let lastError = null
+
+        for (const url of candidateUrls) {
+          try {
+            const resp = await fetch(url, url === streamUrl ? { headers } : {})
+            if (resp.ok) {
+              arrayBuffer = await resp.arrayBuffer()
+              break
+            } else {
+              lastError = new Error(`Máy chủ phản hồi HTTP ${resp.status}`)
+            }
+          } catch (e) {
+            lastError = e
+          }
+        }
+
+        if (!arrayBuffer) {
+          throw lastError || new Error('Không thể tải tệp tin từ máy chủ.')
+        }
         if (isCancelled) return
 
         if (fileExt === 'docx') {
           const { renderAsync } = await import('docx-preview')
+          setLoading(false)
+          // Đợi React mount DOM node container
+          await new Promise((resolve) => setTimeout(resolve, 60))
           if (docxContainerRef.current) {
             docxContainerRef.current.innerHTML = ''
             await renderAsync(arrayBuffer, docxContainerRef.current, undefined, {
@@ -193,10 +233,11 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
             const blob = await entry.async('blob')
             if (!isCancelled) setPptxThumbnail(URL.createObjectURL(blob))
           }
+          if (!isCancelled) setLoading(false)
         }
-        if (!isCancelled) setLoading(false)
       } catch (err) {
         if (!isCancelled) {
+          console.error('[OfficePreviewViewer]', err)
           setError(err.message || 'Không thể tạo bản xem trước trực tiếp.')
           setLoading(false)
         }
@@ -219,7 +260,7 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
         </div>
         <button
           type="button"
-          onClick={handleDownload}
+          onClick={onDownloadClick}
           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--primary-base)', color: 'var(--text-on-brand)', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, flexShrink: 0 }}
         >
           <Download size={14} />
@@ -243,7 +284,7 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
           <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '16px' }}>Vui lòng bấm nút <strong>Tải tệp gốc</strong> ở góc trên để mở và xem đầy đủ bằng Microsoft {fileExt === 'pptx' ? 'PowerPoint' : 'Word'}.</p>
           <button
             type="button"
-            onClick={handleDownload}
+            onClick={onDownloadClick}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--primary-base)', color: 'var(--text-on-brand)', border: 'none', padding: '8px 18px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
           >
             <Download size={15} />
@@ -253,8 +294,18 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
       )}
 
       {/* Hiển thị Word (.docx) */}
-      {!loading && !error && fileExt === 'docx' && (
-        <div className="docx-viewer-host" style={{ width: '100%', maxHeight: '720px', overflowY: 'auto', backgroundColor: 'var(--bg-paper, #525659)', padding: '24px 16px' }}>
+      {!error && fileExt === 'docx' && (
+        <div
+          className="docx-viewer-host"
+          style={{
+            width: '100%',
+            maxHeight: '720px',
+            overflowY: 'auto',
+            backgroundColor: 'var(--bg-paper, #525659)',
+            padding: '24px 16px',
+            display: loading ? 'none' : 'block'
+          }}
+        >
           <div ref={docxContainerRef} style={{ width: '100%', maxWidth: '850px', margin: '0 auto' }} />
         </div>
       )}
@@ -277,7 +328,7 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
           </p>
           <button
             type="button"
-            onClick={handleDownload}
+            onClick={onDownloadClick}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--primary-base)', color: 'var(--text-on-brand)', border: 'none', padding: '9px 20px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
           >
             <Download size={16} />
@@ -478,11 +529,26 @@ export default function PdfPreviewViewer({
     }
     if (onDownload) {
       onDownload(documentItem)
-    } else {
-      try {
-        await downloadDocument(documentItem.id, documentItem.fileName)
-      } catch (err) {
-        console.error('[PdfPreviewViewer] Lỗi tải tài liệu:', err)
+      return
+    }
+    // Nếu là Admin thẩm định hoặc tài liệu chưa phát hành (PENDING/REJECTED), tải trực tiếp từ fileUrl lưu trữ
+    if (documentItem?.fileUrl && documentItem.status !== 'APPROVED') {
+      const link = document.createElement('a')
+      link.href = documentItem.fileUrl
+      link.download = documentItem.fileName || `document-${documentItem.id}`
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      return
+    }
+    try {
+      await downloadDocument(documentItem.id, documentItem.fileName)
+    } catch (err) {
+      console.error('[PdfPreviewViewer] Lỗi tải tài liệu:', err)
+      if (documentItem?.fileUrl) {
+        window.open(documentItem.fileUrl, '_blank')
       }
     }
   }
