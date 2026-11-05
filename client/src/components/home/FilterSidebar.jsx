@@ -6,6 +6,88 @@ import {
   DOCUMENT_TYPES
 } from '../../data/curriculum'
 
+/**
+ * Dropdown tùy biến đồng bộ chuẩn UI/UX 5share (thay thế thẻ select mặc định của trình duyệt)
+ */
+export function CustomSelect({
+  id,
+  label,
+  value,
+  options = [],
+  onChange,
+  className = ''
+}) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+
+  const normalizedOptions = options.map((opt) =>
+    typeof opt === 'string' ? { value: opt, label: opt } : opt
+  )
+
+  const currentOption = normalizedOptions.find((opt) => opt.value === value) || normalizedOptions[0]
+
+  useEffect(() => {
+    if (!open) return undefined
+    const closeOutside = (event) => {
+      if (!wrapRef.current?.contains(event.target)) setOpen(false)
+    }
+    const closeEscape = (event) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', closeOutside)
+    document.addEventListener('keydown', closeEscape)
+    return () => {
+      document.removeEventListener('mousedown', closeOutside)
+      document.removeEventListener('keydown', closeEscape)
+    }
+  }, [open])
+
+  const select = (val) => {
+    onChange(val)
+    setOpen(false)
+  }
+
+  return (
+    <div className={`custom-filter-dropdown ${className}`} ref={wrapRef}>
+      <button
+        id={id}
+        type="button"
+        className={`filter-select custom-filter-trigger ${open ? 'is-open' : ''}`}
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        <span title={currentOption?.label}>{currentOption?.label}</span>
+        <ChevronDown size={15} aria-hidden="true" className={`dropdown-chevron ${open ? 'rotated' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="custom-filter-popover" role="listbox" aria-label={label}>
+          {normalizedOptions.map((opt) => {
+            const isSelected = opt.value === value
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                className={`custom-filter-option ${isSelected ? 'is-selected' : ''}`}
+                onClick={() => select(opt.value)}
+              >
+                <span>{opt.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Dropdown Môn học: có ô tìm kiếm nhanh, phân tách mã môn và tên môn rõ ràng
+ */
 export function CourseFilter({ courses, value, onChange, id, includeAll = true }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -37,32 +119,91 @@ export function CourseFilter({ courses, value, onChange, id, includeAll = true }
     setQuery('')
   }
 
+  const triggerLabel = selected
+    ? `${selected.code} – ${selected.name}`
+    : includeAll
+      ? 'Tất cả môn học'
+      : 'Chọn môn học'
+
   return (
     <div className="course-filter" ref={wrapRef}>
-      <button id={id} type="button" className="filter-select course-filter-trigger" aria-label="Môn học" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-        <span title={selected ? `${selected.code} – ${selected.name}` : includeAll ? 'Tất cả môn học' : 'Chọn môn học'}>{selected ? `${selected.code} – ${selected.name}` : includeAll ? 'Tất cả môn học' : 'Chọn môn học'}</span>
-        <ChevronDown size={15} aria-hidden="true" />
+      <button
+        id={id}
+        type="button"
+        className={`filter-select course-filter-trigger ${open ? 'is-open' : ''}`}
+        aria-label="Môn học"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((val) => !val)}
+      >
+        <span title={triggerLabel}>{triggerLabel}</span>
+        <ChevronDown size={15} aria-hidden="true" className={`dropdown-chevron ${open ? 'rotated' : ''}`} />
       </button>
+
       {open && (
         <div className="course-filter-popover">
           <label className="course-filter-search">
             <Search size={15} aria-hidden="true" />
-            <input autoFocus type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm mã hoặc tên môn" aria-label="Tìm môn học" />
+            <input
+              autoFocus
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Tìm mã hoặc tên môn"
+              aria-label="Tìm môn học"
+            />
           </label>
           <div role="listbox" aria-label="Chọn môn học" className="course-filter-options">
-            {includeAll && !query && <button type="button" role="option" aria-selected={value === 'ALL'} onClick={() => select('ALL')}>Tất cả môn học</button>}
-            {filtered.map((course) => (
-              <button key={course.id} type="button" role="option" aria-selected={value === course.code} onClick={() => select(course.code)} title={`${course.code} – ${course.name}`}>
-                <span>{course.code} – {course.name}</span>
+            {includeAll && !query && (
+              <button
+                type="button"
+                role="option"
+                aria-selected={value === 'ALL'}
+                className={value === 'ALL' ? 'is-selected' : ''}
+                onClick={() => select('ALL')}
+              >
+                <span>Tất cả môn học</span>
               </button>
-            ))}
-            {filtered.length === 0 && <p className="course-filter-empty">Không tìm thấy môn học.</p>}
+            )}
+            {filtered.map((course) => {
+              const isSelected = value === course.code
+              return (
+                <button
+                  key={course.id}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  className={isSelected ? 'is-selected' : ''}
+                  onClick={() => select(course.code)}
+                  title={`${course.code} – ${course.name}`}
+                >
+                  <strong>{course.code}</strong>
+                  <span>{course.name}</span>
+                </button>
+              )
+            })}
+            {filtered.length === 0 && (
+              <p className="course-filter-empty">Không tìm thấy môn học phù hợp.</p>
+            )}
           </div>
         </div>
       )}
     </div>
   )
 }
+
+const FORMAT_OPTIONS = [
+  { value: 'ALL', label: 'Tất cả định dạng' },
+  { value: 'pdf', label: 'PDF' },
+  { value: 'docx', label: 'Word' },
+  { value: 'pptx', label: 'PowerPoint' }
+]
+
+const SORT_OPTIONS = [
+  { value: 'popular', label: 'Tải nhiều nhất' },
+  { value: 'rating', label: 'Đánh giá cao nhất' },
+  { value: 'newest', label: 'Mới nhất' }
+]
 
 // Hàng bộ lọc đa tiêu chí của Kho học liệu (FR-03, FR-04)
 export default function FilterSidebar({
@@ -88,69 +229,52 @@ export default function FilterSidebar({
 
   return (
     <div className="filter-row" role="group" aria-label="Bộ lọc tài liệu">
-      <select
-        className="filter-select"
-        aria-label="Khối kiến thức"
+      <CustomSelect
+        id="filter-block-select"
+        label="Khối kiến thức"
         value={selectedBlock}
-        onChange={(e) => onChangeBlock(e.target.value)}
-      >
-        {KNOWLEDGE_BLOCKS.map((block) => (
-          <option key={block} value={block}>
-            {block}
-          </option>
-        ))}
-      </select>
+        options={KNOWLEDGE_BLOCKS}
+        onChange={onChangeBlock}
+      />
 
-      <CourseFilter courses={visibleCourses} value={selectedCourseCode} onChange={onChangeCourseCode} />
+      <CourseFilter
+        id="filter-course-select"
+        courses={visibleCourses}
+        value={selectedCourseCode}
+        onChange={onChangeCourseCode}
+      />
 
-      <select
-        className="filter-select"
-        aria-label="Học kỳ"
+      <CustomSelect
+        id="filter-semester-select"
+        label="Học kỳ"
         value={selectedSemester}
-        onChange={(e) => onChangeSemester(e.target.value)}
-      >
-        {SEMESTERS.map((sem) => (
-          <option key={sem} value={sem}>
-            {sem}
-          </option>
-        ))}
-      </select>
+        options={SEMESTERS}
+        onChange={onChangeSemester}
+      />
 
-      <select
-        className="filter-select"
-        aria-label="Loại tài liệu"
+      <CustomSelect
+        id="filter-doctype-select"
+        label="Loại học liệu"
         value={selectedDocType}
-        onChange={(e) => onChangeDocType(e.target.value)}
-      >
-        {DOCUMENT_TYPES.map((type) => (
-          <option key={type} value={type}>
-            {type}
-          </option>
-        ))}
-      </select>
+        options={DOCUMENT_TYPES}
+        onChange={onChangeDocType}
+      />
 
-      <select
-        className="filter-select"
-        aria-label="Định dạng"
+      <CustomSelect
+        id="filter-format-select"
+        label="Định dạng"
         value={selectedFormat}
-        onChange={(e) => onChangeFormat(e.target.value)}
-      >
-        <option value="ALL">Tất cả định dạng</option>
-        <option value="pdf">PDF</option>
-        <option value="docx">Word</option>
-        <option value="pptx">PowerPoint</option>
-      </select>
+        options={FORMAT_OPTIONS}
+        onChange={onChangeFormat}
+      />
 
-      <select
-        className="filter-select"
-        aria-label="Sắp xếp"
+      <CustomSelect
+        id="filter-sort-select"
+        label="Sắp xếp"
         value={sortBy}
-        onChange={(e) => onChangeSort(e.target.value)}
-      >
-        <option value="popular">Tải nhiều nhất</option>
-        <option value="rating">Đánh giá cao nhất</option>
-        <option value="newest">Mới nhất</option>
-      </select>
+        options={SORT_OPTIONS}
+        onChange={onChangeSort}
+      />
     </div>
   )
 }

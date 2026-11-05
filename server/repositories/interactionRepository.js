@@ -273,9 +273,8 @@ async function hideComment(user, documentId, commentId) {
   return exists.rowCount ? 'forbidden' : 'missing';
 }
 
-async function findDownloadable(documentId) {
-  const result = await query(`SELECT id, title, file_name, file_url FROM public.documents WHERE id = $1 AND status = 'APPROVED'`, [documentId]);
-  return result.rows[0] || null;
+async function findDownloadable(documentId, user) {
+  return findPreviewable(documentId, user);
 }
 
 async function findPreviewable(documentId, user) {

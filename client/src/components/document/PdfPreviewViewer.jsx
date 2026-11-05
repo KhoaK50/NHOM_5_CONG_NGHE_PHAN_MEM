@@ -20,7 +20,8 @@ import {
   Loader2,
   ExternalLink
 } from 'lucide-react'
-import { getApiBaseUrl } from '../../utils/authGuard'
+import { getApiBaseUrl, getAuthToken } from '../../utils/authGuard'
+import { downloadDocument } from '../../utils/interactionApi'
 
 // Cấu hình worker chuẩn của Mozilla PDF.js
 if (typeof window !== 'undefined' && 'Worker' in window) {
@@ -181,19 +182,14 @@ export default function PdfPreviewViewer({
       setLoading(true)
       setLoadError(null)
       try {
-        const token =
-          localStorage.getItem('5share_auth_token') ||
-          sessionStorage.getItem('5share_auth_token') ||
-          localStorage.getItem('5share_access_token')
-
+        const token = getAuthToken()
         const headers = {}
         if (token) {
           headers['Authorization'] = `Bearer ${token}`
         }
 
         const response = await fetch(streamUrl, {
-          headers,
-          credentials: 'include'
+          headers
         })
 
         if (!response.ok) {
@@ -326,7 +322,7 @@ export default function PdfPreviewViewer({
   }
 
   // Tải về (Chặn khách vãng lai theo quy định UC06 / UC12)
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!isAuthenticated) {
       if (onRequireLogin) onRequireLogin()
       return
@@ -334,7 +330,11 @@ export default function PdfPreviewViewer({
     if (onDownload) {
       onDownload(documentItem)
     } else {
-      window.location.href = `${getApiBaseUrl()}/api/documents/${documentItem.id}/download`
+      try {
+        await downloadDocument(documentItem.id, documentItem.fileName)
+      } catch (err) {
+        console.error('[PdfPreviewViewer] Lỗi tải tài liệu:', err)
+      }
     }
   }
 
@@ -781,7 +781,7 @@ export default function PdfPreviewViewer({
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <a
-                href={streamUrl}
+                href={documentItem.fileUrl || streamUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

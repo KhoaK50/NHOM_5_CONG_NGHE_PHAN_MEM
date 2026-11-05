@@ -179,8 +179,8 @@ async function preview(rawId, user) {
 
 async function download(rawId, user, ipAddress) {
   const documentId = parseId(rawId, 'documentId');
-  const document = await repo.findDownloadable(documentId);
-  if (!document) throw new ApiError(404, 'DOCUMENT_NOT_FOUND', 'Không tìm thấy tài liệu đã được phát hành.');
+  const document = await repo.findDownloadable(documentId, user);
+  if (!document) throw new ApiError(404, 'DOCUMENT_NOT_FOUND', 'Không tìm thấy tài liệu yêu cầu.');
   let url;
   try { url = new URL(document.file_url); } catch { throw new ApiError(404, 'FILE_NOT_FOUND', 'Không tìm thấy tệp lưu trữ.'); }
   if (url.protocol !== 'https:' || url.hostname !== 'res.cloudinary.com' || url.username || url.password || (url.port && url.port !== '443')) {
