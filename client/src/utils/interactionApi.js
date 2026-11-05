@@ -51,11 +51,11 @@ export function removeBookmark(documentId) { return request(`/api/bookmarks/${en
 export function getDocumentComments(documentId, params) {
   return request(`/api/documents/${encodeURIComponent(documentId)}/comments${queryString(params)}`)
 }
-export function rateDocument(documentId, score) {
-  return request(`/api/documents/${encodeURIComponent(documentId)}/ratings`, { method: 'POST', body: { score } })
+export function saveMyReview(documentId, { score, content }) {
+  return request(`/api/documents/${encodeURIComponent(documentId)}/reviews/mine`, { method: 'PUT', body: { score, content } })
 }
-export function addDocumentComment(documentId, content, parentCommentId = null) {
-  return request(`/api/documents/${encodeURIComponent(documentId)}/comments`, { method: 'POST', body: { content, parentCommentId } })
+export function deleteMyReview(documentId) {
+  return request(`/api/documents/${encodeURIComponent(documentId)}/reviews/mine`, { method: 'DELETE' })
 }
 export function deleteDocumentComment(documentId, commentId) {
   return request(`/api/documents/${encodeURIComponent(documentId)}/comments/${encodeURIComponent(commentId)}`, { method: 'DELETE' })

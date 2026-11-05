@@ -269,6 +269,19 @@ function createHighContrastAtriumFloorTexture() {
   return new THREE.CanvasTexture(canvas)
 }
 
+// Khung hình cuối: logo nằm trên chữ 5share và luôn lọt trọn màn hình ở mọi tỉ lệ
+const LOGO_WORLD_WIDTH = 11.2
+const LOGO_WORLD_HEIGHT = 7.5
+const FINAL_VIEW_HEIGHT = 2 * 17.6 * Math.tan((40 * Math.PI) / 360)
+
+function getLogoLockup(aspect) {
+  const scale = Math.min(
+    (FINAL_VIEW_HEIGHT * 0.4) / LOGO_WORLD_HEIGHT,
+    (FINAL_VIEW_HEIGHT * aspect * 0.8) / LOGO_WORLD_WIDTH
+  )
+  return { scale, y: (LOGO_WORLD_HEIGHT * scale) / 2 + FINAL_VIEW_HEIGHT * 0.03 }
+}
+
 function getLogoLoopPoint(leftOrRight, angleRad, radius = 3.25) {
   const centerX = leftOrRight === 0 ? -1.85 : 1.85
   const x = centerX + Math.cos(angleRad) * radius
@@ -1182,9 +1195,10 @@ export default function IntroFilm({ onFinish }) {
       }
 
       const lockupShiftT = smootherstep(0.84, 0.92, p)
-      stageRoot.position.x = lerp(0, -4.45, lockupShiftT)
-      stageRoot.position.y = lerp(0, 0.12, lockupShiftT)
-      stageRoot.scale.setScalar(lerp(1.0, 0.72, lockupShiftT))
+      const logoLockup = getLogoLockup(camera.aspect)
+      stageRoot.position.x = 0
+      stageRoot.position.y = lerp(0, logoLockup.y, lockupShiftT)
+      stageRoot.scale.setScalar(lerp(1.0, logoLockup.scale, lockupShiftT))
 
       const subtleTiltY = Math.sin(elapsed * 0.65) * 0.06
       const subtleTiltX = Math.cos(elapsed * 0.45) * 0.04

@@ -68,3 +68,47 @@ Chưa kiểm tra:
 - `RegisterModal.jsx`, `NotificationPopover.jsx` và `KiemThuTramHarness.jsx` chưa đổi màu vì không nằm trong luồng hiển thị của `App.jsx`.
 - Loại học liệu "Tài liệu" cần chạy `server/db/migrations/004_add_general_document_type.sql` trên cơ sở dữ liệu của nhóm.
 - Mỗi thẻ tài liệu tải nguyên tệp PDF để vẽ ảnh xem trước, nên trang Kho có thể chậm khi tệp lớn. Nên tạo ảnh thu nhỏ phía máy chủ.
+
+## Bản V5.1: cập nhật theo tài liệu "Xem xét cập nhật"
+
+Bản vẽ: Figma nhóm, cùng page `🆕 UI/UX đầy đủ - Bản V5`: [bảng đối chiếu `V5_1_Change_Notes`](https://www.figma.com/design/2FFZM8lQTJ8Y4q1AGe1s3o/5share---UI-UX-design?node-id=186-1971), thành phần mới ở `V5_1_Components`, màn hình ở `V5_SEC_13` đến `V5_SEC_18`. Các nhóm 01 đến 12 giữ nguyên để so sánh.
+
+| Yêu cầu | Thay đổi | Bản vẽ |
+| --- | --- | --- |
+| Đánh giá kiểu CH Play | Số sao trên từng nhận xét, biểu đồ 5 mức sao. Mỗi người một đánh giá cho mỗi tài liệu, lần sau là sửa. Bỏ nút Trả lời, thay bằng nút icon Sửa và Xóa. API mới `PUT` và `DELETE /api/documents/:id/reviews/mine`. | `V5_SEC_13` |
+| Dấu `*` bắt buộc | Thành phần `RequiredMark`, màu `--status-danger`, dùng ở mọi form đang chạy. | `V5_SEC_14`, `V5_SEC_18` |
+| Bỏ "Chèn mô tả gợi ý" | Bỏ nút, mẫu mô tả và CSS liên quan. | `V5_SEC_14` |
+| Đổi tệp, tiêu đề không đổi | Tiêu đề do hệ thống điền thì đổi theo tệp mới. Tiêu đề người dùng tự gõ thì giữ nguyên. Tệp sai định dạng không ghi đè thông tin. | `V5_SEC_14` |
+| Nộp Word, PowerPoint | Đã có từ V5, kiểm tra lại đủ luồng. Giao diện ghi rõ `.docx`, `.pptx`. Tệp `.doc`, `.ppt` vẫn bị chặn theo SRS, có hướng dẫn lưu lại. | `V5_SEC_14` |
+| Gửi tài liệu chậm | Máy chủ gửi tệp lên Cloudinary bằng multipart thay cho base64, ít hơn 29% dữ liệu. Thêm thanh tiến độ, khóa nút khi đang gửi, không chờ bước tạo thông báo. | `V5_SEC_14` |
+| Logo phần giới thiệu | Logo nằm trên chữ 5share, căn giữa, tự co theo màn hình. | `V5_SEC_16` |
+| Dropdown môn học | Cùng màu chữ, cỡ chữ, viền và dòng chọn với dropdown khác, giữ ô tìm. | `V5_SEC_15` |
+| Báo lỗi nhập liệu | Khung đỏ đầu form liệt kê mục cần sửa, tự cuộn tới, bấm để tới đúng ô. Viền đỏ và lời nhắc dưới từng ô. | `V5_SEC_14` |
+| Thông báo phải F5 | Kênh SSE `GET /api/notifications/stream`. Quản trị được báo khi có tài liệu mới. Người gửi được báo khi có kết quả. Kho, Tài liệu của tôi, hàng đợi Kiểm duyệt tự cập nhật. Mất kết nối thì tự nối lại, nạp bù, trong lúc đó nạp lại mỗi 30 giây. | `V5_SEC_17` |
+| Mail ảo khi đăng ký | Đăng ký chỉ nhận `@gmail.com`, kiểm tra ở cả giao diện và máy chủ. Tài khoản đã có và đăng nhập Google không bị ảnh hưởng. | `V5_SEC_18` |
+
+Sửa thêm trong khi làm: nút "Tải thêm nhận xét" trước đây không bao giờ hiện vì đọc sai trường phân trang. Chọn nhanh một tệp khác không còn bị kết quả kiểm tra của tệp trước ghi đè.
+
+Không cần chạy migration, không thêm gói npm.
+
+### Đã kiểm tra
+
+Chạy trên PostgreSQL cục bộ với schema, migration 001 đến 004 và dữ liệu mẫu. Cloudinary được giả lập, không gửi tệp ra ngoài, không chạm cơ sở dữ liệu thật.
+
+- `npm run lint` và `vite build` đạt.
+- 82 kiểm tra API đạt: đăng ký Gmail, luồng SSE theo vai trò, tải PDF, Word, PowerPoint, từ chối tệp đổi đuôi, tệp có macro, tệp `.doc`, duyệt và từ chối, đánh giá một lần kể cả 3 yêu cầu đồng thời, giới hạn kết nối.
+- Chạy trong trình duyệt: thông báo đến sau khoảng 0,3 giây ở cả hai phía. Tiêu chí Quản trị đang tích dở không mất khi danh sách cập nhật. Tự nạp bù sau khi máy chủ khởi động lại. Không tràn ngang ở khổ 375 px. Giao diện đánh giá đúng ở theme tối.
+
+### Chưa kiểm tra
+
+- Tải tệp thật lên Cloudinary bằng multipart và đo thời gian thật trên máy chủ Render, nên chưa khẳng định còn bao nhiêu giây.
+- Kênh SSE qua proxy thật của Render. Nếu proxy cắt kết nối, giao diện vẫn cập nhật nhờ nạp lại mỗi 30 giây.
+- Điện thoại thật.
+
+### Giới hạn còn lại
+
+- Kết nối SSE luôn mở giữ máy chủ Render thức, gói miễn phí sẽ tiêu nhiều giờ chạy hơn.
+- Hub SSE nằm trong bộ nhớ, chỉ đúng khi chạy 1 instance.
+- Ràng buộc Gmail chỉ kiểm tra đuôi, không xác minh hộp thư có thật.
+- Dropdown có sẵn do hệ điều hành vẽ, có thể khác nhẹ dropdown Môn học trên macOS.
+- Nếu môn đã chọn chưa có trong bảng `courses`, máy chủ hiện xếp tài liệu vào môn đầu tiên mà không báo. Lỗi này có từ trước, chưa sửa ở bản này.

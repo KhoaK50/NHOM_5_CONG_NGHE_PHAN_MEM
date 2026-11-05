@@ -32,6 +32,8 @@
   --focus-ring: #8cc0f2;
 
   --accent-star: #d97f00;
+  --select-highlight-bg: #6f6f6f;
+  --select-highlight-text: #ffffff;
   --rating-bg: #fff1d1;
   --rating-text: #7a4a00;
 
@@ -93,6 +95,8 @@
   --focus-ring: #2b5a84;
 
   --accent-star: #f5b544;
+  --select-highlight-bg: #6f6f6f;
+  --select-highlight-text: #ffffff;
   --rating-bg: #3a2b0c;
   --rating-text: #ffd587;
 
@@ -948,4 +952,521 @@ select option {
   .detail-workspace-grid {
     gap: 16px;
   }
+}
+
+/* ==========================================================================
+   CẬP NHẬT V5.1
+   ========================================================================== */
+
+/* ---------- Dấu bắt buộc ---------- */
+.required-mark {
+  margin-left: 3px;
+  color: var(--status-danger);
+  font-weight: 700;
+}
+
+/* ---------- Đóng góp: báo lỗi nhập liệu ---------- */
+.vec-form-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--status-danger);
+  border-left-width: 5px;
+  border-radius: 8px;
+  background: var(--status-danger-soft);
+  color: var(--status-danger);
+  outline: none;
+}
+
+.vec-form-alert strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.vec-form-alert p {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.vec-form-alert ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--text-primary);
+}
+
+.vec-form-alert li + li {
+  margin-top: 3px;
+}
+
+.vec-form-alert li button {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.vec-field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 6px 0 0;
+  color: var(--status-danger);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.vec-field-error svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.vec-form-field.has-error .vec-form-input,
+.vec-form-field.has-error .vec-form-textarea,
+.vec-form-field.has-error .course-filter-trigger,
+.vec-form-field.has-error .vec-dropzone {
+  border: 2px solid var(--status-danger);
+}
+
+.vec-form-field.has-error .vec-form-input:focus,
+.vec-form-field.has-error .vec-form-textarea:focus {
+  border-color: var(--status-danger);
+}
+
+.vec-form-field.has-error .vec-dropzone {
+  background: var(--status-danger-soft);
+}
+
+.vec-dropzone:focus {
+  outline: none;
+}
+
+.file-check.is-checking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.spin-icon {
+  flex-shrink: 0;
+  animation: v51-spin 0.9s linear infinite;
+}
+
+@keyframes v51-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Đóng góp: tiến độ gửi tệp ---------- */
+.upload-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
+}
+
+.upload-progress-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.upload-progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg-muted);
+}
+
+.upload-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary-base);
+  transition: width 0.15s linear;
+}
+
+.upload-progress-track.is-finishing span {
+  animation: v51-pulse 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes v51-pulse {
+  from { background: var(--primary-base); }
+  to { background: var(--brand-soft); }
+}
+
+/* ---------- Dropdown môn học: cùng kiểu với các dropdown khác, vẫn có ô tìm ---------- */
+.course-filter-popover {
+  top: calc(100% + 2px);
+  width: 100%;
+  min-width: min(300px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.course-filter-search {
+  min-height: 36px;
+  margin-bottom: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.course-filter-search input {
+  font-size: 14px;
+}
+
+.course-filter-options {
+  padding-top: 0;
+}
+
+.course-filter-options button {
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 8px;
+  border-radius: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.course-filter-options button span {
+  white-space: normal;
+}
+
+.course-filter-options button:hover,
+.course-filter-options button:focus-visible,
+.course-filter-options button[aria-selected='true'] {
+  background: var(--select-highlight-bg);
+  color: var(--select-highlight-text);
+  outline: none;
+}
+
+.course-filter-empty {
+  font-size: 14px;
+}
+
+@media (pointer: coarse) {
+  .course-filter-options button {
+    min-height: 40px;
+  }
+}
+
+/* ---------- Đánh giá và nhận xét ---------- */
+.review-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+}
+
+.review-panel-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.review-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+}
+
+.review-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 96px;
+}
+
+.review-score strong {
+  color: var(--text-primary);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.review-score > span:last-child {
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: center;
+}
+
+.review-stars {
+  display: inline-flex;
+  gap: 2px;
+  color: var(--line-strong);
+}
+
+.review-stars .is-on {
+  color: var(--accent-star);
+}
+
+.review-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.review-bar-row {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.review-bar-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg-muted);
+}
+
+.review-bar-track span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-star);
+}
+
+.review-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.review-message svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.review-message.is-error {
+  color: var(--status-danger);
+}
+
+.review-message.is-success {
+  color: var(--green-9);
+}
+
+.review-login-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.review-form-label {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.review-star-input {
+  display: flex;
+  gap: 4px;
+}
+
+.review-star-input button {
+  display: inline-flex;
+  padding: 2px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--line-strong);
+  cursor: pointer;
+}
+
+.review-star-input button.is-on {
+  color: var(--accent-star);
+}
+
+.review-star-input button:focus-visible {
+  outline: 2px solid var(--primary-base);
+}
+
+.review-form-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.review-form-buttons {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 460px;
+  overflow-y: auto;
+}
+
+.review-item {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-muted);
+}
+
+.review-item.is-mine {
+  border-color: var(--primary-base);
+  background: var(--brand-soft);
+}
+
+.review-item.is-reply {
+  margin-left: 18px;
+}
+
+.review-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-base);
+  color: var(--text-on-brand);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.review-body {
+  min-width: 0;
+}
+
+.review-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.review-head strong {
+  min-width: 0;
+  padding-top: 2px;
+  color: var(--text-primary);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.review-actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.review-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.review-icon-btn:hover {
+  border-color: var(--primary-base);
+  color: var(--primary-base);
+}
+
+.review-icon-btn.is-danger {
+  color: var(--status-danger);
+}
+
+.review-icon-btn.is-danger:hover {
+  border-color: var(--status-danger);
+  background: var(--status-danger-soft);
+  color: var(--status-danger);
+}
+
+.review-icon-btn:focus-visible {
+  outline: 2px solid var(--primary-base);
+  outline-offset: 1px;
+}
+
+.review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.review-text {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.review-empty {
+  margin: 4px 0;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  text-align: center;
+}
+
+.review-more {
+  width: 100%;
 }

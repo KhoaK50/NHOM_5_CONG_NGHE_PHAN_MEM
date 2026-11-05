@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
-import { AlertCircle } from 'lucide-react'
-import { addDocumentComment, deleteDocumentComment, getDocumentComments, rateDocument } from '../../utils/interactionApi'
+import { AlertCircle, Pencil, Star, Trash2 } from 'lucide-react'
+import { deleteDocumentComment, deleteMyReview, getDocumentComments, saveMyReview } from '../../utils/interactionApi'
 import ConfirmDialog from '../common/ConfirmDialog'
+import RequiredMark from '../common/RequiredMark'
+
+const EMPTY_SUMMARY = { average: 0, totalRatings: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, myRating: null }
+const MAX_REVIEW_LENGTH = 2000
+const LEGACY_CONTENT_NOTICE = 'Bình luận cũ không hiển thị được nội dung.'
 
 function formatDate(value) {
   const date = new Date(value)
@@ -10,28 +15,59 @@ function formatDate(value) {
   return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
+function getInitials(name = '') {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+}
+
+function StarRow({ value = 0, size = 14 }) {
+  const rounded = Math.round(Number(value) || 0)
+  return (
+    <span className="review-stars" role="img" aria-label={`${rounded} trên 5 sao`}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star key={star} size={size} className={star <= rounded ? 'is-on' : ''} fill={star <= rounded ? 'currentColor' : 'none'} aria-hidden="true" />
+      ))}
+    </span>
+  )
+}
+
+function IconAction({ label, danger = false, onClick, children }) {
+  return (
+    <button type="button" className={`review-icon-btn ${danger ? 'is-danger' : ''}`} onClick={onClick} aria-label={label} title={label}>
+      {children}
+    </button>
+  )
+}
+
+function readableContent(content) {
+  return typeof content === 'string' && content !== '[object Object]' ? content : LEGACY_CONTENT_NOTICE
+}
+
 export default function RatingComments({
   documentItem,
   isAuthenticated = false,
   canInteract,
   currentUser,
-  onRequireLogin
+  onRequireLogin,
+  onSummaryChange
 }) {
   const effectiveCanInteract = Boolean(canInteract !== undefined ? canInteract : isAuthenticated)
-  const [summary, setSummary] = useState({ average: 0, totalRatings: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, myRating: null })
+  const [summary, setSummary] = useState(EMPTY_SUMMARY)
+  const [myReview, setMyReview] = useState(null)
   const [comments, setComments] = useState([])
-  const [selectedStars, setSelectedStars] = useState(5)
-  const [hoverStar, setHoverStar] = useState(0)
-  const [commentText, setCommentText] = useState('')
-  const [replyingTo, setReplyingTo] = useState(null)
-  const [replyText, setReplyText] = useState('')
   const [pagination, setPagination] = useState({ page: 1, totalItems: 0 })
+  const [isEditing, setIsEditing] = useState(false)
+  const [draftStars, setDraftStars] = useState(0)
+  const [hoverStar, setHoverStar] = useState(0)
+  const [draftText, setDraftText] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
-  const [pendingDeleteId, setPendingDeleteId] = useState(null)
+  const [pendingDelete, setPendingDelete] = useState(null) // { kind: 'mine' } | { kind: 'comment', id }
 
   const docId = documentItem?.id
 
@@ -42,9 +78,10 @@ export default function RatingComments({
       .then((data) => {
         if (cancelled) return
         setSummary(data.summary)
-        setSelectedStars(data.summary.myRating || 5)
+        setMyReview(data.myReview || null)
         setComments(data.items)
-        setPagination({ page: data.page, totalItems: data.totalItems })
+        setPagination({ page: data.pagination.page, totalItems: data.pagination.totalItems })
+        onSummaryChange?.(docId, data.summary)
       })
       .catch((requestError) => {
         if (!cancelled) setError(requestError.message)
@@ -53,29 +90,48 @@ export default function RatingComments({
         if (!cancelled) setLoading(false)
       })
     return () => { cancelled = true }
-  }, [docId, reloadKey])
+  }, [docId, reloadKey, onSummaryChange])
 
-  const submit = async (event, parentCommentId = null, text = commentText) => {
+  const startEditing = () => {
+    setDraftStars(myReview?.score || 0)
+    setDraftText(myReview?.content || '')
+    setError('')
+    setNotice('')
+    setIsEditing(true)
+  }
+
+  const cancelEditing = () => {
+    setIsEditing(false)
+    setDraftStars(0)
+    setDraftText('')
+    setError('')
+  }
+
+  const handleSubmit = async (event) => {
     event.preventDefault()
     if (!isAuthenticated) {
-      if (onRequireLogin) onRequireLogin()
+      onRequireLogin?.()
+      return
+    }
+    const content = draftText.trim()
+    if (!draftStars) {
+      setError('Vui lòng chọn số sao trước khi gửi đánh giá.')
+      return
+    }
+    if (content.length === 1) {
+      setError('Nhận xét cần ít nhất 2 ký tự, hoặc để trống nếu chỉ muốn chấm sao.')
       return
     }
     setError('')
     setNotice('')
     setSaving(true)
     try {
-      if (!parentCommentId && selectedStars) {
-        await rateDocument(docId, selectedStars)
-      }
-      if (text.trim()) {
-        await addDocumentComment(docId, text.trim(), parentCommentId)
-      }
-      setCommentText('')
-      setReplyingTo(null)
-      setReplyText('')
-      setNotice('Đã lưu đánh giá của bạn.')
-      setReloadKey((k) => k + 1)
+      await saveMyReview(docId, { score: draftStars, content })
+      setIsEditing(false)
+      setDraftStars(0)
+      setDraftText('')
+      setNotice(myReview ? 'Đã cập nhật đánh giá của bạn.' : 'Đã gửi đánh giá của bạn.')
+      setReloadKey((key) => key + 1)
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -88,8 +144,8 @@ export default function RatingComments({
     setLoading(true)
     try {
       const data = await getDocumentComments(docId, { page: nextPage, limit: 20 })
-      setComments((prev) => [...prev, ...data.items])
-      setPagination({ page: data.page, totalItems: data.totalItems })
+      setComments((prev) => [...prev, ...data.items.filter((item) => !prev.some((known) => known.id === item.id))])
+      setPagination({ page: data.pagination.page, totalItems: data.pagination.totalItems })
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -97,127 +153,177 @@ export default function RatingComments({
     }
   }
 
-  const handleDelete = async (commentId) => {
-    setPendingDeleteId(null)
+  const handleConfirmDelete = async () => {
+    const target = pendingDelete
+    setPendingDelete(null)
     setError('')
+    setNotice('')
     try {
-      await deleteDocumentComment(docId, commentId)
-      setReloadKey((k) => k + 1)
-      setNotice('Đã xóa bình luận.')
-    } catch (requestError) { setError(requestError.message) }
+      if (target.kind === 'mine') {
+        await deleteMyReview(docId)
+        setIsEditing(false)
+        setNotice('Đã xóa đánh giá của bạn.')
+      } else {
+        await deleteDocumentComment(docId, target.id)
+        setNotice('Đã xóa nhận xét.')
+      }
+      setReloadKey((key) => key + 1)
+    } catch (requestError) {
+      setError(requestError.message)
+    }
   }
 
-  const isOwner = (comment) => Boolean(currentUser && Number(comment.userId) === Number(currentUser.id))
-  const canDelete = (comment) => isAuthenticated && (isOwner(comment) || currentUser?.role === 'ADMIN')
+  const canDelete = (comment) => {
+    if (!isAuthenticated) return false
+    const isOwner = Boolean(currentUser && Number(comment.userId) === Number(currentUser.id))
+    return isOwner || currentUser?.role === 'ADMIN'
+  }
+
+  const visibleComments = comments.filter((comment) => comment.id !== myReview?.commentId)
+  const total = summary.totalRatings || 0
+  const showForm = effectiveCanInteract && (!myReview || isEditing)
 
   return (
-    <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '18px 20px', boxShadow: 'var(--shadow-card)' }} aria-label="Đánh giá">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid var(--border-subtle)' }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Đánh giá</h3>
-        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{summary.totalRatings ? `★ ${Number(summary.average).toFixed(1)} · ${summary.totalRatings} lượt` : 'Chưa có đánh giá'}</span>
+    <section className="review-panel" aria-label="Đánh giá và nhận xét">
+      <h3 className="review-panel-title">Đánh giá và nhận xét</h3>
+
+      <div className="review-summary">
+        <div className="review-score">
+          <strong>{total ? Number(summary.average).toFixed(1) : '–'}</strong>
+          <StarRow value={summary.average} size={15} />
+          <span>{total ? `${total.toLocaleString('vi-VN')} lượt đánh giá` : 'Chưa có đánh giá'}</span>
+        </div>
+        <div className="review-bars" aria-hidden="true">
+          {[5, 4, 3, 2, 1].map((star) => {
+            const count = summary.distribution?.[star] || 0
+            return (
+              <div className="review-bar-row" key={star}>
+                <span>{star}</span>
+                <div className="review-bar-track"><span style={{ width: `${total ? (count / total) * 100 : 0}%` }} /></div>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
-      {effectiveCanInteract ? (
-        <form onSubmit={(event) => submit(event)} style={{ marginBottom: 14 }}>
-          <strong style={{ fontSize: 13 }}>Đánh giá tài liệu</strong>
-          <div onMouseLeave={() => setHoverStar(0)} style={{ display: 'flex', gap: 3, margin: '8px 0' }}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                type="button"
-                key={star}
-                aria-label={`${star} sao`}
-                onClick={() => setSelectedStars(star)}
-                onMouseEnter={() => setHoverStar(star)}
-                style={{
-                  border: 0,
-                  background: 'none',
-                  padding: 0,
-                  cursor: 'pointer',
-                  color: star <= (hoverStar || selectedStars) ? 'var(--accent-star)' : 'var(--line-strong)',
-                  fontSize: 24
-                }}
-              >
-                ★
-              </button>
-            ))}
-            <span style={{ alignSelf: 'center', fontSize: 12, color: 'var(--text-secondary)' }}>{selectedStars}/5</span>
-          </div>
-          <textarea
-            value={commentText}
-            onChange={(event) => setCommentText(event.target.value)}
-            maxLength={2000}
-            rows={3}
-            placeholder="Chia sẻ nhận xét về tài liệu (không bắt buộc)…"
-            style={{
-              width: '100%',
-              resize: 'vertical',
-              padding: 9,
-              borderRadius: 7,
-              border: '1px solid var(--line-strong)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-primary)'
-            }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 7, fontSize: 11, color: 'var(--text-tertiary)' }}>
-            <span>{commentText.length}/2.000 ký tự</span>
-            <button type="submit" className="btn-solid-primary" disabled={saving}>
-              {saving ? 'Đang gửi…' : 'Gửi đánh giá'}
-            </button>
-          </div>
-        </form>
-      ) : (
-        !isAuthenticated && (
-          <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 8, background: 'var(--bg-muted)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Đăng nhập để gửi đánh giá và nhận xét học liệu</span>
-            <button type="button" className="btn-ghost" onClick={onRequireLogin} style={{ fontSize: 12, fontWeight: 600 }}>Đăng nhập</button>
-          </div>
-        )
+      {error && <div className="review-message is-error" role="alert"><AlertCircle size={15} aria-hidden="true" /><span>{error}</span></div>}
+      {notice && <div className="review-message is-success" role="status"><span>{notice}</span></div>}
+
+      {!isAuthenticated && (
+        <div className="review-login-prompt">
+          <span>Đăng nhập để đánh giá tài liệu này</span>
+          <button type="button" className="btn-ghost" onClick={onRequireLogin}>Đăng nhập</button>
+        </div>
       )}
 
-      {error && <div role="alert" style={{ display: 'flex', gap: 6, color: 'var(--red-9)', fontSize: 12, marginBottom: 10 }}><AlertCircle size={14} />{error}</div>}
-      {notice && <div role="status" style={{ color: 'var(--green-9)', fontSize: 12, marginBottom: 10 }}>{notice}</div>}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 430, overflowY: 'auto' }}>
-        {loading && comments.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 12 }}>Đang tải bình luận…</p> : comments.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 12 }}>Chưa có bình luận nào.</p> : comments.map((comment) => (
-          <article key={comment.id} style={{ marginLeft: comment.parentCommentId ? 18 : 0, padding: '10px 12px', borderRadius: 8, background: 'var(--bg-muted)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}><strong style={{ fontSize: 12.5 }}>{comment.authorName}</strong><time style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{formatDate(comment.createdAt)}</time></div>
-              <div style={{ display: 'inline-flex', gap: 10, alignItems: 'center' }}>
-                {effectiveCanInteract && (
-                  <button type="button" className="btn-ghost" onClick={() => { setReplyingTo(comment.id); setReplyText('') }} style={{ padding: 0, fontSize: 11 }}>
-                    Trả lời
-                  </button>
-                )}
-                {canDelete(comment) && (
-                  <button type="button" className="btn-ghost" onClick={() => setPendingDeleteId(comment.id)} style={{ padding: 0, fontSize: 11, color: 'var(--red-9)' }}>
-                    Xóa
-                  </button>
-                )}
+      {myReview && !isEditing && (
+        <article className="review-item is-mine" aria-label="Đánh giá của bạn">
+          <div className="review-avatar" aria-hidden="true">{getInitials(currentUser?.fullName)}</div>
+          <div className="review-body">
+            <div className="review-head">
+              <strong>Đánh giá của bạn</strong>
+              <div className="review-actions">
+                <IconAction label="Chỉnh sửa đánh giá" onClick={startEditing}><Pencil size={16} aria-hidden="true" /></IconAction>
+                <IconAction label="Xóa đánh giá" danger onClick={() => setPendingDelete({ kind: 'mine' })}><Trash2 size={16} aria-hidden="true" /></IconAction>
               </div>
             </div>
-            {comment.parentCommentId && <div style={{ marginBottom: 4, fontSize: 10, color: 'var(--text-tertiary)' }}>Phản hồi bình luận #{comment.parentCommentId}</div>}
-            <p style={{ margin: 0, fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{typeof comment.content === 'string' && comment.content !== '[object Object]' ? comment.content : 'Bình luận cũ không hiển thị được nội dung.'}</p>
-            {replyingTo === comment.id && (
-              <form onSubmit={(event) => submit(event, comment.id, replyText)} style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                <input value={replyText} onChange={(event) => setReplyText(event.target.value)} maxLength={2000} placeholder="Viết phản hồi…" style={{ flex: 1, minWidth: 0, padding: 7, border: '1px solid var(--line-strong)', borderRadius: 6, background: 'var(--bg-surface)', color: 'var(--text-primary)' }} />
-                <button className="btn-solid-primary" disabled={saving}>Gửi</button>
-              </form>
-            )}
+            <div className="review-meta">
+              {myReview.score ? <StarRow value={myReview.score} /> : <span>Chưa chấm sao</span>}
+              <time>{formatDate(myReview.createdAt)}</time>
+            </div>
+            {myReview.content && <p className="review-text">{readableContent(myReview.content)}</p>}
+          </div>
+        </article>
+      )}
+
+      {showForm && (
+        <form className="review-form" onSubmit={handleSubmit}>
+          <span className="review-form-label" id="review-stars-label">
+            {isEditing ? 'Chỉnh sửa đánh giá của bạn' : 'Đánh giá của bạn'}
+            <RequiredMark />
+          </span>
+          <div className="review-star-input" role="group" aria-labelledby="review-stars-label" onMouseLeave={() => setHoverStar(0)}>
+            {[1, 2, 3, 4, 5].map((star) => {
+              const isOn = star <= (hoverStar || draftStars)
+              return (
+                <button
+                  type="button"
+                  key={star}
+                  className={isOn ? 'is-on' : ''}
+                  aria-label={`${star} sao`}
+                  aria-pressed={draftStars === star}
+                  onClick={() => { setDraftStars(star); setError('') }}
+                  onMouseEnter={() => setHoverStar(star)}
+                >
+                  <Star size={28} fill={isOn ? 'currentColor' : 'none'} aria-hidden="true" />
+                </button>
+              )
+            })}
+          </div>
+          <label className="review-form-label" htmlFor="review-text-input">Nhận xét (không bắt buộc)</label>
+          <textarea
+            id="review-text-input"
+            className="vec-form-textarea"
+            value={draftText}
+            onChange={(event) => setDraftText(event.target.value)}
+            maxLength={MAX_REVIEW_LENGTH}
+            rows={3}
+            placeholder="Chia sẻ nhận xét của bạn về tài liệu này"
+          />
+          <div className="review-form-footer">
+            <span>{draftText.length.toLocaleString('vi-VN')}/2.000 ký tự</span>
+            <div className="review-form-buttons">
+              {isEditing && <button type="button" className="btn-ghost nav-auth-link" onClick={cancelEditing} disabled={saving}>Hủy</button>}
+              <button type="submit" className="btn-solid-primary" disabled={saving}>
+                {saving ? 'Đang lưu…' : isEditing ? 'Lưu thay đổi' : 'Gửi đánh giá'}
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+
+      <div className="review-list">
+        {loading && comments.length === 0 ? (
+          <p className="review-empty">Đang tải nhận xét…</p>
+        ) : visibleComments.length === 0 ? (
+          <p className="review-empty">{myReview ? 'Chưa có nhận xét nào khác.' : 'Chưa có nhận xét nào.'}</p>
+        ) : visibleComments.map((comment) => (
+          <article key={comment.id} className={`review-item ${comment.parentCommentId ? 'is-reply' : ''}`}>
+            <div className="review-avatar" aria-hidden="true">{getInitials(comment.authorName)}</div>
+            <div className="review-body">
+              <div className="review-head">
+                <strong>{comment.authorName}</strong>
+                {canDelete(comment) && (
+                  <div className="review-actions">
+                    <IconAction label="Xóa nhận xét" danger onClick={() => setPendingDelete({ kind: 'comment', id: comment.id })}>
+                      <Trash2 size={16} aria-hidden="true" />
+                    </IconAction>
+                  </div>
+                )}
+              </div>
+              <div className="review-meta">
+                {comment.score ? <StarRow value={comment.score} /> : null}
+                <time>{formatDate(comment.createdAt)}</time>
+              </div>
+              <p className="review-text">{readableContent(comment.content)}</p>
+            </div>
           </article>
         ))}
       </div>
+
       {comments.length < pagination.totalItems && (
-        <button type="button" className="btn-ghost" disabled={loading} onClick={handleLoadMore} style={{ marginTop: 10, width: '100%' }}>
-          Tải thêm bình luận
+        <button type="button" className="btn-ghost review-more" disabled={loading} onClick={handleLoadMore}>
+          Tải thêm nhận xét
         </button>
       )}
-      {pendingDeleteId !== null && (
+
+      {pendingDelete && (
         <ConfirmDialog
-          title="Xóa bình luận này?"
-          message="Bình luận sẽ bị xóa khỏi tài liệu và không thể khôi phục."
-          confirmLabel="Xóa bình luận"
-          onConfirm={() => handleDelete(pendingDeleteId)}
-          onCancel={() => setPendingDeleteId(null)}
+          title={pendingDelete.kind === 'mine' ? 'Xóa đánh giá của bạn?' : 'Xóa nhận xét này?'}
+          message={pendingDelete.kind === 'mine' ? 'Số sao và nhận xét của bạn sẽ bị xóa. Bạn có thể đánh giá lại sau.' : 'Nhận xét sẽ bị xóa khỏi tài liệu và không thể khôi phục.'}
+          confirmLabel={pendingDelete.kind === 'mine' ? 'Xóa đánh giá' : 'Xóa nhận xét'}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setPendingDelete(null)}
         />
       )}
     </section>

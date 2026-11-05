@@ -48,14 +48,39 @@ function toQuery(params) {
 }
 
 // UC07
-export function uploadDocument(payload) {
+function parseJsonSafely(text) {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
+// Dùng XMLHttpRequest vì fetch chưa báo được tiến độ gửi tệp trên mọi trình duyệt
+export function uploadDocument(payload, { onProgress } = {}) {
   const formData = payload instanceof FormData ? payload : new FormData()
   if (!(payload instanceof FormData)) {
     Object.entries(payload).forEach(([k, v]) => {
       if (v !== undefined && v !== null) formData.append(k, v)
     })
   }
-  return request('/api/documents', { method: 'POST', formData })
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `${getApiBaseUrl()}/api/documents`)
+    const token = getAuthToken()
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(Math.min(100, Math.round((event.loaded / event.total) * 100)))
+    }
+    xhr.onload = () => {
+      const body = parseJsonSafely(xhr.responseText)
+      if (xhr.status >= 200 && xhr.status < 300) resolve(body)
+      else reject(new ApiRequestError(xhr.status, body))
+    }
+    xhr.onerror = () => reject(new ApiRequestError(0, null))
+    xhr.onabort = () => reject(new ApiRequestError(0, null))
+    xhr.send(formData)
+  })
 }
 
 // UC08

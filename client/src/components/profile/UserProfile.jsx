@@ -1,3 +1,4 @@
+import RequiredMark from '../common/RequiredMark'
 import { useState, useRef } from 'react'
 import {
   KeyRound,
@@ -281,6 +282,7 @@ export default function UserProfile({
                   style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}
                 >
                   Họ và tên:
+                  <RequiredMark />
                 </label>
                 <input
                   id="profile-fullname"
@@ -582,6 +584,7 @@ export default function UserProfile({
                 style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}
               >
                 Mật khẩu hiện tại:
+                <RequiredMark />
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -628,6 +631,7 @@ export default function UserProfile({
                   style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}
                 >
                   Mật khẩu mới:
+                  <RequiredMark />
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -672,6 +676,7 @@ export default function UserProfile({
                   style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}
                 >
                   Xác nhận mật khẩu mới:
+                  <RequiredMark />
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input

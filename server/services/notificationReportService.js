@@ -5,6 +5,8 @@
  */
 
 const repo = require('../repositories/notificationReportRepository');
+const realtime = require('./realtimeHub');
+const { ADMIN_NEW_DOCUMENT_TITLE } = require('../utils/notificationTitles');
 
 class ApiError extends Error {
   constructor(statusCode, code, message, extra = {}) {
@@ -77,6 +79,8 @@ async function getNotifications(userId, query = {}) {
     title: row.title,
     message: row.message,
     documentId: row.related_document_id,
+    // Tài liệu chờ duyệt chưa có trong Kho công khai nên mở thẳng màn hình Kiểm duyệt
+    targetScreen: row.type === 'SYSTEM' && row.title === ADMIN_NEW_DOCUMENT_TITLE ? 'admin-moderation' : null,
     isRead: row.is_read,
     createdAt: formatRelativeTime(row.created_at),
     rawCreatedAt: row.created_at
@@ -145,6 +149,8 @@ async function submitReport(userId, body = {}) {
     reasonCategory,
     description: cleanDesc
   });
+
+  realtime.publishToAdmins('moderation', { reportId: newReport.id });
 
   return {
     id: newReport.id,

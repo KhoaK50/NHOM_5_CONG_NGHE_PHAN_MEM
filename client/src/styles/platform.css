@@ -1920,24 +1920,6 @@
   box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
-.vec-template-btn {
-  padding: 3px 8px;
-  border-radius: 5px;
-  border: 1px solid var(--slate-7);
-  background-color: var(--slate-2);
-  color: var(--slate-12);
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.14s ease;
-}
-
-.vec-template-btn:hover {
-  border-color: var(--blue-9);
-  color: var(--blue-9);
-}
-
 /* Cột Phải: Trạm Kiểm định Nhị phân & 8 Tiêu chí (Binary & Hash Inspector) */
 
 

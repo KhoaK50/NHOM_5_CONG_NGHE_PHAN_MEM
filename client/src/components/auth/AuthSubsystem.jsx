@@ -1,3 +1,4 @@
+import RequiredMark from '../common/RequiredMark'
 import { useState, useEffect } from 'react'
 import {
   Mail,
@@ -94,8 +95,10 @@ export default function AuthSubsystem({
 
   // Email format validation
   const isEmailValid = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)
-  const showRegEmailError = regEmail.length > 0 && !isEmailValid(regEmail)
-  const showRegEmailSuccess = regEmail.length > 0 && isEmailValid(regEmail)
+  // Đăng ký chỉ nhận Gmail, khớp với kiểm tra ở máy chủ
+  const isGmailValid = (val) => /^[a-z0-9]+(?:\.[a-z0-9]+)*(?:\+[a-z0-9._-]+)?@gmail\.com$/.test(val.trim().toLowerCase())
+  const showRegEmailError = regEmail.length > 0 && !isGmailValid(regEmail)
+  const showRegEmailSuccess = regEmail.length > 0 && isGmailValid(regEmail)
 
   // Password criteria (Login/Register)
   const ruleLengthOk = registerPassword.length >= 8
@@ -205,8 +208,8 @@ export default function AuthSubsystem({
       triggerToast('Vui lòng nhập họ và tên của bạn.', false, 'Lỗi đăng ký')
       return
     }
-    if (!isEmailValid(regEmail)) {
-      triggerToast('Địa chỉ email không đúng định dạng.', false, 'Lỗi đăng ký')
+    if (!isGmailValid(regEmail)) {
+      triggerToast('Vui lòng dùng địa chỉ Gmail hợp lệ, ví dụ ten.ban@gmail.com.', false, 'Lỗi đăng ký')
       return
     }
     if (passedRuleCount < 3) {
@@ -535,7 +538,7 @@ export default function AuthSubsystem({
                     <form onSubmit={handleLoginSubmit}>
                       {/* Email Field */}
                       <div className="form-field">
-                        <label htmlFor="login-email">Email đăng nhập</label>
+                        <label htmlFor="login-email">Email đăng nhập<RequiredMark /></label>
                         <div className="input-box">
                           <input
                             id="login-email"
@@ -553,7 +556,7 @@ export default function AuthSubsystem({
 
                       {/* Password Field */}
                       <div className="form-field">
-                        <label htmlFor="login-pass">Mật khẩu</label>
+                        <label htmlFor="login-pass">Mật khẩu<RequiredMark /></label>
                         <div className="input-box">
                           <input
                             id="login-pass"
@@ -668,7 +671,7 @@ export default function AuthSubsystem({
                     <form onSubmit={handleRegisterSubmit}>
                       {/* Full Name */}
                       <div className="form-field">
-                        <label htmlFor="reg-name">Họ và tên</label>
+                        <label htmlFor="reg-name">Họ và tên<RequiredMark /></label>
                         <div className="input-box">
                           <input
                             id="reg-name"
@@ -686,7 +689,7 @@ export default function AuthSubsystem({
 
                       {/* Email Field */}
                       <div className="form-field">
-                        <label htmlFor="reg-email">Email tài khoản</label>
+                        <label htmlFor="reg-email">Email tài khoản<RequiredMark /></label>
                         <div
                           className={`input-box ${
                             showRegEmailError ? 'error' : ''
@@ -695,7 +698,7 @@ export default function AuthSubsystem({
                           <input
                             id="reg-email"
                             type="email"
-                            placeholder="name@example.com"
+                            placeholder="ten.ban@gmail.com"
                             value={regEmail}
                             onChange={(e) => setRegEmail(e.target.value)}
                             required
@@ -705,7 +708,7 @@ export default function AuthSubsystem({
                           <Mail size={16} className="field-icon" />
                         </div>
                         <div className={`feedback-msg ${showRegEmailError ? 'show' : ''}`}>
-                          Email không đúng định dạng.
+                          Chỉ chấp nhận địa chỉ Gmail, ví dụ ten.ban@gmail.com.
                         </div>
                       </div>
 
@@ -713,7 +716,7 @@ export default function AuthSubsystem({
                       <div className="form-row-grid">
                         {/* Password Field */}
                         <div className="form-field">
-                          <label htmlFor="reg-pass">Mật khẩu</label>
+                          <label htmlFor="reg-pass">Mật khẩu<RequiredMark /></label>
                           <div className="input-box">
                             <input
                               id="reg-pass"
@@ -758,7 +761,7 @@ export default function AuthSubsystem({
 
                         {/* Confirm Password Field */}
                         <div className="form-field">
-                          <label htmlFor="reg-confirm">Xác nhận</label>
+                          <label htmlFor="reg-confirm">Xác nhận<RequiredMark /></label>
                           <div
                             className={`input-box ${confirmMismatch ? 'error' : ''} ${
                               confirmMatch ? 'success' : ''
@@ -891,6 +894,7 @@ export default function AuthSubsystem({
                           />
                           <span style={{ fontSize: '12px', lineHeight: 1.45 }}>
                             Tôi đồng ý với Điều khoản dịch vụ và Chính sách bảo mật học thuật của 5share.
+                            <RequiredMark />
                           </span>
                         </label>
                       </div>
@@ -1035,7 +1039,7 @@ export default function AuthSubsystem({
               ) : (
                 <form onSubmit={handleForgotSubmit}>
                   <div className="form-field">
-                    <label htmlFor="forgot-email">Email tài khoản</label>
+                    <label htmlFor="forgot-email">Email tài khoản<RequiredMark /></label>
                     <div className="input-box">
                       <input
                         id="forgot-email"
@@ -1114,7 +1118,7 @@ export default function AuthSubsystem({
               )}
 
               <div className="form-field">
-                <label htmlFor="reset-token">Mã khôi phục bảo mật</label>
+                <label htmlFor="reset-token">Mã khôi phục bảo mật<RequiredMark /></label>
                 <div className="input-box">
                   <input
                     id="reset-token"
@@ -1130,7 +1134,7 @@ export default function AuthSubsystem({
               </div>
 
               <div className="form-field">
-                <label htmlFor="reset-pass">Mật khẩu mới</label>
+                <label htmlFor="reset-pass">Mật khẩu mới<RequiredMark /></label>
                 <div className="input-box">
                   <input
                     id="reset-pass"
@@ -1156,7 +1160,7 @@ export default function AuthSubsystem({
               </div>
 
               <div className="form-field">
-                <label htmlFor="reset-confirm">Xác nhận mật khẩu mới</label>
+                <label htmlFor="reset-confirm">Xác nhận mật khẩu mới<RequiredMark /></label>
                 <div className="input-box">
                   <input
                     id="reset-confirm"

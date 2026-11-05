@@ -53,7 +53,7 @@ export function CourseFilter({ courses, value, onChange, id, includeAll = true }
             {includeAll && !query && <button type="button" role="option" aria-selected={value === 'ALL'} onClick={() => select('ALL')}>Tất cả môn học</button>}
             {filtered.map((course) => (
               <button key={course.id} type="button" role="option" aria-selected={value === course.code} onClick={() => select(course.code)} title={`${course.code} – ${course.name}`}>
-                <strong>{course.code}</strong><span>{course.name}</span>
+                <span>{course.code} – {course.name}</span>
               </button>
             ))}
             {filtered.length === 0 && <p className="course-filter-empty">Không tìm thấy môn học.</p>}

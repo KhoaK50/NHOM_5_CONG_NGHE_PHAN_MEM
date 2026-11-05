@@ -7,6 +7,8 @@
 const service = require('../services/notificationReportService');
 const authService = require('../services/authService');
 const { query } = require('../db/pool');
+const realtime = require('../services/realtimeHub');
+const { getClientIp } = require('../utils/security');
 
 async function resolveUser(req) {
   if (req.user) return req.user;
@@ -26,6 +28,19 @@ async function resolveUser(req) {
   if (auth.ok) return auth.user;
 
   return null;
+}
+
+/** Luồng SSE: Khách chỉ nhận thay đổi của Kho công khai, thành viên nhận thêm thông báo của mình. */
+function handleNotificationStream(req, res) {
+  const accepted = realtime.subscribe(req, res, { user: req.user || null, ip: getClientIp(req) });
+  if (!accepted) {
+    return res.status(429).json({
+      success: false,
+      code: 'TOO_MANY_STREAMS',
+      message: 'Có quá nhiều kết nối đang mở. Hệ thống sẽ tự thử lại sau.'
+    });
+  }
+  return undefined;
 }
 
 async function handleGetNotifications(req, res, next) {
@@ -111,6 +126,7 @@ async function handleSimulateModeration(req, res, next) {
 }
 
 module.exports = {
+  handleNotificationStream,
   handleGetNotifications,
   handleMarkNotificationsRead,
   handleSubmitReport,

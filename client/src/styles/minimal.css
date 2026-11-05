@@ -842,21 +842,6 @@
   color: var(--text-secondary);
 }
 
-.vec-template-btn {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 500;
-  border: 0;
-  background: none;
-  color: var(--primary-base);
-  padding: 0;
-  cursor: pointer;
-}
-
-.vec-template-btn svg {
-  display: none;
-}
-
 .vec-form-actions {
   display: flex;
   justify-content: flex-end;
