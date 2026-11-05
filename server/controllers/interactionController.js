@@ -34,7 +34,13 @@ async function previewDocument(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Accept-Ranges', 'bytes');
   res.setHeader('Cache-Control', 'public, max-age=3600');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const reqOrigin = req.headers.origin;
+  if (reqOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', '*');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -51,6 +57,11 @@ async function download(req, res) {
   res.setHeader('Content-Type', mimeForFormat(format));
   res.setHeader('Content-Disposition', contentDisposition('attachment', fileName));
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  const reqOrigin = req.headers.origin;
+  if (reqOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   const length = upstream.headers.get('content-length');
   if (length && /^\d+$/.test(length)) res.setHeader('Content-Length', length);
   try { await pipeline(Readable.fromWeb(upstream.body), res); }

@@ -156,7 +156,11 @@ export function updateSavedUserProfile(userProfile, newToken = null) {
 export function getAuthToken() {
   try {
     const token =
-      localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || null;
+      localStorage.getItem(TOKEN_KEY) ||
+      sessionStorage.getItem(TOKEN_KEY) ||
+      localStorage.getItem('5share_access_token') ||
+      sessionStorage.getItem('5share_access_token') ||
+      null;
     if (!token) return null;
     if (isJwtExpired(token)) {
       clearAuthSession();
