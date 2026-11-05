@@ -1,4 +1,5 @@
 import RequiredMark from '../common/RequiredMark'
+import CustomSelect from '../common/CustomSelect'
 import { useEffect, useState } from 'react'
 import { X, BookPlus, AlertTriangle } from 'lucide-react'
 import { KNOWLEDGE_BLOCK_LABELS } from '../../utils/documentCourseApi'
@@ -143,19 +144,25 @@ export default function CourseModal({ editingCourse = null, submitting = false, 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
               <label htmlFor="course-block-select" style={labelStyle}>Khối kiến thức<RequiredMark /></label>
-              <select id="course-block-select" value={knowledgeBlock} onChange={(e) => setKnowledgeBlock(e.target.value)} style={inputStyle(false)}>
-                {Object.entries(KNOWLEDGE_BLOCK_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
+              <CustomSelect
+                id="course-block-select"
+                label="Khối kiến thức"
+                value={knowledgeBlock}
+                options={Object.entries(KNOWLEDGE_BLOCK_LABELS).map(([value, label]) => ({ value, label }))}
+                onChange={setKnowledgeBlock}
+                triggerStyle={{ height: '38px' }}
+              />
             </div>
             <div>
               <label htmlFor="course-sem-select" style={labelStyle}>Học kỳ gợi ý<RequiredMark /></label>
-              <select id="course-sem-select" value={semester} onChange={(e) => setSemester(e.target.value)} style={inputStyle(false)}>
-                {SEMESTER_OPTIONS.map((value) => (
-                  <option key={value} value={value}>Học kỳ {value}</option>
-                ))}
-              </select>
+              <CustomSelect
+                id="course-sem-select"
+                label="Học kỳ gợi ý"
+                value={String(semester)}
+                options={SEMESTER_OPTIONS.map((value) => ({ value: String(value), label: `Học kỳ ${value}` }))}
+                onChange={(val) => setSemester(Number(val))}
+                triggerStyle={{ height: '38px' }}
+              />
             </div>
           </div>
 

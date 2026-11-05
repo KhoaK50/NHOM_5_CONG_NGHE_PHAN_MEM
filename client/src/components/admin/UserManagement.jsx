@@ -1,4 +1,5 @@
 import RequiredMark from '../common/RequiredMark'
+import CustomSelect from '../common/CustomSelect'
 import { useState } from 'react'
 import {
   Users,
@@ -177,43 +178,31 @@ export default function UserManagement({
 
         {/* Lọc theo Vai trò & Trạng thái */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-          <select
+          <CustomSelect
+            aria-label="Lọc theo vai trò"
             value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            style={{
-              height: '34px',
-              padding: '0 10px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-strong)',
-              backgroundColor: 'var(--bg-surface)',
-              color: 'var(--text-primary)',
-              fontSize: '12.5px',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="ALL">Tất cả vai trò</option>
-            <option value="STUDENT">Sinh viên</option>
-            <option value="ADMIN">Quản trị viên</option>
-          </select>
+            options={[
+              { value: 'ALL', label: 'Tất cả vai trò' },
+              { value: 'STUDENT', label: 'Sinh viên' },
+              { value: 'ADMIN', label: 'Quản trị viên' }
+            ]}
+            onChange={setRoleFilter}
+            style={{ minWidth: '140px' }}
+            triggerStyle={{ height: '34px', fontSize: '12.5px' }}
+          />
 
-          <select
+          <CustomSelect
+            aria-label="Lọc theo trạng thái"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{
-              height: '34px',
-              padding: '0 10px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-strong)',
-              backgroundColor: 'var(--bg-surface)',
-              color: 'var(--text-primary)',
-              fontSize: '12.5px',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="ACTIVE">Hoạt động bình thường</option>
-            <option value="LOCKED">Đã khóa tài khoản</option>
-          </select>
+            options={[
+              { value: 'ALL', label: 'Tất cả trạng thái' },
+              { value: 'ACTIVE', label: 'Hoạt động bình thường' },
+              { value: 'LOCKED', label: 'Đã khóa tài khoản' }
+            ]}
+            onChange={setStatusFilter}
+            style={{ minWidth: '170px' }}
+            triggerStyle={{ height: '34px', fontSize: '12.5px' }}
+          />
 
           {(searchQuery || roleFilter !== 'ALL' || statusFilter !== 'ALL') && (
             <button

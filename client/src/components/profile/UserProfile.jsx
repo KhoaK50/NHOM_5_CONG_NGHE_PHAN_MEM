@@ -1,4 +1,5 @@
 import RequiredMark from '../common/RequiredMark'
+import CustomSelect from '../common/CustomSelect'
 import { useState, useRef } from 'react'
 import {
   KeyRound,
@@ -361,26 +362,13 @@ export default function UserProfile({
                 >
                   Khóa học:
                 </label>
-                <select
+                <CustomSelect
                   id="profile-cohort"
                   value={cohort}
-                  onChange={(e) => setCohort(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '40px',
-                    padding: '0 10px',
-                    borderRadius: '8px',
-                    border: '1.5px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-surface)',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  {COHORT_OPTIONS.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.code} — {c.label}
-                    </option>
-                  ))}
-                </select>
+                  options={COHORT_OPTIONS.map((c) => ({ value: c.code, label: `${c.code} — ${c.label}` }))}
+                  onChange={setCohort}
+                  triggerStyle={{ height: '40px' }}
+                />
               </div>
             </div>
 

@@ -16,6 +16,7 @@ import {
   UserCheck
 } from 'lucide-react'
 import { INITIAL_TOP_CONTRIBUTORS } from '../../data/mockData'
+import CustomSelect from '../common/CustomSelect'
 
 export default function BountyBoard({
   currentUser,
@@ -306,27 +307,16 @@ export default function BountyBoard({
               </div>
 
               <div style={{ width: '180px' }}>
-                <select
+                <CustomSelect
+                  aria-label="Lọc theo môn học"
                   value={selectedCourse}
-                  onChange={(e) => setSelectedCourse(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '36px',
-                    padding: '0 10px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-surface)',
-                    color: 'var(--text-primary)',
-                    fontSize: '12.5px'
-                  }}
-                >
-                  <option value="ALL">Tất cả môn học</option>
-                  {activeCourses.map((c) => (
-                    <option key={c.id} value={c.code}>
-                      {c.code} – {c.name}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: 'ALL', label: 'Tất cả môn học' },
+                    ...activeCourses.map((c) => ({ value: c.code, label: `${c.code} – ${c.name}` }))
+                  ]}
+                  onChange={setSelectedCourse}
+                  triggerStyle={{ height: '36px', fontSize: '12.5px' }}
+                />
               </div>
             </div>
           </div>
@@ -731,26 +721,13 @@ export default function BountyBoard({
                 <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                   Học phần liên quan:
                 </label>
-                <select
+                <CustomSelect
+                  aria-label="Học phần liên quan"
                   value={newCourseCode}
-                  onChange={(e) => setNewCourseCode(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '40px',
-                    padding: '0 10px',
-                    borderRadius: '8px',
-                    border: '1.5px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-surface)',
-                    color: 'var(--text-primary)',
-                    fontSize: '13px'
-                  }}
-                >
-                  {activeCourses.map((crs) => (
-                    <option key={crs.id} value={crs.code}>
-                      {crs.code} – {crs.name}
-                    </option>
-                  ))}
-                </select>
+                  options={activeCourses.map((crs) => ({ value: crs.code, label: `${crs.code} – ${crs.name}` }))}
+                  onChange={setNewCourseCode}
+                  triggerStyle={{ height: '40px', fontSize: '13px' }}
+                />
               </div>
 
               <div>
@@ -907,27 +884,16 @@ export default function BountyBoard({
                     </button>
                   </div>
                 ) : (
-                  <select
+                  <CustomSelect
+                    aria-label="Chọn tài liệu đã phê duyệt"
                     value={selectedDocId}
-                    onChange={(e) => setSelectedDocId(e.target.value)}
-                    style={{
-                      width: '100%',
-                      height: '40px',
-                      padding: '0 10px',
-                      borderRadius: '8px',
-                      border: '1.5px solid var(--border-subtle)',
-                      backgroundColor: 'var(--bg-surface)',
-                      color: 'var(--text-primary)',
-                      fontSize: '13px'
-                    }}
-                  >
-                    <option value="">-- Chọn tài liệu đã phê duyệt --</option>
-                    {userApprovedDocs.map((doc) => (
-                      <option key={doc.id} value={doc.id}>
-                        {doc.title} ({doc.courseCode})
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: '', label: '-- Chọn tài liệu đã phê duyệt --' },
+                      ...userApprovedDocs.map((doc) => ({ value: String(doc.id), label: `${doc.title} (${doc.courseCode})` }))
+                    ]}
+                    onChange={(val) => setSelectedDocId(val ? Number(val) : '')}
+                    triggerStyle={{ height: '40px', fontSize: '13px' }}
+                  />
                 )}
               </div>
 
