@@ -89,24 +89,35 @@ async function listMyUploads(userId, { status, limit, offset }) {
   return { rows: items.rows, total: count.rows[0].total };
 }
 
-async function listPublicDocuments({ limit, offset, search }) {
+// Bỏ dấu ngay trong SQL, không phụ thuộc extension unaccent của CSDL
+const VN_FROM = 'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ';
+const VN_TO = 'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyydAAAAAAAAAAAAAAAAAEEEEEEEEEEEIIIIIOOOOOOOOOOOOOOOOOUUUUUUUUUUUYYYYYD';
+const plain = (expr) => `lower(translate(${expr}, '${VN_FROM}', '${VN_TO}'))`;
+
+async function listPublicDocuments({ limit, offset, search, courseId, semester, docType, format }) {
   const params = [];
-  let searchSql = '';
+  const conditions = [];
   if (search) {
-    params.push(`%${search}%`);
-    searchSql = `AND (d.title ILIKE $1 OR c.course_name ILIKE $1 OR c.course_code ILIKE $1)`;
+    params.push(`%${search.replace(/[\\%_]/g, '\\$&')}%`);
+    const p = `$${params.length}`;
+    conditions.push(`(${plain('d.title')} LIKE ${p} OR ${plain("COALESCE(d.description, '')")} LIKE ${p} OR ${plain('c.course_name')} LIKE ${p} OR lower(c.course_code) LIKE ${p} OR ${plain('u.full_name')} LIKE ${p})`);
   }
+  if (courseId) { params.push(courseId); conditions.push(`d.course_id = $${params.length}`); }
+  if (semester) { params.push(semester); conditions.push(`c.semester = $${params.length}`); }
+  if (docType) { params.push(docType); conditions.push(`d.doc_type = $${params.length}`); }
+  if (format) { params.push(`%.${format}`); conditions.push(`lower(d.file_name) LIKE $${params.length}`); }
+  const filterSql = conditions.map((item) => `AND ${item}`).join(' ');
   params.push(limit, offset);
   const lim = params.length - 1;
   const off = params.length;
-  const rows = await query(`SELECT d.id, d.title, d.description, d.doc_type, d.file_name, d.preview_url,
-    d.file_size_bytes, d.page_count, d.file_hash, d.status, d.reject_reason,
+  const rows = await query(`SELECT d.id, d.title, d.description, d.doc_type, d.file_name,
+    d.file_size_bytes, d.page_count, d.status,
     d.total_views, d.total_downloads, d.rating_avg, d.created_at,
     d.course_id, c.course_code, c.course_name, u.full_name AS uploader_name,
     (SELECT COUNT(*)::int FROM public.ratings r WHERE r.document_id = d.id) AS rating_count
     FROM public.documents d JOIN public.courses c ON c.id = d.course_id
     JOIN public.users u ON u.id = d.uploader_id
-    WHERE d.status = 'APPROVED' ${searchSql}
+    WHERE d.status = 'APPROVED' ${filterSql}
     ORDER BY d.created_at DESC LIMIT $${lim} OFFSET $${off}`, params);
   return rows.rows;
 }
@@ -282,13 +293,13 @@ async function findPreviewable(documentId, user) {
   let queryText;
   let params;
   if (isAdmin) {
-    queryText = 'SELECT id, title, file_name, file_url, status FROM public.documents WHERE id = $1';
+    queryText = 'SELECT id, title, file_name, file_url, file_hash, status FROM public.documents WHERE id = $1';
     params = [documentId];
   } else if (user && user.id) {
-    queryText = "SELECT id, title, file_name, file_url, status FROM public.documents WHERE id = $1 AND (status = 'APPROVED' OR uploader_id = $2)";
+    queryText = "SELECT id, title, file_name, file_url, file_hash, status FROM public.documents WHERE id = $1 AND (status = 'APPROVED' OR uploader_id = $2)";
     params = [documentId, user.id];
   } else {
-    queryText = "SELECT id, title, file_name, file_url, status FROM public.documents WHERE id = $1 AND status = 'APPROVED'";
+    queryText = "SELECT id, title, file_name, file_url, file_hash, status FROM public.documents WHERE id = $1 AND status = 'APPROVED'";
     params = [documentId];
   }
   const result = await query(queryText, params);

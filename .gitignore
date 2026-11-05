@@ -179,3 +179,6 @@ tests/
 tools/
 server/db/test_*.js
 
+# Test tự động của dự án, cần được commit
+!server/tests/
+!server/tests/**

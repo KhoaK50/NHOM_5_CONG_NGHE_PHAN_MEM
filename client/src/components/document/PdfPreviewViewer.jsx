@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import * as pdfjsLib from 'pdfjs-dist'
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import {
   FileText,
   Presentation,
@@ -26,7 +27,7 @@ import { downloadDocument } from '../../utils/interactionApi'
 
 // Cấu hình worker chuẩn của Mozilla PDF.js
 if (typeof window !== 'undefined' && 'Worker' in window) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
 }
 
 /**
@@ -402,10 +403,10 @@ export default function PdfPreviewViewer({
         if (!isMounted) return
 
         const loadingTask = pdfjsLib.getDocument({
-          // Tệp do người dùng tải lên: tắt eval để chặn lỗ hổng CVE-2024-4367 của pdf.js 3.x
+          // Tệp do người dùng tải lên: không cho pdf.js chạy eval
           isEvalSupported: false,
           data: new Uint8Array(arrayBuffer),
-          cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+          cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
           cMapPacked: true
         })
 
@@ -445,8 +446,10 @@ export default function PdfPreviewViewer({
   if (!documentItem) return null
 
   // Giới hạn số trang đọc thử theo quy định UC06: Khách vãng lai tối đa 3 trang
+  // Khách chỉ nhận 3 trang từ máy chủ, tổng số trang lấy từ thông tin tài liệu
+  const totalPages = isAuthenticated ? numPages : Math.max(numPages, Number(documentItem.pageCount) || 0)
   const maxAccessiblePages = isAuthenticated ? numPages : Math.min(3, numPages)
-  const isCappedForGuest = !isAuthenticated && numPages > 3
+  const isCappedForGuest = !isAuthenticated && totalPages > 3
 
   // Điều hướng trang
   const handlePageChange = (newPage) => {
@@ -670,7 +673,7 @@ export default function PdfPreviewViewer({
               }}
             >
               <Lock size={11} />
-              <span>Xem trước 3 / {numPages || '...'} trang</span>
+              <span>Xem trước 3 / {totalPages || '...'} trang</span>
             </span>
           )}
         </div>
@@ -1069,12 +1072,12 @@ export default function PdfPreviewViewer({
                 </div>
 
                 <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-                  Giới hạn xem trước 3/{numPages} trang (Quy định UC06)
+                  Giới hạn xem trước 3/{totalPages} trang (Quy định UC06)
                 </div>
 
                 <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '20px' }}>
                   Bạn đang trải nghiệm chế độ đọc thử dành cho <strong>Khách vãng lai</strong>. Để tiếp tục đọc toàn văn{' '}
-                  <strong>từ trang 4 đến trang {numPages}</strong> cũng như tải tệp tin gốc về máy cá nhân, vui lòng đăng nhập
+                  <strong>từ trang 4 đến trang {totalPages}</strong> cũng như tải tệp tin gốc về máy cá nhân, vui lòng đăng nhập
                   bằng tài khoản Sinh viên / Giảng viên HCMUE.
                 </p>
 
@@ -1097,7 +1100,7 @@ export default function PdfPreviewViewer({
                   }}
                 >
                   <LogIn size={16} />
-                  <span>Đăng nhập để xem trọn vẹn {numPages} trang</span>
+                  <span>Đăng nhập để xem trọn vẹn {totalPages} trang</span>
                 </button>
               </div>
             )}

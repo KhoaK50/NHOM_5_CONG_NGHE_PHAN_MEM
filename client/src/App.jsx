@@ -24,7 +24,7 @@ import {
   addBookmark,
   downloadDocument,
   listBookmarks,
-  listPublicDocuments,
+  listAllPublicDocuments,
   recordDocumentView,
   removeBookmark
 } from './utils/interactionApi'
@@ -81,6 +81,11 @@ function inferNoticeTone(text = '') {
   return 'success'
 }
 
+function readSharedDocumentId() {
+  const match = window.location.pathname.match(/^\/documents\/(\d+)\/?$/)
+  return match ? Number(match[1]) : null
+}
+
 export default function App() {
   const [actorRole, setActorRole] = useState(() => {
     const saved = AuthGuard.getSavedUserProfile()
@@ -95,6 +100,9 @@ export default function App() {
       const params = new URLSearchParams(window.location.search)
       if (params.get('reset_token')) {
         return 'auth'
+      }
+      if (readSharedDocumentId() != null) {
+        return 'discovery'
       }
     }
     return 'landing'
@@ -165,9 +173,22 @@ export default function App() {
   // Nạp kho tài liệu công khai
   useEffect(() => {
     let cancelled = false
-    listPublicDocuments({ page: 1, limit: 100 })
+    listAllPublicDocuments()
       .then((items) => {
-        if (!cancelled) setDocuments(items || [])
+        if (cancelled) return
+        setDocuments(items)
+        // Link chia sẻ dạng /documents/:id
+        const sharedId = readSharedDocumentId()
+        if (sharedId == null) return
+        window.history.replaceState(null, '', '/')
+        if (items.some((item) => item.id === sharedId)) {
+          setSelectedDocId(sharedId)
+          setActiveView('detail')
+          recordDocumentView(sharedId).catch(() => {})
+        } else {
+          setActiveView('discovery')
+          showNotice('Tài liệu trong liên kết không tồn tại hoặc không còn công khai.', 'error')
+        }
       })
       .catch((error) => {
         if (!cancelled) {
@@ -208,7 +229,7 @@ export default function App() {
 
   // Làm mới Kho học liệu nhưng giữ tài liệu đang đọc, kể cả khi tài liệu đó chưa hoặc không còn công khai
   const refreshDocuments = useCallback(async () => {
-    const items = (await listPublicDocuments({ page: 1, limit: 100 })) || []
+    const items = await listAllPublicDocuments()
     setDocuments((prev) => {
       const selectedId = selectedDocIdRef.current
       if (selectedId == null || items.some((item) => item.id === selectedId)) return items
@@ -398,52 +419,10 @@ export default function App() {
     setActiveView('upload')
   }
 
-  const handleSwitchSavedAccount = async (savedEntry) => {
-    if (!savedEntry || !savedEntry.token) {
-      handleOpenAuth('login')
-      return
-    }
-
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${savedEntry.token}` }
-      })
-      const data = await res.json().catch(() => ({}))
-
-      if (!res.ok || data.status !== 'success' || !data.user) {
-        AuthGuard.removeSavedAccount(savedEntry.email)
-        showNotice('Phiên đã lưu của tài khoản này đã hết hạn hoặc bị thu hồi. Vui lòng đăng nhập lại.')
-        handleOpenAuth('login')
-        return
-      }
-
-      const verifiedUser = data.user
-      const nextRole = verifiedUser.role === 'ADMIN' ? 'ADMIN' : 'USER'
-      AuthGuard.saveAuthSession(savedEntry.token, verifiedUser, true)
-      setUserSession(verifiedUser)
-      setActorRole(nextRole)
-
-      if (nextRole === 'ADMIN') {
-        fetchAdminUsersList(savedEntry.token)
-      } else if (
-        ['admin', 'admin-dashboard', 'admin-moderation', 'admin-courses', 'admin-users'].includes(
-          activeView
-        )
-      ) {
-        setActiveView('discovery')
-      }
-      if (nextRole === 'ADMIN' && ['bookmarks'].includes(activeView)) {
-        setActiveView('discovery')
-      }
-
-      showNotice(
-        `Đã chuyển sang tài khoản "${verifiedUser.fullName}" (${
-          nextRole === 'ADMIN' ? 'Quản trị viên' : 'Sinh viên'
-        }).`
-      )
-    } catch {
-      showNotice('Không thể xác thực phiên tài khoản đã lưu với máy chủ.')
-    }
+  // Danh sách tài khoản không còn giữ token: đổi tài khoản phải đăng nhập lại
+  const handleSwitchSavedAccount = (savedEntry) => {
+    showNotice(`Vui lòng đăng nhập để chuyển sang tài khoản ${savedEntry?.email || 'đã chọn'}.`)
+    handleOpenAuth('login')
   }
 
   const handleNavigate = (view) => {
@@ -756,10 +735,11 @@ export default function App() {
       const data = await res.json().catch(() => ({}))
       if (!res.ok || data.status !== 'success') {
         showNotice(data.message || 'Không thể cập nhật trạng thái tài khoản này.')
-        return
+        return false
       }
     } catch {
-      // Nếu ngoại tuyến thì vẫn cập nhật state cục bộ
+      showNotice('Không kết nối được máy chủ, trạng thái tài khoản chưa thay đổi.', 'error')
+      return false
     }
 
     setUsers((prev) =>
@@ -781,6 +761,7 @@ export default function App() {
         return u
       })
     )
+    return true
   }
 
   const handleToggleUserRole = async (userId, nextRole) => {
@@ -797,10 +778,11 @@ export default function App() {
       const data = await res.json().catch(() => ({}))
       if (!res.ok || data.status !== 'success') {
         showNotice(data.message || 'Không thể thay đổi quyền của tài khoản này.')
-        return
+        return false
       }
     } catch {
-      // Nếu ngoại tuyến thì vẫn cập nhật state cục bộ
+      showNotice('Không kết nối được máy chủ, quyền của tài khoản chưa thay đổi.', 'error')
+      return false
     }
 
     const canonicalUiRole = nextRole === 'ADMIN' ? 'ADMIN' : 'USER'
@@ -809,6 +791,7 @@ export default function App() {
         u.id === userId ? { ...u, role: canonicalUiRole, dbRole: nextRole } : u
       )
     )
+    return true
   }
 
   const handleMarkOneRead = async (notifId) => {

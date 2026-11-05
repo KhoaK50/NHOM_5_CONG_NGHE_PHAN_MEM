@@ -40,7 +40,7 @@ function acceptSinglePdf(req, res, next) {
   upload.single('file')(req, res, (err) => {
     if (!err) return next();
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return next(new ApiError(413, 'FILE_TOO_LARGE', 'Tệp vượt quá giới hạn 25 MB.'));
+      return next(new ApiError(413, 'FILE_TOO_LARGE', 'Tệp vượt quá giới hạn 10 MB.'));
     }
     return next(new ApiError(400, 'FILE_REQUIRED', 'Vui lòng gửi đúng một tệp tài liệu trong trường "file".'));
   });
@@ -68,7 +68,7 @@ router.post(
 router.get('/documents/:id', buildLimiter(300, 15), attachOptionalUser, controller.handleGetVisibleDocument);
 
 // Công khai: danh mục môn học phục vụ bộ lọc tìm kiếm và tra cứu
-router.get('/courses', buildLimiter(300, 15), controller.handleListCourses);
+router.get('/courses', buildLimiter(300, 15), controller.handleListPublicCourses);
 
 // Toàn bộ nhánh /admin chỉ dành cho ADMIN
 const admin = express.Router();

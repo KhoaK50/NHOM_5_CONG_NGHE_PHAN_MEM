@@ -1,5 +1,10 @@
+const { PDFDocument } = require('pdf-lib');
 const repo = require('../repositories/interactionRepository');
 const { detectDocumentFormat } = require('../utils/documentFormat');
+
+const GUEST_PDF_PAGES = 3;
+const GUEST_CACHE_MAX_BYTES = 32 * 1024 * 1024;
+const guestPdfCache = new Map();
 
 class ApiError extends Error {
   constructor(statusCode, code, message) { super(message); this.statusCode = statusCode; this.code = code; }
@@ -42,14 +47,38 @@ async function getMyUploads(userId, query) {
   };
 }
 
+function optionalPositiveInt(value, field) {
+  if (value === undefined || value === '') return undefined;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) throw new ApiError(400, 'INVALID_QUERY', `${field} không hợp lệ.`);
+  return parsed;
+}
+
+/** Bỏ dấu tiếng Việt để tìm được cả khi gõ không dấu. */
+function normalizeSearch(text) {
+  return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase().trim().slice(0, 120);
+}
+
+const PUBLIC_FORMATS = ['pdf', 'docx', 'pptx'];
+
 async function listDocuments(query) {
   const { page, limit, offset } = pagination(query, 30);
-  const search = String(query.q || '').trim().slice(0, 120);
-  const rows = await repo.listPublicDocuments({ limit, offset, search });
+  const format = query.format ? String(query.format).toLowerCase() : undefined;
+  if (format && !PUBLIC_FORMATS.includes(format)) throw new ApiError(400, 'INVALID_QUERY', 'Định dạng không hợp lệ.');
+  const rows = await repo.listPublicDocuments({
+    limit,
+    offset,
+    search: normalizeSearch(query.q),
+    courseId: optionalPositiveInt(query.courseId, 'courseId'),
+    semester: optionalPositiveInt(query.semester, 'semester'),
+    docType: query.docType ? String(query.docType).slice(0, 40) : undefined,
+    format
+  });
+  // Không trả link lưu trữ và mã băm: Khách phải đọc qua API xem trước có giới hạn
   return rows.map((row) => ({
     id: row.id, title: row.title, description: row.description, docType: row.doc_type,
-    fileName: row.file_name, previewUrl: row.preview_url, fileSizeBytes: Number(row.file_size_bytes), fileSizeMb: Number(row.file_size_bytes) / 1048576,
-    pageCount: row.page_count, fileHash: row.file_hash?.trim(), status: row.status,
+    fileName: row.file_name, fileSizeBytes: Number(row.file_size_bytes), fileSizeMb: Number(row.file_size_bytes) / 1048576,
+    pageCount: row.page_count, status: row.status,
     courseId: row.course_id, courseCode: row.course_code, courseName: row.course_name,
     uploaderName: row.uploader_name, viewCount: row.total_views, downloadCount: row.total_downloads,
     ratingAvg: Number(row.rating_avg), ratingCount: Number(row.rating_count),
@@ -121,7 +150,7 @@ async function saveReview(userId, rawId, body) {
   const score = body?.score;
   if (!Number.isInteger(score) || score < 1 || score > 5) throw new ApiError(400, 'INVALID_SCORE', 'Vui lòng chọn từ 1 đến 5 sao.');
   const content = typeof body?.content === 'string' ? body.content.trim() : '';
-  if (content && (content.length < 2 || content.length > 2000)) throw new ApiError(400, 'INVALID_CONTENT', 'Nhận xét phải có từ 2 đến 2.000 ký tự.');
+  if (content && (content.length < 2 || content.length > 1000)) throw new ApiError(400, 'INVALID_CONTENT', 'Nhận xét phải có từ 2 đến 1.000 ký tự.');
   try {
     const ratingAverage = await repo.saveReview(userId, documentId, score, content);
     return { documentId, score, content, ratingAverage };
@@ -141,7 +170,7 @@ async function deleteReview(userId, rawId) {
 async function addComment(userId, rawId, body) {
   const documentId = parseId(rawId, 'documentId');
   const content = String(body?.content || '').trim();
-  if (content.length < 2 || content.length > 2000) throw new ApiError(400, 'INVALID_CONTENT', 'Bình luận phải có từ 2 đến 2.000 ký tự.');
+  if (content.length < 2 || content.length > 1000) throw new ApiError(400, 'INVALID_CONTENT', 'Bình luận phải có từ 2 đến 1.000 ký tự.');
   const parentCommentId = body.parentCommentId == null ? null : parseId(body.parentCommentId, 'parentCommentId');
   if (parentCommentId === null && (await repo.hasOwnRootComment(userId, documentId))) {
     throw new ApiError(409, 'REVIEW_ALREADY_EXISTS', 'Mỗi người chỉ có một đánh giá. Hãy chỉnh sửa đánh giá hiện có.');
@@ -161,20 +190,60 @@ async function deleteComment(user, rawDocumentId, rawCommentId) {
   return { documentId, commentId, deleted: true };
 }
 
-async function preview(rawId, user) {
+/** Cắt 3 trang đầu ở máy chủ. Không đọc được thì báo lỗi, không bao giờ trả nguyên tệp cho Khách. */
+async function buildGuestPdf(buffer, cacheKey) {
+  const cached = guestPdfCache.get(cacheKey);
+  if (cached) return cached;
+  let source;
+  try {
+    source = await PDFDocument.load(buffer);
+  } catch {
+    throw new ApiError(422, 'PREVIEW_UNAVAILABLE', 'Tài liệu này chưa xem trước được. Vui lòng đăng nhập để đọc toàn văn.');
+  }
+  let output = buffer;
+  if (source.getPageCount() > GUEST_PDF_PAGES) {
+    const target = await PDFDocument.create();
+    const pages = await target.copyPages(source, [...Array(GUEST_PDF_PAGES).keys()]);
+    pages.forEach((page) => target.addPage(page));
+    output = Buffer.from(await target.save());
+  }
+  guestPdfCache.set(cacheKey, output);
+  let total = [...guestPdfCache.values()].reduce((sum, item) => sum + item.length, 0);
+  for (const key of guestPdfCache.keys()) {
+    if (total <= GUEST_CACHE_MAX_BYTES) break;
+    total -= guestPdfCache.get(key).length;
+    guestPdfCache.delete(key);
+  }
+  return output;
+}
+
+async function preview(rawId, user, ifNoneMatch) {
   const documentId = parseId(rawId, 'documentId');
   const document = await repo.findPreviewable(documentId, user);
   if (!document) throw new ApiError(404, 'DOCUMENT_NOT_FOUND', 'Không tìm thấy tài liệu yêu cầu.');
+  const fileName = String(document.file_name || `document-${documentId}.pdf`);
+  const format = detectDocumentFormat(fileName) || 'pdf';
+  const namedFile = detectDocumentFormat(fileName) ? fileName : `${fileName}.pdf`;
+  const isGuestPdf = !user && format === 'pdf';
+  // Quyền đã kiểm tra ở trên nên 304 không làm lộ tài liệu vừa bị ẩn
+  const etag = `"${String(document.file_hash || documentId).trim().slice(0, 32)}-${isGuestPdf ? 'guest' : 'full'}"`;
+  if (ifNoneMatch === etag) return { notModified: true, etag };
   let url;
   try { url = new URL(document.file_url); } catch { throw new ApiError(404, 'FILE_NOT_FOUND', 'Không tìm thấy tệp lưu trữ.'); }
   if (url.protocol !== 'https:' || !/^res(-[1-5])?\.cloudinary\.com$/.test(url.hostname) || url.username || url.password || (url.port && url.port !== '443')) {
     throw new ApiError(502, 'FILE_STORAGE_UNAVAILABLE', 'Nguồn lưu trữ tài liệu không được hỗ trợ.');
   }
+  const cacheKey = `${documentId}:${etag}`;
+  if (isGuestPdf && guestPdfCache.has(cacheKey)) {
+    return { buffer: guestPdfCache.get(cacheKey), fileName: namedFile, format, etag };
+  }
   const upstream = await fetch(url, { signal: AbortSignal.timeout(20000), redirect: 'follow' }).catch(() => null);
   if (!upstream?.ok || !upstream.body) throw new ApiError(502, 'FILE_STORAGE_UNAVAILABLE', 'Không thể tải tệp từ kho lưu trữ.');
-  const fileName = String(document.file_name || `document-${documentId}.pdf`);
-  const format = detectDocumentFormat(fileName);
-  return { upstream, fileName: format ? fileName : `${fileName}.pdf`, format: format || 'pdf' };
+  if (isGuestPdf) {
+    const buffer = await buildGuestPdf(Buffer.from(await upstream.arrayBuffer()), cacheKey);
+    return { buffer, fileName: namedFile, format, etag };
+  }
+  return { upstream, fileName: namedFile, format, etag };
 }
 
 async function download(rawId, user, ipAddress) {

@@ -44,7 +44,6 @@ function hashPassword(plainPassword) {
  * Hỗ trợ:
  *  - Chuẩn `scrypt$<salt>$<hash>`
  *  - Chuẩn `pbkdf2:sha256:...` (tương thích Werkzeug/Vectoria)
- *  - Dữ liệu mẫu khởi tạo `$2b$10$5ShareHash...` (mật khẩu mặc định: `5Share@2026` hoặc `Secret@123`)
  */
 function verifyPassword(plainPassword, storedHash) {
   if (!plainPassword || !storedHash) return false;
@@ -69,16 +68,6 @@ function verifyPassword(plainPassword, storedHash) {
     if (!salt || !originalHex) return false;
     const derived = crypto.pbkdf2Sync(plain, salt, iterations, 32, 'sha256').toString('hex');
     return crypto.timingSafeEqual(Buffer.from(derived), Buffer.from(originalHex));
-  }
-
-  // Hỗ trợ 6 tài khoản Seed mẫu trong seed_5share.sql
-  if (hashStr.startsWith('$2b$10$5ShareHash')) {
-    return (
-      plain === '5Share@2026' ||
-      plain === 'Secret@123' ||
-      plain === '12345678a' ||
-      plain === 'Admin@2026'
-    );
   }
 
   return false;

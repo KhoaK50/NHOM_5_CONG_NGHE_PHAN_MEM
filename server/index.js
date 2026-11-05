@@ -63,12 +63,13 @@ app.use('/api', notificationReportRoutes);
 // Health check endpoint kèm kiểm tra kết nối PostgreSQL thực tế
 app.get('/api/health', async (req, res) => {
   try {
-    const dbCheck = await query('SELECT COUNT(*)::int AS user_count FROM public.users');
+    await query('SELECT 1');
     res.status(200).json({
       status: 'success',
       service: '5share Backend API',
       database: 'connected',
-      userCount: dbCheck.rows[0]?.user_count ?? 0,
+      // Render tự cấp biến này: dùng để kiểm tra API đang chạy đúng commit
+      version: String(process.env.RENDER_GIT_COMMIT || 'local').slice(0, 7),
       timestamp: new Date().toISOString()
     });
   } catch (err) {
