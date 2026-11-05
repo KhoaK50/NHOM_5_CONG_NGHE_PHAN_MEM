@@ -249,7 +249,7 @@ export default function UploadModal({
           >
             <Upload size={22} color="var(--primary-base)" aria-hidden="true" />
             <strong className="vec-dropzone-title">Kéo thả tệp vào đây</strong>
-            <span className="vec-dropzone-sub">PDF, Word (.docx) hoặc PowerPoint (.pptx), tối đa 25 MB</span>
+            <span className="vec-dropzone-sub">PDF, Word (.docx) hoặc PowerPoint (.pptx), tối đa 10 MB (Cloudinary Free)</span>
             <label className="vec-file-picker-btn">
               <span>{selectedRawFile ? 'Đổi tệp khác' : 'Chọn tệp'}</span>
               <input
