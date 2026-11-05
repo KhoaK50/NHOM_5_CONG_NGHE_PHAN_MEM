@@ -9,6 +9,8 @@ const crypto = require('crypto');
 const repo = require('../repositories/documentCourseRepository');
 const { uploadDocumentBufferToCloudinary } = require('./cloudinaryService');
 const { InvalidDocumentError, detectDocumentFormat, inspectOfficeDocument } = require('../utils/documentFormat');
+const { ADMIN_NEW_DOCUMENT_TITLE } = require('../utils/notificationTitles');
+const realtime = require('./realtimeHub');
 
 const MAX_PDF_BYTES = 26214400; // 25 MB
 const APPROVE_REWARD_POINTS = 20;
@@ -242,8 +244,9 @@ function parseModerationInput(body) {
 async function moderateDocument(rawId, body, admin, ipAddress) {
   const id = parseId(rawId);
   const input = parseModerationInput(body);
+  let uploaderId = null;
 
-  return repo.withTransaction(async (db) => {
+  const result = await repo.withTransaction(async (db) => {
     const doc = await repo.lockDocument(db, id);
     if (!doc) throw new ApiError(404, 'DOCUMENT_NOT_FOUND', 'Không tìm thấy tài liệu.');
     // Khóa dòng ở trên khiến Admin thứ hai chờ rồi rơi vào nhánh này: chỉ một người thành công.
@@ -295,6 +298,7 @@ async function moderateDocument(rawId, body, admin, ipAddress) {
     });
 
     if (isApprove) await repo.addContributionScore(db, doc.uploader_id, APPROVE_REWARD_POINTS);
+    uploaderId = doc.uploader_id;
 
     await repo.insertNotification(db, {
       userId: doc.uploader_id,
@@ -315,6 +319,12 @@ async function moderateDocument(rawId, body, admin, ipAddress) {
       contributionScoreDelta: isApprove ? APPROVE_REWARD_POINTS : 0
     };
   });
+
+  // Chỉ báo sau khi giao dịch đã lưu để client đọc lại được dữ liệu mới
+  realtime.publishToUsers([uploaderId], 'notification', { documentId: id });
+  realtime.publishToAdmins('moderation', { documentId: id });
+  if (result.status === 'APPROVED') realtime.publishToAll('documents', { documentId: id });
+  return result;
 }
 
 // --------------------------- UC09: BÁO CÁO VI PHẠM ---------------------------
@@ -395,8 +405,9 @@ async function resolveAdminReport(rawId, body, admin, ipAddress) {
   if (adminNote.length === 0 || adminNote.length > 1000) {
     throw new ApiError(422, 'MISSING_ADMIN_NOTE', 'Bắt buộc nhập ghi chú xử lý (tối đa 1000 ký tự).');
   }
+  const notifiedUserIds = [];
 
-  return repo.withTransaction(async (db) => {
+  const result = await repo.withTransaction(async (db) => {
     const report = await repo.lockReport(db, id);
     if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND', 'Không tìm thấy báo cáo.');
     if (report.status !== 'PENDING') {
@@ -437,6 +448,7 @@ async function resolveAdminReport(rawId, body, admin, ipAddress) {
     });
     for (const notification of buildReportNotifications(action, report, doc)) {
       await repo.insertNotification(db, notification);
+      notifiedUserIds.push(notification.userId);
     }
 
     return {
@@ -448,6 +460,11 @@ async function resolveAdminReport(rawId, body, admin, ipAddress) {
       resolvedAt: toIso(resolved.resolved_at)
     };
   });
+
+  realtime.publishToUsers(notifiedUserIds, 'notification', { documentId: result.documentId });
+  realtime.publishToAdmins('moderation', { reportId: id });
+  if (rule.documentStatus) realtime.publishToAll('documents', { documentId: result.documentId });
+  return result;
 }
 
 // --------------------------- UC10: MÔN HỌC ---------------------------
@@ -688,6 +705,24 @@ function normalizeDocType(input) {
   return 'GIAO_TRINH';
 }
 
+/** Báo Quản trị viên ngay khi có tài liệu mới. Lỗi ở bước này không được làm hỏng việc tải lên. */
+async function announceNewDocument(doc, user) {
+  try {
+    const uploaderName = user.fullName || user.full_name || 'Một thành viên';
+    const adminIds = await repo.insertAdminNotifications({
+      documentId: doc.id,
+      type: 'SYSTEM',
+      title: ADMIN_NEW_DOCUMENT_TITLE,
+      message: `${uploaderName} vừa gửi tài liệu "${doc.title}".`,
+      excludeUserId: user.id
+    });
+    realtime.publishToUsers(adminIds, 'notification', { documentId: doc.id });
+  } catch (err) {
+    console.error('[DocumentCourse API] Không gửi được thông báo tài liệu mới:', err.message);
+  }
+  realtime.publishToAdmins('moderation', { documentId: doc.id });
+}
+
 async function uploadDocument(file, body, user) {
   if (!user || !user.id) {
     throw new ApiError(401, 'UNAUTHORIZED', 'Bạn cần đăng nhập để tải học liệu lên hệ thống.');
@@ -748,6 +783,9 @@ async function uploadDocument(file, body, user) {
     pageCount: pages || uploadResult.pages || 1,
     fileHash
   });
+
+  // Không chờ bước này để người gửi nhận kết quả sớm nhất
+  announceNewDocument(newDoc, user);
 
   return newDoc;
 }

@@ -18,6 +18,8 @@ async function createBookmark(req, res) { return res.status(201).json({ success:
 async function removeBookmark(req, res) { await service.removeBookmark(req.user.id, req.params.documentId); return res.status(204).end(); }
 async function comments(req, res) { return res.json({ success: true, data: await service.comments(req.params.id, req.user, req.query) }); }
 async function rate(req, res) { return res.json({ success: true, message: 'Đã ghi nhận đánh giá.', data: await service.rate(req.user.id, req.params.id, req.body) }); }
+async function saveReview(req, res) { return res.json({ success: true, message: 'Đã lưu đánh giá.', data: await service.saveReview(req.user.id, req.params.id, req.body) }); }
+async function deleteReview(req, res) { return res.json({ success: true, message: 'Đã xóa đánh giá.', data: await service.deleteReview(req.user.id, req.params.id) }); }
 async function addComment(req, res) { return res.status(201).json({ success: true, message: 'Đã gửi bình luận.', data: await service.addComment(req.user.id, req.params.id, req.body) }); }
 async function deleteComment(req, res) {
   const commentId = req.params.commentId || req.query.commentId;
@@ -59,4 +61,4 @@ async function recordView(req, res) {
   return res.status(201).json({ success: true, data });
 }
 
-module.exports = { dashboard, myUploads, publicDocuments, bookmarks, createBookmark, removeBookmark, comments, rate, addComment, deleteComment, previewDocument, download, recordView };
+module.exports = { dashboard, myUploads, publicDocuments, bookmarks, createBookmark, removeBookmark, comments, rate, saveReview, deleteReview, addComment, deleteComment, previewDocument, download, recordView };

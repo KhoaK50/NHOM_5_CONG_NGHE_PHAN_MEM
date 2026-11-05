@@ -19,7 +19,8 @@ export default function DocumentDetail({
   onEditComment,
   onDeleteComment,
   onSubmitReport,
-  onRequireLogin
+  onRequireLogin,
+  onRatingSummaryChange
 }) {
   const [reportModalOpen, setReportModalOpen] = useState(false)
   const [reportTarget, setReportTarget] = useState({ type: 'DOCUMENT', comment: null })
@@ -142,6 +143,8 @@ export default function DocumentDetail({
 
           {/* Khu vực Đánh giá & Thảo luận học thuật */}
           <RatingComments
+            key={documentItem.id}
+            onSummaryChange={onRatingSummaryChange}
             documentItem={documentItem}
             isAuthenticated={isAuthenticated}
             currentUser={currentUser}

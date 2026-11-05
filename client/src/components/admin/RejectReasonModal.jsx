@@ -1,3 +1,4 @@
+import RequiredMark from '../common/RequiredMark'
 import { useEffect, useState } from 'react'
 import { XCircle, X, AlertTriangle, Info } from 'lucide-react'
 
@@ -103,6 +104,7 @@ export default function RejectReasonModal({ documentItem, submitting = false, se
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
             <label htmlFor="reject-reason-textarea" style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
               Nội dung gửi tới tác giả
+              <RequiredMark />
             </label>
             <span style={{ fontSize: '11px', fontWeight: 500, color: isLengthOk ? 'var(--green-11)' : shownError ? 'var(--red-11)' : 'var(--text-tertiary)' }}>
               {trimmedLength < MIN_REASON_LENGTH

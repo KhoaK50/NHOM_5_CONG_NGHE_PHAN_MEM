@@ -132,6 +132,7 @@ async function uploadAvatarBufferToCloudinary(fileBuffer, userId) {
 }
 
 const MAX_PDF_BYTES = 25 * 1024 * 1024; // 25 MB
+const DOCUMENT_UPLOAD_TIMEOUT_MS = 90 * 1000;
 
 function isPdfBuffer(buffer) {
   return Buffer.isBuffer(buffer) && buffer.length >= 8 && buffer.subarray(0, 5).toString('ascii') === '%PDF-';
@@ -174,22 +175,23 @@ async function uploadDocumentBufferToCloudinary(fileBuffer, originalName = 'docu
   const stringToSign = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
   const signature = crypto.createHash('sha1').update(stringToSign).digest('hex');
 
-  const dataUri = `data:${mimeForFormat(format)};base64,${fileBuffer.toString('base64')}`;
-  const formBody = new URLSearchParams({
-    file: dataUri,
-    api_key: apiKey,
-    timestamp: String(timestamp),
-    folder,
-    public_id: publicId,
-    signature
-  });
+  // Gửi multipart để giữ nguyên kích thước tệp. Base64 trong URL-encoded làm dữ liệu lớn hơn khoảng 40%.
+  const formBody = new FormData();
+  formBody.append('file', new Blob([fileBuffer], { type: mimeForFormat(format) }), `${safeBase || 'document'}.${format}`);
+  formBody.append('api_key', apiKey);
+  formBody.append('timestamp', String(timestamp));
+  formBody.append('folder', folder);
+  formBody.append('public_id', publicId);
+  formBody.append('signature', signature);
 
   const endpoint = `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/raw/upload`;
-  const resp = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: formBody.toString()
-  });
+  let resp;
+  try {
+    resp = await fetch(endpoint, { method: 'POST', body: formBody, signal: AbortSignal.timeout(DOCUMENT_UPLOAD_TIMEOUT_MS) });
+  } catch (err) {
+    console.error('[CloudinaryService.uploadPdf]', err.message);
+    return { ok: false, statusCode: 502, message: 'Không kết nối được kho lưu trữ. Vui lòng thử lại sau ít phút.' };
+  }
 
   const payload = await resp.json().catch(() => ({}));
   if (!resp.ok || !payload.secure_url) {

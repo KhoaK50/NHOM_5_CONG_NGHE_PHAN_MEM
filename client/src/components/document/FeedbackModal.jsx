@@ -1,3 +1,4 @@
+import RequiredMark from '../common/RequiredMark'
 import { useState } from 'react'
 import {
   MessageSquare,
@@ -205,7 +206,7 @@ export default function FeedbackModal({
                 htmlFor="feedback-title"
                 style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)' }}
               >
-                Tiêu đề ngắn gọn <span style={{ color: 'var(--danger-base)' }}>*</span>
+                Tiêu đề ngắn gọn<RequiredMark />
               </label>
               <input
                 id="feedback-title"
@@ -235,7 +236,7 @@ export default function FeedbackModal({
                   htmlFor="feedback-content"
                   style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}
                 >
-                  Nội dung phản ánh chi tiết <span style={{ color: 'var(--danger-base)' }}>*</span>
+                  Nội dung phản ánh chi tiết<RequiredMark />
                 </label>
                 <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{content.length}/1000</span>
               </div>
@@ -267,7 +268,7 @@ export default function FeedbackModal({
                 htmlFor="feedback-email"
                 style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)' }}
               >
-                Email nhận phản hồi {currentUser ? '(Đã tự động điền)' : '(Bắt buộc để nhận giải đáp)'}
+                Email nhận phản hồi {currentUser ? '(Đã tự động điền)' : <RequiredMark />}
               </label>
               <input
                 id="feedback-email"

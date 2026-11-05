@@ -90,7 +90,15 @@ async function comments(documentIdRaw, user, query) {
   const result = await repo.getComments(documentId, user?.id, { limit, offset });
   return {
     summary: { average: Number(result.summary.average), totalRatings: result.summary.total, distribution: { 5: result.summary.five, 4: result.summary.four, 3: result.summary.three, 2: result.summary.two, 1: result.summary.one }, myRating: result.myRating },
-    items: result.comments.map((row) => ({ id: row.id, userId: row.user_id, authorName: row.full_name, content: row.content, parentCommentId: row.parent_comment_id, upvoteCount: row.upvote_count, createdAt: row.created_at })),
+    myReview: result.myRating !== null || result.myComment
+      ? {
+          score: result.myRating,
+          commentId: result.myComment?.id ?? null,
+          content: result.myComment?.content ?? '',
+          createdAt: result.myRatedAt || result.myComment?.created_at
+        }
+      : null,
+    items: result.comments.map((row) => ({ id: row.id, userId: row.user_id, authorName: row.full_name, content: row.content, score: row.score ?? null, parentCommentId: row.parent_comment_id, upvoteCount: row.upvote_count, createdAt: row.created_at })),
     pagination: { page, limit, totalItems: result.totalComments, totalPages: Math.ceil(result.totalComments / limit) }
   };
 }
@@ -108,11 +116,36 @@ async function rate(userId, rawId, body) {
   }
 }
 
+async function saveReview(userId, rawId, body) {
+  const documentId = parseId(rawId, 'documentId');
+  const score = body?.score;
+  if (!Number.isInteger(score) || score < 1 || score > 5) throw new ApiError(400, 'INVALID_SCORE', 'Vui lòng chọn từ 1 đến 5 sao.');
+  const content = typeof body?.content === 'string' ? body.content.trim() : '';
+  if (content && (content.length < 2 || content.length > 2000)) throw new ApiError(400, 'INVALID_CONTENT', 'Nhận xét phải có từ 2 đến 2.000 ký tự.');
+  try {
+    const ratingAverage = await repo.saveReview(userId, documentId, score, content);
+    return { documentId, score, content, ratingAverage };
+  } catch (error) {
+    if (error.code === 'DOCUMENT_NOT_FOUND') throw new ApiError(404, 'DOCUMENT_NOT_FOUND', 'Không tìm thấy tài liệu đã được phát hành.');
+    throw error;
+  }
+}
+
+async function deleteReview(userId, rawId) {
+  const documentId = parseId(rawId, 'documentId');
+  const ratingAverage = await repo.deleteReview(userId, documentId);
+  if (ratingAverage === null) throw new ApiError(404, 'REVIEW_NOT_FOUND', 'Bạn chưa có đánh giá nào cho tài liệu này.');
+  return { documentId, ratingAverage };
+}
+
 async function addComment(userId, rawId, body) {
   const documentId = parseId(rawId, 'documentId');
   const content = String(body?.content || '').trim();
   if (content.length < 2 || content.length > 2000) throw new ApiError(400, 'INVALID_CONTENT', 'Bình luận phải có từ 2 đến 2.000 ký tự.');
   const parentCommentId = body.parentCommentId == null ? null : parseId(body.parentCommentId, 'parentCommentId');
+  if (parentCommentId === null && (await repo.hasOwnRootComment(userId, documentId))) {
+    throw new ApiError(409, 'REVIEW_ALREADY_EXISTS', 'Mỗi người chỉ có một đánh giá. Hãy chỉnh sửa đánh giá hiện có.');
+  }
   const row = await repo.addComment(userId, documentId, content, parentCommentId);
   if (row) return { id: row.id, documentId: row.document_id, userId: row.user_id, content: row.content, parentCommentId: row.parent_comment_id, upvoteCount: row.upvote_count, createdAt: row.created_at };
   if (!(await repo.findApprovedDocument(documentId))) throw new ApiError(404, 'DOCUMENT_NOT_FOUND', 'Không tìm thấy tài liệu đã được phát hành.');
@@ -170,4 +203,4 @@ async function recordView(rawId, user, ipAddress) {
   return { documentId, actionType };
 }
 
-module.exports = { ApiError, getDashboard, getMyUploads, listDocuments, listBookmarks, createBookmark, removeBookmark, comments, rate, addComment, deleteComment, preview, download, recordView };
+module.exports = { ApiError, getDashboard, getMyUploads, listDocuments, listBookmarks, createBookmark, removeBookmark, comments, rate, saveReview, deleteReview, addComment, deleteComment, preview, download, recordView };

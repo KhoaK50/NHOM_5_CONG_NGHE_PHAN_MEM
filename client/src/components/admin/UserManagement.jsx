@@ -1,3 +1,4 @@
+import RequiredMark from '../common/RequiredMark'
 import { useState } from 'react'
 import {
   Users,
@@ -445,6 +446,7 @@ export default function UserManagement({
               <div>
                 <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, marginBottom: '6px' }}>
                   Chi tiết lý do ghi nhận vào hồ sơ kiểm duyệt:
+                  <RequiredMark />
                 </label>
                 <textarea
                   rows={3}

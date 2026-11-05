@@ -5,10 +5,17 @@
  */
 
 const express = require('express');
+const rateLimit = require('express-rate-limit').default;
 const controller = require('../controllers/notificationReportController');
 const { ApiError } = require('../services/notificationReportService');
+const { attachOptionalUser } = require('../middleware/rbac');
 
 const router = express.Router();
+
+const streamLimit = rateLimit({ windowMs: 60 * 1000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false });
+
+// UC03: Nhận thông báo ngay, không cần tải lại trang
+router.get('/notifications/stream', streamLimit, attachOptionalUser, controller.handleNotificationStream);
 
 // UC03: Xem danh sách thông báo & đánh dấu đã đọc
 router.get('/notifications', controller.handleGetNotifications);

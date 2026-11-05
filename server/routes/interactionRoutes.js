@@ -21,6 +21,8 @@ router.delete('/bookmarks/:documentId', requireMember, asyncRoute(controller.rem
 
 router.get('/documents/:id/comments', attachOptionalUser, asyncRoute(controller.comments));
 router.post('/documents/:id/ratings', requireMember, asyncRoute(controller.rate));
+router.put('/documents/:id/reviews/mine', requireMember, asyncRoute(controller.saveReview));
+router.delete('/documents/:id/reviews/mine', requireMember, asyncRoute(controller.deleteReview));
 router.post('/documents/:id/comments', requireMember, asyncRoute(controller.addComment));
 router.delete('/documents/:id/comments/:commentId', requireMember, asyncRoute(controller.deleteComment));
 router.delete('/documents/:id/comments', requireMember, asyncRoute(controller.deleteComment));

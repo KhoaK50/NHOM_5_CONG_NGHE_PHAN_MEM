@@ -14,7 +14,7 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('vi-VN')
 }
 
-export default function MyDocuments({ currentUser, onSelectDoc, onOpenUpload }) {
+export default function MyDocuments({ currentUser, onSelectDoc, onOpenUpload, refreshSignal = 0 }) {
   const [statusFilter, setStatusFilter] = useState('PENDING')
   const [documents, setDocuments] = useState([])
   const [counts, setCounts] = useState({ PENDING: 0, APPROVED: 0, REJECTED: 0 })
@@ -50,7 +50,7 @@ export default function MyDocuments({ currentUser, onSelectDoc, onOpenUpload }) 
     return () => {
       cancelled = true
     }
-  }, [statusFilter, page, currentUser?.id, reloadKey])
+  }, [statusFilter, page, currentUser?.id, reloadKey, refreshSignal])
 
   const filtered = documents.filter((doc) => doc.status === statusFilter)
   const tabStyle = (active) => ({

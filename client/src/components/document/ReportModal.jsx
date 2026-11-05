@@ -7,6 +7,7 @@
  * ============================================================================
  */
 
+import RequiredMark from '../common/RequiredMark';
 import { useEffect, useState } from "react";
 import { api } from "../../api/notificationReportApi";
 
@@ -237,6 +238,7 @@ export default function ReportModal({
               <fieldset className="report-fieldset" aria-describedby={errors.reason ? "reason-error" : undefined}>
                 <legend>
                   Lý do báo cáo
+                  <RequiredMark />
                 </legend>
                 <div className="report-reasons">
                   {REASONS.map((r) => (
@@ -283,6 +285,7 @@ export default function ReportModal({
                 <div>
                   <label htmlFor="description">
                     Mô tả chi tiết
+                    <RequiredMark />
                   </label>
                   <span>
                     {description.length}/{MAX_DESC}

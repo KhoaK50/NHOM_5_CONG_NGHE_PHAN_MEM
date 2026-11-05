@@ -1,3 +1,4 @@
+import RequiredMark from '../common/RequiredMark'
 import { useEffect, useState } from 'react'
 import { AlertTriangle, EyeOff, ShieldCheck, Trash2, X } from 'lucide-react'
 
@@ -113,7 +114,8 @@ export default function ResolveReportModal({ report, action, submitting = false,
 
         <form onSubmit={handleSubmit}>
           <label htmlFor="resolve-note-textarea" style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)' }}>
-            Ghi chú xử lý (bắt buộc)
+            Ghi chú xử lý
+            <RequiredMark />
           </label>
           <textarea
             id="resolve-note-textarea"

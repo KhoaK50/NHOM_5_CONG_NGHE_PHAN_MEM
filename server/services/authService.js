@@ -22,6 +22,8 @@ const {
 const { uploadAvatarBufferToCloudinary } = require('./cloudinaryService');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Đăng ký bằng mật khẩu chỉ nhận Gmail. Đăng nhập và tài khoản đã có không bị ảnh hưởng.
+const GMAIL_REGEX = /^[a-z0-9]+(?:\.[a-z0-9]+)*(?:\+[a-z0-9._-]+)?@gmail\.com$/;
 
 function computeInitials(fullName) {
   const parts = String(fullName || 'SV')
@@ -168,8 +170,8 @@ async function registerUser({
   if (!cleanedName || cleanedName.length < 2) {
     return { statusCode: 400, body: { status: 'error', message: 'Vui lòng nhập họ và tên hợp lệ.' } };
   }
-  if (!EMAIL_REGEX.test(cleanedEmail)) {
-    return { statusCode: 400, body: { status: 'error', message: 'Định dạng địa chỉ email không hợp lệ.' } };
+  if (cleanedEmail.length > 254 || !GMAIL_REGEX.test(cleanedEmail)) {
+    return { statusCode: 400, body: { status: 'error', message: 'Vui lòng dùng địa chỉ Gmail hợp lệ, ví dụ ten.ban@gmail.com.' } };
   }
 
   const pwdError = validatePasswordRules(password);

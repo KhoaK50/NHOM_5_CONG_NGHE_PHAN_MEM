@@ -137,19 +137,97 @@ async function deleteBookmark(userId, documentId) {
 }
 
 async function getComments(documentId, userId, { limit, offset }) {
-  const [summary, comments, count, ownRating] = await Promise.all([
+  const [summary, comments, count, ownRating, ownComment] = await Promise.all([
     query(`SELECT COUNT(*)::int AS total, COALESCE(AVG(score), 0)::numeric(3,1) AS average,
       COUNT(*) FILTER (WHERE score = 5)::int AS five, COUNT(*) FILTER (WHERE score = 4)::int AS four,
       COUNT(*) FILTER (WHERE score = 3)::int AS three, COUNT(*) FILTER (WHERE score = 2)::int AS two,
       COUNT(*) FILTER (WHERE score = 1)::int AS one FROM public.ratings WHERE document_id = $1`, [documentId]),
-    query(`SELECT c.id, c.user_id, u.full_name, c.content, c.parent_comment_id, c.upvote_count, c.created_at
+    query(`SELECT c.id, c.user_id, u.full_name, c.content, c.parent_comment_id, c.upvote_count, c.created_at, r.score
       FROM public.document_comments c JOIN public.users u ON u.id = c.user_id
+      LEFT JOIN public.ratings r ON r.user_id = c.user_id AND r.document_id = c.document_id
       WHERE c.document_id = $1 AND c.is_hidden = FALSE
       ORDER BY c.created_at DESC LIMIT $2 OFFSET $3`, [documentId, limit, offset]),
     query('SELECT COUNT(*)::int AS total FROM public.document_comments WHERE document_id = $1 AND is_hidden = FALSE', [documentId]),
-    userId ? query('SELECT score FROM public.ratings WHERE document_id = $1 AND user_id = $2', [documentId, userId]) : Promise.resolve({ rows: [] })
+    userId ? query('SELECT score, rated_at FROM public.ratings WHERE document_id = $1 AND user_id = $2', [documentId, userId]) : Promise.resolve({ rows: [] }),
+    userId ? query(`SELECT id, content, created_at FROM public.document_comments
+      WHERE document_id = $1 AND user_id = $2 AND parent_comment_id IS NULL AND is_hidden = FALSE
+      ORDER BY created_at DESC, id DESC LIMIT 1`, [documentId, userId]) : Promise.resolve({ rows: [] })
   ]);
-  return { summary: summary.rows[0], comments: comments.rows, totalComments: count.rows[0].total, myRating: ownRating.rows[0]?.score ?? null };
+  return {
+    summary: summary.rows[0],
+    comments: comments.rows,
+    totalComments: count.rows[0].total,
+    myRating: ownRating.rows[0]?.score ?? null,
+    myRatedAt: ownRating.rows[0]?.rated_at ?? null,
+    myComment: ownComment.rows[0] || null
+  };
+}
+
+const REFRESH_RATING_AVG_SQL = `UPDATE public.documents SET rating_avg = COALESCE(
+  (SELECT AVG(score) FROM public.ratings WHERE document_id = $1), 0) WHERE id = $1 AND status = 'APPROVED'
+  RETURNING rating_avg`;
+
+/**
+ * Mỗi người có một đánh giá trên mỗi tài liệu: lần sau là sửa, không tạo mới.
+ * Dòng ratings bị khóa ở lệnh đầu nên hai yêu cầu đồng thời không thể tạo 2 nhận xét.
+ */
+async function saveReview(userId, documentId, score, content) {
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
+    await client.query(`INSERT INTO public.ratings (user_id, document_id, score)
+      SELECT $1, id, $3 FROM public.documents WHERE id = $2 AND status = 'APPROVED'
+      ON CONFLICT (user_id, document_id) DO UPDATE SET score = EXCLUDED.score, rated_at = CURRENT_TIMESTAMP`, [userId, documentId, score]);
+    const average = await client.query(REFRESH_RATING_AVG_SQL, [documentId]);
+    if (!average.rowCount) throw Object.assign(new Error('DOCUMENT_NOT_FOUND'), { code: 'DOCUMENT_NOT_FOUND' });
+
+    const existing = await client.query(`SELECT id FROM public.document_comments
+      WHERE document_id = $1 AND user_id = $2 AND parent_comment_id IS NULL AND is_hidden = FALSE
+      ORDER BY created_at DESC, id DESC LIMIT 1`, [documentId, userId]);
+    const commentId = existing.rows[0]?.id;
+    if (content && commentId) {
+      await client.query('UPDATE public.document_comments SET content = $1 WHERE id = $2', [content, commentId]);
+    } else if (content) {
+      await client.query('INSERT INTO public.document_comments (user_id, document_id, content) VALUES ($1, $2, $3)', [userId, documentId, content]);
+    } else if (commentId) {
+      await client.query('UPDATE public.document_comments SET is_hidden = TRUE WHERE id = $1', [commentId]);
+    }
+    await client.query('COMMIT');
+    return Number(average.rows[0].rating_avg);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally { client.release(); }
+}
+
+/** Xóa đánh giá của chính mình: bỏ số sao và ẩn nhận xét để có thể đánh giá lại. */
+async function deleteReview(userId, documentId) {
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
+    const rating = await client.query('DELETE FROM public.ratings WHERE user_id = $1 AND document_id = $2 RETURNING score', [userId, documentId]);
+    const comments = await client.query(`WITH RECURSIVE target_comments(id) AS (
+        SELECT id FROM public.document_comments WHERE document_id = $1 AND user_id = $2 AND is_hidden = FALSE
+        UNION
+        SELECT child.id FROM public.document_comments child
+        JOIN target_comments parent ON child.parent_comment_id = parent.id
+      )
+      UPDATE public.document_comments SET is_hidden = TRUE
+      WHERE id IN (SELECT id FROM target_comments) RETURNING id`, [documentId, userId]);
+    const average = await client.query(REFRESH_RATING_AVG_SQL, [documentId]);
+    await client.query('COMMIT');
+    if (!rating.rowCount && !comments.rowCount) return null;
+    return Number(average.rows[0]?.rating_avg || 0);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally { client.release(); }
+}
+
+async function hasOwnRootComment(userId, documentId) {
+  const result = await query(`SELECT 1 FROM public.document_comments
+    WHERE document_id = $1 AND user_id = $2 AND parent_comment_id IS NULL AND is_hidden = FALSE LIMIT 1`, [documentId, userId]);
+  return result.rowCount > 0;
 }
 
 async function saveRating(userId, documentId, score) {
@@ -260,4 +338,4 @@ async function findApprovedDocument(documentId) {
   return result.rowCount > 0;
 }
 
-module.exports = { getDashboard, listMyUploads, listPublicDocuments, listBookmarks, upsertBookmark, deleteBookmark, getComments, saveRating, addComment, hideComment, findDownloadable, findPreviewable, recordDownload, recordView, findApprovedDocument };
+module.exports = { getDashboard, listMyUploads, listPublicDocuments, listBookmarks, upsertBookmark, deleteBookmark, getComments, saveRating, saveReview, deleteReview, hasOwnRootComment, addComment, hideComment, findDownloadable, findPreviewable, recordDownload, recordView, findApprovedDocument };

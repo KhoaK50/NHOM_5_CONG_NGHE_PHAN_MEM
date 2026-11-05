@@ -1,3 +1,4 @@
+import RequiredMark from '../common/RequiredMark'
 import { useEffect, useState } from 'react'
 import { X, BookPlus, AlertTriangle } from 'lucide-react'
 import { KNOWLEDGE_BLOCK_LABELS } from '../../utils/documentCourseApi'
@@ -91,7 +92,7 @@ export default function CourseModal({ editingCourse = null, submitting = false, 
         <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px', gap: '12px' }}>
             <div>
-              <label htmlFor="course-code-input" style={labelStyle}>Mã học phần</label>
+              <label htmlFor="course-code-input" style={labelStyle}>Mã học phần<RequiredMark /></label>
               <input
                 id="course-code-input"
                 type="text"
@@ -107,7 +108,7 @@ export default function CourseModal({ editingCourse = null, submitting = false, 
               <FieldError id="course-code-error" message={fieldErrors.courseCode} />
             </div>
             <div>
-              <label htmlFor="course-credits-input" style={labelStyle}>Số tín chỉ</label>
+              <label htmlFor="course-credits-input" style={labelStyle}>Số tín chỉ<RequiredMark /></label>
               <input
                 id="course-credits-input"
                 type="number"
@@ -124,7 +125,7 @@ export default function CourseModal({ editingCourse = null, submitting = false, 
           </div>
 
           <div>
-            <label htmlFor="course-name-input" style={labelStyle}>Tên học phần theo chương trình đào tạo</label>
+            <label htmlFor="course-name-input" style={labelStyle}>Tên học phần theo chương trình đào tạo<RequiredMark /></label>
             <input
               id="course-name-input"
               type="text"
@@ -141,7 +142,7 @@ export default function CourseModal({ editingCourse = null, submitting = false, 
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label htmlFor="course-block-select" style={labelStyle}>Khối kiến thức</label>
+              <label htmlFor="course-block-select" style={labelStyle}>Khối kiến thức<RequiredMark /></label>
               <select id="course-block-select" value={knowledgeBlock} onChange={(e) => setKnowledgeBlock(e.target.value)} style={inputStyle(false)}>
                 {Object.entries(KNOWLEDGE_BLOCK_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -149,7 +150,7 @@ export default function CourseModal({ editingCourse = null, submitting = false, 
               </select>
             </div>
             <div>
-              <label htmlFor="course-sem-select" style={labelStyle}>Học kỳ gợi ý</label>
+              <label htmlFor="course-sem-select" style={labelStyle}>Học kỳ gợi ý<RequiredMark /></label>
               <select id="course-sem-select" value={semester} onChange={(e) => setSemester(e.target.value)} style={inputStyle(false)}>
                 {SEMESTER_OPTIONS.map((value) => (
                   <option key={value} value={value}>Học kỳ {value}</option>

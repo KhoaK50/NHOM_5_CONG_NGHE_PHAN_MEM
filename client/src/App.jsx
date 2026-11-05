@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { ArrowLeft, Lock } from 'lucide-react'
 import Navbar from './components/common/Navbar'
 import AuthSubsystem from './components/auth/AuthSubsystem'
@@ -19,6 +19,7 @@ import { CURRICULUM_COURSES } from './data/curriculum'
 import { api, subscribeNotifications } from './api/notificationReportApi'
 import ToastStack from './components/common/ToastStack'
 import { listPublicCourses, listModerationDocuments, listReports, uploadDocument } from './utils/documentCourseApi'
+import { connectRealtime } from './utils/realtime'
 import {
   addBookmark,
   downloadDocument,
@@ -27,6 +28,11 @@ import {
   recordDocumentView,
   removeBookmark
 } from './utils/interactionApi'
+
+// Dự phòng khi luồng sự kiện bị ngắt, và tránh tải lại liên tục khi người dùng quay lại tab
+const FALLBACK_POLL_MS = 30000
+const FOCUS_REFRESH_MIN_MS = 10000
+const REALTIME_COALESCE_MS = 250
 
 const KNOWLEDGE_BLOCK_LABEL_MAP = {
   DAI_CUONG: 'Đại cương',
@@ -108,6 +114,10 @@ export default function App() {
   const [selectedDocId, setSelectedDocId] = useState(null)
   const [toasts, setToasts] = useState([])
   const [adminPendingCount, setAdminPendingCount] = useState(0)
+  // Tăng mỗi khi máy chủ báo có thay đổi để các màn hình đang mở tự nạp lại
+  const [liveVersion, setLiveVersion] = useState(0)
+  const selectedDocIdRef = useRef(null)
+  const activeViewRef = useRef(activeView)
   const [userSession, setUserSession] = useState(() => {
     const saved = AuthGuard.getSavedUserProfile()
     if (saved && AuthGuard.getAuthToken()) {
@@ -188,20 +198,107 @@ export default function App() {
     }
   }, [actorRole, userSession?.id, showNotice])
 
-  // UC03: Lấy thông báo thời gian thực kết nối PostgreSQL API
   useEffect(() => {
-    if (!userSession) {
-      return undefined
-    }
+    selectedDocIdRef.current = selectedDocId
+  }, [selectedDocId])
+
+  useEffect(() => {
+    activeViewRef.current = activeView
+  }, [activeView])
+
+  // Làm mới Kho học liệu nhưng giữ tài liệu đang đọc, kể cả khi tài liệu đó chưa hoặc không còn công khai
+  const refreshDocuments = useCallback(async () => {
+    const items = (await listPublicDocuments({ page: 1, limit: 100 })) || []
+    setDocuments((prev) => {
+      const selectedId = selectedDocIdRef.current
+      if (selectedId == null || items.some((item) => item.id === selectedId)) return items
+      const selected = prev.find((item) => item.id === selectedId)
+      return selected ? [selected, ...items] : items
+    })
+  }, [])
+
+  // UC03: Nhận thông báo và thay đổi của Kho ngay khi máy chủ báo, không cần tải lại trang
+  const sessionUserId = userSession?.id
+  useEffect(() => {
     let isCancelled = false
-    api
-      .getNotifications({ limit: 20 })
-      .then((res) => {
-        if (!isCancelled && Array.isArray(res?.data?.items)) {
-          setNotifications(res.data.items)
-        }
-      })
-      .catch(() => {})
+    let knownIds = null
+    let streamConnected = false
+    let hasConnectedBefore = false
+    let lastRefreshAt = Date.now()
+    const pendingTasks = new Set()
+    let coalesceTimer = null
+
+    const loadNotifications = (announce) => {
+      if (!sessionUserId) return
+      api
+        .getNotifications({ limit: 20 })
+        .then((res) => {
+          const items = res?.data?.items
+          if (isCancelled || !Array.isArray(items)) return
+          if (announce && knownIds) {
+            const fresh = items.filter((item) => !knownIds.has(item.id) && !item.isRead)
+            if (fresh.length === 1) showNotice(`Thông báo mới: ${fresh[0].title}`, 'info')
+            else if (fresh.length > 1) showNotice(`Bạn có ${fresh.length} thông báo mới.`, 'info')
+          }
+          knownIds = new Set(items.map((item) => item.id))
+          setNotifications(items)
+        })
+        .catch(() => {})
+    }
+
+    const loadDocuments = () => {
+      refreshDocuments().catch(() => {})
+    }
+
+    const refreshAll = () => {
+      lastRefreshAt = Date.now()
+      loadNotifications(true)
+      loadDocuments()
+      setLiveVersion((version) => version + 1)
+    }
+
+    // Gom các sự kiện đến sát nhau thành một lần nạp
+    const schedule = (task) => {
+      pendingTasks.add(task)
+      if (coalesceTimer) return
+      coalesceTimer = setTimeout(() => {
+        coalesceTimer = null
+        const tasks = [...pendingTasks]
+        pendingTasks.clear()
+        tasks.forEach((run) => run())
+        setLiveVersion((version) => version + 1)
+      }, REALTIME_COALESCE_MS)
+    }
+
+    const announceNotifications = () => loadNotifications(true)
+    const noop = () => {}
+
+    loadNotifications(false)
+
+    const disconnect = connectRealtime({
+      onEvent: (event) => {
+        if (isCancelled) return
+        if (event === 'notification') schedule(announceNotifications)
+        else if (event === 'documents') schedule(loadDocuments)
+        else if (event === 'moderation') schedule(noop)
+      },
+      onStatusChange: (connected) => {
+        streamConnected = connected
+        // Kết nối lại: nạp bù những gì đã lỡ trong lúc mất kết nối
+        if (connected && hasConnectedBefore && !isCancelled) refreshAll()
+        if (connected) hasConnectedBefore = true
+      }
+    })
+
+    const pollTimer = setInterval(() => {
+      if (!streamConnected && document.visibilityState === 'visible') refreshAll()
+    }, FALLBACK_POLL_MS)
+
+    const handleVisible = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastRefreshAt > FOCUS_REFRESH_MIN_MS) refreshAll()
+    }
+    document.addEventListener('visibilitychange', handleVisible)
+    window.addEventListener('focus', handleVisible)
 
     const unsubscribe = subscribeNotifications((newEvent) => {
       if (isCancelled) return
@@ -213,9 +310,14 @@ export default function App() {
 
     return () => {
       isCancelled = true
+      clearTimeout(coalesceTimer)
+      clearInterval(pollTimer)
+      document.removeEventListener('visibilitychange', handleVisible)
+      window.removeEventListener('focus', handleVisible)
+      disconnect()
       if (typeof unsubscribe === 'function') unsubscribe()
     }
-  }, [userSession, showNotice])
+  }, [sessionUserId, refreshDocuments, showNotice])
 
   const fetchAdminUsersList = useCallback((authToken) => {
     const tokenToUse = authToken || AuthGuard.getAuthToken()
@@ -589,39 +691,51 @@ export default function App() {
     )
   }
 
-  const handleSubmitNewDocument = async (newDocPayload) => {
+  const handleSubmitNewDocument = async (newDocPayload, { onProgress } = {}) => {
     if (isCurrentUserLocked) {
-      showNotice('Tài khoản của bạn đang bị tạm khóa. Không thể thực hiện đóng góp học liệu.')
-      return
+      return { ok: false, message: 'Tài khoản của bạn đang bị tạm khóa. Không thể thực hiện đóng góp học liệu.' }
     }
 
     if (actorRole === 'GUEST' || !userSession?.id) {
       showNotice('Vui lòng đăng nhập tài khoản sinh viên hoặc giảng viên để tải học liệu lên hệ thống.')
       handleOpenAuth('login')
-      return
+      return { ok: false }
     }
 
     try {
-      showNotice('Đang tải tệp lên...', 'info')
-      const res = await uploadDocument({
-        title: newDocPayload.title,
-        courseCode: newDocPayload.courseCode,
-        courseId: newDocPayload.courseId,
-        docType: newDocPayload.docType,
-        description: newDocPayload.description,
-        file: newDocPayload.file
-      })
-
-      if (res?.success) {
-        showNotice(res.message || 'Đã gửi tài liệu. Tài liệu đang chờ quản trị viên kiểm duyệt.')
-        setActiveView('my-docs')
-      } else {
-        showNotice(res?.message || 'Không thể tải tài liệu lên. Vui lòng thử lại.')
-      }
+      const res = await uploadDocument(
+        {
+          title: newDocPayload.title,
+          courseCode: newDocPayload.courseCode,
+          courseId: newDocPayload.courseId,
+          docType: newDocPayload.docType,
+          description: newDocPayload.description,
+          file: newDocPayload.file
+        },
+        { onProgress }
+      )
+      showNotice(res?.message || 'Đã gửi tài liệu. Tài liệu đang chờ quản trị viên kiểm duyệt.', 'success')
+      // Chỉ chuyển màn hình nếu người dùng vẫn đang ở trang Đóng góp
+      if (activeViewRef.current === 'upload') setActiveView('my-docs')
+      else setLiveVersion((version) => version + 1)
+      return { ok: true }
     } catch (err) {
-      showNotice(`Lỗi tải học liệu: ${err.message || 'Không thể kết nối máy chủ'}`)
+      const message = err.message || 'Không thể kết nối máy chủ. Vui lòng thử lại.'
+      if (activeViewRef.current !== 'upload') showNotice(`Không gửi được tài liệu: ${message}`, 'error')
+      return { ok: false, message }
     }
   }
+
+  // Cập nhật điểm đánh giá trên Kho ngay sau khi có người đánh giá
+  const handleRatingSummaryChange = useCallback((documentId, summary) => {
+    setDocuments((prev) =>
+      prev.map((item) =>
+        item.id === documentId
+          ? { ...item, ratingAvg: Number(summary.average) || 0, ratingCount: summary.totalRatings || 0 }
+          : item
+      )
+    )
+  }, [])
 
   const handleToggleUserStatus = async (userId, lockReason = null) => {
     const target = users.find((u) => u.id === userId)
@@ -780,7 +894,7 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [isAdminView])
+  }, [isAdminView, liveVersion])
 
   const handleSelectAdminSubTab = (tabId) => {
     setAdminSubTab(tabId)
@@ -863,7 +977,7 @@ export default function App() {
 
             <main className="admin-workspace-content">
               {currentAdminTab === 'moderation' && (
-                <ModerationQueue onNotice={showNotice} onPendingCountChange={setAdminPendingCount} />
+                <ModerationQueue onNotice={showNotice} onPendingCountChange={setAdminPendingCount} refreshSignal={liveVersion} />
               )}
 
               {currentAdminTab === 'courses' && (
@@ -874,6 +988,7 @@ export default function App() {
                 <AdminDashboard
                   onSelectDoc={handleSelectDocument}
                   onNavigateTab={handleSelectAdminSubTab}
+                  refreshSignal={liveVersion}
                 />
               )}
 
@@ -943,6 +1058,7 @@ export default function App() {
               onToggleBookmark={handleToggleBookmark}
               onSubmitReport={handleSubmitReport}
               onRequireLogin={() => handleOpenAuth('login')}
+              onRatingSummaryChange={handleRatingSummaryChange}
             />
           )}
 
@@ -960,6 +1076,7 @@ export default function App() {
               currentUser={userSession}
               onSelectDoc={handleSelectDocument}
               onOpenUpload={handleOpenUpload}
+              refreshSignal={liveVersion}
             />
           )}
 

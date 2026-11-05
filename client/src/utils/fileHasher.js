@@ -129,7 +129,9 @@ export async function verifyFileAndHash(fileObj, existingDocuments = []) {
       isDuplicate: false,
       duplicateDoc: null,
       stageFailed: 'EXTENSION',
-      errorMessage: 'Chỉ chấp nhận tệp tin chuẩn định dạng .pdf, .docx hoặc .pptx.'
+      errorMessage: /\.(doc|ppt)$/i.test(fileName)
+        ? 'Tệp .doc, .ppt đời cũ chưa được hỗ trợ. Hãy mở tệp trong Word hoặc PowerPoint rồi lưu lại thành .docx hoặc .pptx.'
+        : 'Chỉ chấp nhận tệp .pdf, .docx hoặc .pptx.'
     }
   }
 

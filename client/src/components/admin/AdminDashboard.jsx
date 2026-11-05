@@ -8,7 +8,8 @@ import { getDashboardStats } from '../../utils/interactionApi'
 
 export default function AdminDashboard({
   onSelectDoc,
-  onNavigateTab
+  onNavigateTab,
+  refreshSignal = 0
 }) {
   const [hoveredCourseIndex, setHoveredCourseIndex] = useState(null)
   const [hoveredPointIndex, setHoveredPointIndex] = useState(null)
@@ -21,7 +22,7 @@ export default function AdminDashboard({
       .then((data) => { if (!cancelled) setDashboardData(data) })
       .catch((error) => { if (!cancelled) setDashboardError(error.message) })
     return () => { cancelled = true }
-  }, [])
+  }, [refreshSignal])
 
   const totalDocs = dashboardData?.totalDocuments ?? 0
   const approvedDocsCount = dashboardData?.approved ?? 0

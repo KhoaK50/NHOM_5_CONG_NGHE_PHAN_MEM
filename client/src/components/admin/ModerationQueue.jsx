@@ -100,7 +100,7 @@ function buildEmptyChecks() {
   return Object.fromEntries(MANUAL_CRITERIA.map((item) => [item.key, false]))
 }
 
-export default function ModerationQueue({ onNotice, onPendingCountChange }) {
+export default function ModerationQueue({ onNotice, onPendingCountChange, refreshSignal = 0 }) {
   const [activeTab, setActiveTab] = useState('pending') // 'pending' | 'reports'
 
   // Hàng đợi tài liệu
@@ -153,7 +153,7 @@ export default function ModerationQueue({ onNotice, onPendingCountChange }) {
     return () => {
       cancelled = true
     }
-  }, [docPage, reportPage, reloadKey, onPendingCountChange])
+  }, [docPage, reportPage, reloadKey, refreshSignal, onPendingCountChange])
 
   // Mỗi tài liệu bắt đầu với bảng kiểm trống: Admin phải tự xác nhận sau khi đọc.
   useEffect(() => {

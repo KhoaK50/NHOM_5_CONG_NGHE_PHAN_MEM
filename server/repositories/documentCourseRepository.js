@@ -289,6 +289,18 @@ async function findCourseByCode(courseCode) {
   return res.rows[0] || null;
 }
 
+/** Gửi một thông báo tới mọi Quản trị viên đang hoạt động, trả về danh sách người nhận. */
+async function insertAdminNotifications({ documentId, type, title, message, excludeUserId }) {
+  const res = await query(
+    `INSERT INTO public.notifications (user_id, related_document_id, type, title, message)
+     SELECT id, $1, $2, $3, $4 FROM public.users
+     WHERE role = 'ADMIN' AND status = 'active' AND id <> $5
+     RETURNING user_id`,
+    [documentId, type, title, message, excludeUserId]
+  );
+  return res.rows.map((row) => row.user_id);
+}
+
 async function insertDocument({
   courseId,
   uploaderId,
@@ -342,6 +354,7 @@ module.exports = {
   insertModerationLog,
   insertAdminLog,
   insertNotification,
+  insertAdminNotifications,
   listReports,
   lockReport,
   resolveReport,
