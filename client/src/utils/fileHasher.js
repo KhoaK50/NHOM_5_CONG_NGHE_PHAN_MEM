@@ -156,7 +156,7 @@ export async function verifyFileAndHash(fileObj, existingDocuments = []) {
     }
   }
 
-  // Tầng 1 (tiếp): Giới hạn biên kích thước <= 25MB
+  // Tầng 1 (tiếp): Giới hạn biên kích thước <= 10 MB
   if (sizeBytes > MAX_FILE_SIZE_BYTES) {
     return {
       isValid: false,

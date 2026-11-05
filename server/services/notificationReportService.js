@@ -125,7 +125,7 @@ async function submitReport(userId, body = {}) {
 
   // 1. Kiểm tra tài liệu tồn tại
   const doc = await repo.findDocumentById(docIdNum);
-  if (!doc) {
+  if (!doc || doc.status !== 'APPROVED') {
     throw new ApiError(404, 'DOCUMENT_NOT_FOUND', 'Học liệu không tồn tại hoặc không còn khả dụng.');
   }
 
@@ -159,43 +159,9 @@ async function submitReport(userId, body = {}) {
   };
 }
 
-/**
- * Giả lập thông báo duyệt/từ chối tài liệu cho mục đích kiểm thử (TC3)
- */
-async function simulateModeration(userId, body = {}) {
-  const { action = 'APPROVED', documentTitle = 'Tài liệu học tập', documentId = 11, reason } = body;
-  const isApproved = String(action).toUpperCase() === 'APPROVED';
-
-  const type = isApproved ? 'DOC_APPROVED' : 'DOC_REJECTED';
-  const title = isApproved ? 'Tài liệu đã được duyệt' : 'Tài liệu bị từ chối';
-  const message = isApproved
-    ? `"${documentTitle}" đã hiển thị cho mọi người.`
-    : `"${documentTitle}". Lý do: ${reason || 'Nội dung trùng lặp với tài liệu đã có.'}`;
-
-  const row = await repo.insertNotification({
-    userId,
-    relatedDocumentId: Number(documentId) || null,
-    type,
-    title,
-    message
-  });
-
-  return {
-    id: row.id,
-    type: isApproved ? 'DOCUMENT_APPROVED' : 'DOCUMENT_REJECTED',
-    rawType: type,
-    title: row.title,
-    message: row.message,
-    documentId: row.related_document_id,
-    isRead: false,
-    createdAt: 'Vừa xong'
-  };
-}
-
 module.exports = {
   ApiError,
   getNotifications,
   markNotificationsRead,
-  submitReport,
-  simulateModeration
+  submitReport
 };

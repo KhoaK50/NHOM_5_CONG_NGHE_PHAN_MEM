@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FileText, Presentation, BookOpen } from 'lucide-react'
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url'
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { getApiBaseUrl, getAuthToken } from '../../utils/authGuard'
 
 const PREVIEWABLE = ['pdf', 'docx', 'pptx']

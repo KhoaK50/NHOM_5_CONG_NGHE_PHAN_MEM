@@ -181,7 +181,10 @@ const COURSE_COLUMNS = `
   c.is_active, c.created_at, c.updated_at,
   (SELECT COUNT(*)::int FROM public.documents d WHERE d.course_id = c.id) AS document_count`;
 
-async function listCourses({ q, knowledgeBlock, semester, isActive, limit, offset }) {
+// API công khai chỉ đếm tài liệu đã duyệt, không lộ số tài liệu chờ duyệt hoặc đã bị từ chối
+const PUBLIC_COURSE_COLUMNS = COURSE_COLUMNS.replace('WHERE d.course_id = c.id', "WHERE d.course_id = c.id AND d.status = 'APPROVED'");
+
+async function listCourses({ q, knowledgeBlock, semester, isActive, limit, offset, publicOnly = false }) {
   const params = [];
   const where = [];
   if (q) {
@@ -204,7 +207,7 @@ async function listCourses({ q, knowledgeBlock, semester, isActive, limit, offse
 
   const [rows, total, stats] = await Promise.all([
     query(
-      `SELECT ${COURSE_COLUMNS} FROM public.courses c ${whereSql}
+      `SELECT ${publicOnly ? PUBLIC_COURSE_COLUMNS : COURSE_COLUMNS} FROM public.courses c ${whereSql}
        ORDER BY c.course_code ASC
        LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
       [...params, limit, offset]
@@ -213,7 +216,7 @@ async function listCourses({ q, knowledgeBlock, semester, isActive, limit, offse
     query(
       `SELECT (SELECT COUNT(*)::int FROM public.courses) AS total_courses,
               (SELECT COUNT(*)::int FROM public.courses WHERE is_active) AS active_courses,
-              (SELECT COUNT(*)::int FROM public.documents) AS total_documents`
+              (SELECT COUNT(*)::int FROM public.documents ${publicOnly ? "WHERE status = 'APPROVED'" : ''}) AS total_documents`
     )
   ]);
   return { rows: rows.rows, total: total.rows[0].total, stats: stats.rows[0] };

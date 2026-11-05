@@ -121,19 +121,4 @@ export const api = {
     });
   },
 
-  /**
-   * Giả lập bắn thông báo duyệt/từ chối từ UC08, UC09 (TC3), chỉ dùng cho khung kiểm thử
-   */
-  async simulateModerationNotification(action, { documentTitle, documentId = 11, reason } = {}) {
-    const data = await request('/notifications/simulate-moderation', {
-      method: 'POST',
-      body: { action, documentTitle, documentId, reason },
-      errorMessage: 'Lỗi bắn thông báo',
-    });
-    const notifListRes = await this.getNotifications({ limit: 20 });
-    if (notifListRes?.data) {
-      emitNotificationUpdate(notifListRes.data);
-    }
-    return data.data;
-  },
 };

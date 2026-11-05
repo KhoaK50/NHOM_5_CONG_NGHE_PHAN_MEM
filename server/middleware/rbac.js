@@ -2,21 +2,14 @@
  * ============================================================================
  * RBAC MIDDLEWARE: XÁC THỰC BEARER JWT & PHÂN QUYỀN CHO CỤM UC08–UC10
  * Quyền lấy từ USERS trong CSDL, không tin role do client gửi.
- * Hỗ trợ nhận diện Bearer JWT từ Authorization Header và Query Param (?token=)
+ * Chỉ nhận Bearer JWT qua Authorization Header, token trên URL có thể lọt vào log.
  * ============================================================================
  */
 
 const authService = require('../services/authService');
 
 function extractAuthHeader(req) {
-  if (req.headers && req.headers.authorization) {
-    return req.headers.authorization;
-  }
-  const queryToken = req.query?.token || req.query?.accessToken;
-  if (queryToken && typeof queryToken === 'string') {
-    return `Bearer ${queryToken.trim()}`;
-  }
-  return null;
+  return req.headers?.authorization || null;
 }
 
 function resolveAuthCode(auth) {

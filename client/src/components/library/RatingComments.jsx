@@ -5,7 +5,7 @@ import ConfirmDialog from '../common/ConfirmDialog'
 import RequiredMark from '../common/RequiredMark'
 
 const EMPTY_SUMMARY = { average: 0, totalRatings: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, myRating: null }
-const MAX_REVIEW_LENGTH = 2000
+const MAX_REVIEW_LENGTH = 1000
 const LEGACY_CONTENT_NOTICE = 'Bình luận cũ không hiển thị được nội dung.'
 
 function formatDate(value) {
@@ -271,7 +271,7 @@ export default function RatingComments({
             placeholder="Chia sẻ nhận xét của bạn về tài liệu này"
           />
           <div className="review-form-footer">
-            <span>{draftText.length.toLocaleString('vi-VN')}/2.000 ký tự</span>
+            <span>{draftText.length.toLocaleString('vi-VN')}/1.000 ký tự</span>
             <div className="review-form-buttons">
               {isEditing && <button type="button" className="btn-ghost nav-auth-link" onClick={cancelEditing} disabled={saving}>Hủy</button>}
               <button type="submit" className="btn-solid-primary" disabled={saving}>

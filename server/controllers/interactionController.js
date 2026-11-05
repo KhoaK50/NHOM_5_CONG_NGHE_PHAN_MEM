@@ -28,12 +28,12 @@ async function deleteComment(req, res) {
   return res.json({ success: true, message: 'Đã xử lý bình luận.', data });
 }
 async function previewDocument(req, res) {
-  const { upstream, fileName, format } = await service.preview(req.params.id, req.user);
-  res.setHeader('Content-Type', mimeForFormat(format));
-  res.setHeader('Content-Disposition', contentDisposition('inline', fileName));
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Accept-Ranges', 'bytes');
-  res.setHeader('Cache-Control', 'public, max-age=3600');
+  const result = await service.preview(req.params.id, req.user, req.headers['if-none-match']);
+  const { upstream, buffer, fileName, format, etag, notModified } = result;
+  // Luôn hỏi lại máy chủ: tài liệu bị ẩn hoặc gỡ phải hết đọc được ngay, kể cả trình duyệt đã xem
+  res.setHeader('Cache-Control', 'private, no-cache');
+  res.setHeader('Vary', 'Authorization');
+  res.setHeader('ETag', etag);
   const reqOrigin = req.headers.origin;
   if (reqOrigin) {
     res.setHeader('Access-Control-Allow-Origin', reqOrigin);
@@ -46,10 +46,20 @@ async function previewDocument(req, res) {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   res.removeHeader('X-Frame-Options');
   res.setHeader('Content-Security-Policy', 'frame-ancestors *');
+  if (notModified) return res.status(304).end();
+  res.setHeader('Content-Type', mimeForFormat(format));
+  res.setHeader('Content-Disposition', contentDisposition('inline', fileName));
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  if (buffer) {
+    res.setHeader('Content-Length', String(buffer.length));
+    return res.end(buffer);
+  }
+  res.setHeader('Accept-Ranges', 'bytes');
   const length = upstream.headers.get('content-length');
   if (length && /^\d+$/.test(length)) res.setHeader('Content-Length', length);
   try { await pipeline(Readable.fromWeb(upstream.body), res); }
   catch (error) { if (!res.headersSent) throw error; res.destroy(error); }
+  return undefined;
 }
 
 async function download(req, res) {

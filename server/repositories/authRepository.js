@@ -429,8 +429,8 @@ async function updateUserStatus(userId, nextStatus) {
   const canonical = nextStatus === 'locked' ? 'locked' : 'active';
   const res = await query(
     `UPDATE public.users
-     SET status = $1,
-         token_version = CASE WHEN $1 = 'locked' THEN COALESCE(token_version, 1) + 1 ELSE token_version END,
+     SET status = $1::varchar,
+         token_version = CASE WHEN $1::varchar = 'locked' THEN COALESCE(token_version, 1) + 1 ELSE token_version END,
          updated_at = CURRENT_TIMESTAMP
      WHERE id = $2
      RETURNING ${USER_RETURN_COLS}`,

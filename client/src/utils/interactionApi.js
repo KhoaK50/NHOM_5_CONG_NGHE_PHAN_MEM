@@ -40,6 +40,18 @@ function queryString(params = {}) {
   return text ? `?${text}` : ''
 }
 
+/** Tải đủ Kho theo từng trang, để tìm và lọc không bỏ sót tài liệu sau 100 bản ghi đầu. */
+export async function listAllPublicDocuments() {
+  const pageSize = 100
+  const all = []
+  for (let page = 1; page <= 50; page += 1) {
+    const items = (await listPublicDocuments({ page, limit: pageSize })) || []
+    all.push(...items)
+    if (items.length < pageSize) break
+  }
+  return all
+}
+
 export function listPublicDocuments(params) { return request(`/api/documents${queryString(params)}`) }
 export function recordDocumentView(documentId) { return request(`/api/documents/${encodeURIComponent(documentId)}/access`, { method: 'POST' }) }
 export function getDashboardStats() { return request('/api/stats/dashboard') }

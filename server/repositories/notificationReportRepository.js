@@ -68,19 +68,6 @@ async function markNotificationsAsRead(userId, { ids = [], markAll = false } = {
 }
 
 /**
- * Thêm thông báo mới vào CSDL
- */
-async function insertNotification({ userId, relatedDocumentId = null, type, title, message }) {
-  const sql = `
-    INSERT INTO public.notifications (user_id, related_document_id, type, title, message, is_read)
-    VALUES ($1, $2, $3, $4, $5, false)
-    RETURNING id, user_id, related_document_id, type, title, message, is_read, created_at
-  `;
-  const result = await query(sql, [userId, relatedDocumentId, type, title, message]);
-  return result.rows[0];
-}
-
-/**
  * Tìm tài liệu theo ID
  */
 async function findDocumentById(documentId) {
@@ -124,7 +111,6 @@ module.exports = {
   getNotificationsByUser,
   countUnreadNotifications,
   markNotificationsAsRead,
-  insertNotification,
   findDocumentById,
   findPendingReport,
   createReport

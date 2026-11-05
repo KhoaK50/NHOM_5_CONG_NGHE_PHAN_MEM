@@ -131,7 +131,7 @@ async function uploadAvatarBufferToCloudinary(fileBuffer, userId) {
   };
 }
 
-const MAX_PDF_BYTES = 25 * 1024 * 1024; // 25 MB
+const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB, giới hạn tệp raw của gói Cloudinary Free
 const DOCUMENT_UPLOAD_TIMEOUT_MS = 90 * 1000;
 
 function isPdfBuffer(buffer) {
@@ -153,7 +153,7 @@ async function uploadDocumentBufferToCloudinary(fileBuffer, originalName = 'docu
     return { ok: false, statusCode: 400, message: 'Vui lòng chọn tệp tài liệu để tải lên.' };
   }
   if (fileBuffer.length > MAX_PDF_BYTES) {
-    return { ok: false, statusCode: 413, message: 'Kích thước tệp vượt quá 25 MB.' };
+    return { ok: false, statusCode: 413, message: 'Kích thước tệp vượt quá 10 MB.' };
   }
   if (format === 'pdf' ? !isPdfBuffer(fileBuffer) : !isZipBuffer(fileBuffer)) {
     return { ok: false, statusCode: 415, message: 'Tệp không đúng định dạng đã chọn: chữ ký đầu tệp không khớp.' };

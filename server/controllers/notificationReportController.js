@@ -6,7 +6,6 @@
 
 const service = require('../services/notificationReportService');
 const authService = require('../services/authService');
-const { query } = require('../db/pool');
 const realtime = require('../services/realtimeHub');
 const { getClientIp } = require('../utils/security');
 
@@ -15,14 +14,6 @@ async function resolveUser(req) {
 
   const authHeader = req.headers.authorization;
   if (!authHeader) return null;
-
-  // Hỗ trợ chế độ test harness độc lập khi truyền mock token
-  if (authHeader.includes('mock_jwt')) {
-    const testUser = await query(
-      `SELECT id, role, full_name, email FROM public.users WHERE role = 'STUDENT' ORDER BY id LIMIT 1`
-    );
-    if (testUser.rows[0]) return testUser.rows[0];
-  }
 
   const auth = await authService.authenticateRequest(authHeader);
   if (auth.ok) return auth.user;
@@ -109,26 +100,9 @@ async function handleSubmitReport(req, res, next) {
   }
 }
 
-async function handleSimulateModeration(req, res, next) {
-  try {
-    const user = await resolveUser(req);
-    const userId = user ? user.id : 10; // Fallback to first test student if needed
-
-    const data = await service.simulateModeration(userId, req.body);
-    return res.status(201).json({
-      success: true,
-      message: 'Đã giả lập phát thông báo kiểm duyệt thành công',
-      data
-    });
-  } catch (err) {
-    return next(err);
-  }
-}
-
 module.exports = {
   handleNotificationStream,
   handleGetNotifications,
   handleMarkNotificationsRead,
-  handleSubmitReport,
-  handleSimulateModeration
+  handleSubmitReport
 };

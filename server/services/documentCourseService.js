@@ -12,7 +12,7 @@ const { InvalidDocumentError, detectDocumentFormat, inspectOfficeDocument } = re
 const { ADMIN_NEW_DOCUMENT_TITLE } = require('../utils/notificationTitles');
 const realtime = require('./realtimeHub');
 
-const MAX_PDF_BYTES = 26214400; // 25 MB
+const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB, giới hạn tệp raw của gói Cloudinary Free
 const APPROVE_REWARD_POINTS = 20;
 const PG_UNIQUE_VIOLATION = '23505';
 const PG_FOREIGN_KEY_VIOLATION = '23503';
@@ -121,7 +121,7 @@ async function checkDuplicateHash(file) {
     throw new ApiError(400, 'FILE_REQUIRED', 'Vui lòng chọn một tệp tài liệu để kiểm tra.');
   }
   if (file.buffer.length > MAX_PDF_BYTES) {
-    throw new ApiError(413, 'FILE_TOO_LARGE', 'Tệp vượt quá giới hạn 25 MB.');
+    throw new ApiError(413, 'FILE_TOO_LARGE', 'Tệp vượt quá giới hạn 10 MB.');
   }
   assertReadableDocument(file);
 
@@ -212,7 +212,7 @@ async function getVisibleDocument(rawId, viewer) {
     courseCode: row.course_code,
     courseName: row.course_name,
     uploaderName: row.uploader_name,
-    previewUrl: row.preview_url,
+    previewUrl: viewer ? row.preview_url : null,
     fileUrl: viewer ? row.file_url : null
   };
 }
@@ -540,7 +540,7 @@ function translateCourseWriteError(err) {
   return err;
 }
 
-async function listAdminCourses(query) {
+async function listAdminCourses(query, { publicOnly = false } = {}) {
   const { page, limit, offset } = parsePagination(query);
   const knowledgeBlock = parseEnumQuery(query.knowledgeBlock, KNOWLEDGE_BLOCKS, undefined);
   let semester;
@@ -559,7 +559,8 @@ async function listAdminCourses(query) {
     semester,
     isActive: activeText === undefined ? undefined : activeText === 'true',
     limit,
-    offset
+    offset,
+    publicOnly
   });
   return {
     data: rows.map(toCourseDto),
@@ -753,8 +754,7 @@ async function uploadDocument(file, body, user) {
   }
 
   if (!resolvedCourseId) {
-    const allCourses = await repo.listCourses({ limit: 1 });
-    resolvedCourseId = allCourses.rows?.[0]?.id || 1;
+    throw new ApiError(400, 'COURSE_NOT_FOUND', 'Môn học đã chọn không có trong danh mục. Vui lòng chọn lại.');
   }
 
   const { format, pages } = assertReadableDocument(file);

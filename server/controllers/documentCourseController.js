@@ -59,6 +59,10 @@ async function handleListCourses(req, res) {
   return res.status(200).json({ success: true, ...(await service.listAdminCourses(req.query)) });
 }
 
+async function handleListPublicCourses(req, res) {
+  return res.status(200).json({ success: true, ...(await service.listAdminCourses(req.query, { publicOnly: true })) });
+}
+
 async function handleGetCourse(req, res) {
   return res.status(200).json({ success: true, data: await service.getAdminCourse(req.params.id) });
 }
@@ -88,6 +92,7 @@ module.exports = {
   handleListReports,
   handleResolveReport,
   handleListCourses,
+  handleListPublicCourses,
   handleGetCourse,
   handleCreateCourse,
   handleUpdateCourse,

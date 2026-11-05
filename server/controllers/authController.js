@@ -48,9 +48,8 @@ async function handleRegister(req, res) {
 async function handleLogin(req, res) {
   try {
     const { email, password, rememberMe } = req.body || {};
-    const ipAddress = req.body?.customDeviceIp || getClientIp(req);
-    const deviceInfo =
-      req.body?.customDeviceName || parseUserAgent(req.headers['user-agent']);
+    const ipAddress = getClientIp(req);
+    const deviceInfo = parseUserAgent(req.headers['user-agent']);
     const { backendUrl, frontendUrl } = resolveUrls(req);
 
     const result = await authService.loginUser({

@@ -82,24 +82,23 @@ export default function UserManagement({
   }
 
   // Xác nhận khóa
-  const handleConfirmLock = (e) => {
+  const handleConfirmLock = async (e) => {
     e.preventDefault()
     if (!lockReason.trim()) {
       setLockError('Vui lòng nhập hoặc chọn lý do khóa tài khoản.')
       return
     }
-    toggleUser?.(lockingUser.id, lockReason.trim())
-    setBannerNotice(`Đã khóa tài khoản thành viên "${lockingUser.fullName}". Các quyền đóng góp và tương tác đã bị phong tỏa.`)
+    // App báo kết quả sau khi máy chủ phản hồi, không báo thành công trước
+    await toggleUser?.(lockingUser.id, lockReason.trim())
     setLockingUser(null)
     setLockReason('')
     setLockError('')
   }
 
   // Xác nhận mở khóa
-  const handleConfirmUnlock = () => {
+  const handleConfirmUnlock = async () => {
     if (unlockingUser) {
-      toggleUser?.(unlockingUser.id, null)
-      setBannerNotice(`Đã mở khóa tài khoản "${unlockingUser.fullName}". Người dùng có thể tiếp tục sử dụng đầy đủ tính năng.`)
+      await toggleUser?.(unlockingUser.id, null)
       setUnlockingUser(null)
     }
   }
@@ -301,9 +300,10 @@ export default function UserManagement({
                           <button
                             type="button"
                             disabled={isProtected}
-                            onClick={() => {
+                            onClick={async () => {
                               const nextRole = isAdmin ? 'STUDENT' : 'ADMIN'
-                              onToggleUserRole(user.id, nextRole)
+                              const changed = await onToggleUserRole(user.id, nextRole)
+                              if (!changed) return
                               setBannerNotice(
                                 nextRole === 'ADMIN'
                                   ? `Đã thăng quyền Quản trị viên cho "${user.fullName}".`

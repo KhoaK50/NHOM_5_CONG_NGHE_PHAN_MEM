@@ -63,7 +63,18 @@ export function getSavedAccounts() {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((acc) => acc && acc.email && acc.token && !isJwtExpired(acc.token));
+    const accounts = parsed.filter((acc) => acc && acc.email);
+    // Dọn token do bản cũ để lại: danh sách này chỉ giữ thông tin hiển thị
+    if (accounts.some((acc) => 'token' in acc)) {
+      const cleaned = accounts.map((acc) => {
+        const copy = { ...acc };
+        delete copy.token;
+        return copy;
+      });
+      localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(cleaned));
+      return cleaned;
+    }
+    return accounts;
   } catch {
     return [];
   }
@@ -122,7 +133,6 @@ export function saveAuthSession(token, userProfile, remember = true) {
         studentId: userProfile.studentId || userProfile.studentCode || '',
         avatar_url: userProfile.avatar_url || userProfile.avatarUrl || null,
         avatarInitials: userProfile.avatarInitials || 'SV',
-        token,
         lastLogin: new Date().toISOString()
       };
       if (existingIdx > -1) {

@@ -88,7 +88,7 @@ export const EIGHT_MODERATION_CRITERIA = [
     title: 'Dung lượng trong giới hạn',
     executor: 'Hệ thống tự động',
     type: 'AUTO',
-    rule: 'Dung lượng tệp tin tối đa không vượt quá 25MB.'
+    rule: 'Dung lượng tệp tin tối đa không vượt quá 10 MB.'
   },
   {
     id: 3,
