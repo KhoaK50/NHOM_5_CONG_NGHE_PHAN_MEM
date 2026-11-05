@@ -195,8 +195,17 @@ async function uploadDocumentBufferToCloudinary(fileBuffer, originalName = 'docu
 
   const payload = await resp.json().catch(() => ({}));
   if (!resp.ok || !payload.secure_url) {
-    console.error('[CloudinaryService.uploadPdf]', payload?.error?.message || payload);
-    return { ok: false, statusCode: 502, message: 'Không thể lưu trữ tệp lên Cloudinary.' };
+    const rawMsg = payload?.error?.message;
+    let message = 'Không thể lưu trữ tệp lên Cloudinary.';
+    if (rawMsg) {
+      if (/file size too large|maximum.*size/i.test(rawMsg)) {
+        message = `Tệp vượt quá giới hạn của dịch vụ lưu trữ đám mây Cloudinary (Tối đa 10 MB đối với gói Cloudinary Free). Tệp của bạn: ${(fileBuffer.length / (1024 * 1024)).toFixed(2)} MB. Vui lòng chọn tệp nhỏ hơn 10 MB hoặc nén lại trước khi gửi.`;
+      } else {
+        message = `Lỗi từ dịch vụ lưu trữ đám mây: ${rawMsg}`;
+      }
+    }
+    console.error('[CloudinaryService.uploadPdf]', rawMsg || payload);
+    return { ok: false, statusCode: 502, message };
   }
 
   return {
