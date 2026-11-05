@@ -14,6 +14,7 @@ import {
   X
 } from 'lucide-react'
 import CourseModal from './CourseModal'
+import CustomSelect from '../common/CustomSelect'
 import {
   KNOWLEDGE_BLOCK_LABELS,
   createCourse,
@@ -25,16 +26,7 @@ import {
 const PAGE_SIZE = 10
 const SEARCH_DEBOUNCE_MS = 300
 
-const selectStyle = {
-  height: '34px',
-  padding: '0 10px',
-  borderRadius: '8px',
-  border: '1px solid var(--border-strong)',
-  backgroundColor: 'var(--bg-surface)',
-  color: 'var(--text-primary)',
-  fontSize: '12.5px',
-  cursor: 'pointer'
-}
+
 
 const iconButtonStyle = { padding: '5px 8px', display: 'inline-flex', alignItems: 'center' }
 
@@ -257,49 +249,54 @@ export default function CourseManagement({ onNotice }) {
           />
         </div>
 
-        <select
+        <CustomSelect
+          id="admin-filter-semester"
           aria-label="Lọc theo học kỳ"
           value={semesterFilter}
-          onChange={(e) => {
-            setSemesterFilter(e.target.value)
+          options={[
+            { value: '', label: 'Tất cả học kỳ' },
+            ...[1, 2, 3, 4, 5, 6, 7, 8].map((value) => ({ value: String(value), label: `Học kỳ ${value}` }))
+          ]}
+          onChange={(val) => {
+            setSemesterFilter(val)
             setPage(1)
           }}
-          style={selectStyle}
-        >
-          <option value="">Tất cả học kỳ</option>
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((value) => (
-            <option key={value} value={value}>Học kỳ {value}</option>
-          ))}
-        </select>
+          style={{ minWidth: '130px' }}
+          triggerStyle={{ height: '34px', fontSize: '12.5px' }}
+        />
 
-        <select
+        <CustomSelect
+          id="admin-filter-block"
           aria-label="Lọc theo khối kiến thức"
           value={blockFilter}
-          onChange={(e) => {
-            setBlockFilter(e.target.value)
+          options={[
+            { value: '', label: 'Tất cả khối kiến thức' },
+            ...Object.entries(KNOWLEDGE_BLOCK_LABELS).map(([value, label]) => ({ value, label }))
+          ]}
+          onChange={(val) => {
+            setBlockFilter(val)
             setPage(1)
           }}
-          style={selectStyle}
-        >
-          <option value="">Tất cả khối kiến thức</option>
-          {Object.entries(KNOWLEDGE_BLOCK_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
+          style={{ minWidth: '170px' }}
+          triggerStyle={{ height: '34px', fontSize: '12.5px' }}
+        />
 
-        <select
+        <CustomSelect
+          id="admin-filter-status"
           aria-label="Lọc theo trạng thái"
           value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value)
+          options={[
+            { value: '', label: 'Tất cả trạng thái' },
+            { value: 'true', label: 'Đang mở đào tạo' },
+            { value: 'false', label: 'Tạm ẩn' }
+          ]}
+          onChange={(val) => {
+            setStatusFilter(val)
             setPage(1)
           }}
-          style={selectStyle}
-        >
-          <option value="">Tất cả trạng thái</option>
-          <option value="true">Đang mở đào tạo</option>
-          <option value="false">Tạm ẩn</option>
-        </select>
+          style={{ minWidth: '150px' }}
+          triggerStyle={{ height: '34px', fontSize: '12.5px' }}
+        />
 
         {hasFilter && (
           <button

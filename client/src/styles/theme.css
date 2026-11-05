@@ -1085,8 +1085,19 @@ select option {
 .vec-form-field.has-error .vec-form-input,
 .vec-form-field.has-error .vec-form-textarea,
 .vec-form-field.has-error .course-filter-trigger,
+.vec-form-field.has-error .custom-filter-trigger,
 .vec-form-field.has-error .vec-dropzone {
   border: 2px solid var(--status-danger);
+}
+
+.vec-form-field .custom-filter-trigger {
+  height: 38px;
+}
+
+.custom-filter-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .vec-form-field.has-error .vec-form-input:focus,
@@ -1635,4 +1646,33 @@ select option {
 
 .review-more {
   width: 100%;
+}
+
+/* ==========================================================================
+   TRÌNH XEM TÀI LIỆU WORD (.DOCX) NỘI BỘ (KHÔNG DÙNG IFRAME GOOGLE)
+   ========================================================================== */
+.docx-viewer-host {
+  width: 100%;
+  max-height: 720px;
+  overflow-y: auto;
+  background-color: var(--bg-paper, #525659);
+  padding: 24px 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.docx-viewer-host .docx-wrapper {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.docx-viewer-host section.docx {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+  margin-bottom: 24px !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+[data-theme='dark'] .docx-viewer-host {
+  background-color: #0f172a;
 }

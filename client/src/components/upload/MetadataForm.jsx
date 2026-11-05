@@ -1,6 +1,6 @@
 import { AlertCircle } from 'lucide-react'
 import { DOCUMENT_TYPES } from '../../data/curriculum'
-import { CourseFilter } from '../home/FilterSidebar'
+import { CourseFilter, CustomSelect } from '../home/FilterSidebar'
 import RequiredMark from '../common/RequiredMark'
 
 export function FieldError({ id, message }) {
@@ -83,20 +83,14 @@ export default function MetadataForm({
               <RequiredMark />
             </label>
           </div>
-          <select
+          <CustomSelect
             id="upload-doctype-select"
-            className="vec-form-select"
+            label="Loại tài liệu"
             value={docType}
+            options={validDocTypes}
             disabled={disabled}
-            required
-            onChange={(e) => onChangeDocType(e.target.value)}
-          >
-            {validDocTypes.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
+            onChange={onChangeDocType}
+          />
         </div>
       </div>
 

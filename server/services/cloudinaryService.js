@@ -169,7 +169,15 @@ async function uploadDocumentBufferToCloudinary(fileBuffer, originalName = 'docu
 
   const timestamp = Math.floor(Date.now() / 1000);
   const folder = '5share/documents';
-  const safeBase = originalName.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+  const asciiBase = originalName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+    .slice(0, 40);
+  const safeBase = asciiBase || 'document';
   const publicId = `doc_${timestamp}_${safeBase}${format === 'pdf' ? '' : `.${format}`}`;
 
   const stringToSign = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;

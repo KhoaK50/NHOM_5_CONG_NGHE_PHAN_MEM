@@ -415,6 +415,7 @@ async function resolveAdminReport(rawId, body, admin, ipAddress) {
     }
 
     const doc = await repo.lockDocument(db, report.document_id);
+    if (!doc) throw new ApiError(404, 'DOCUMENT_NOT_FOUND', 'Không tìm thấy tài liệu liên quan đến báo cáo.');
     if (rule.documentStatus) {
       if (!rule.allowedFrom.includes(doc.status)) {
         throw new ApiError(409, 'INVALID_DOCUMENT_STATE', 'Trạng thái hiện tại của tài liệu không cho phép thao tác này.', {

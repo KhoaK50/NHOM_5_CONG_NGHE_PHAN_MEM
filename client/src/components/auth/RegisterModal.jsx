@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState } from "react";
+import CustomSelect from '../common/CustomSelect';
 import { api } from "../../api/notificationReportApi";
 
 const COHORTS = ["K47", "K48", "K49", "K50"];
@@ -286,22 +287,15 @@ export default function RegisterModal({
               </Field>
 
               <Field id="cohort" label="Khóa học" error={errors.cohort}>
-                <select
+                <CustomSelect
                   id="cohort"
                   name="cohort"
                   value={formData.cohort}
-                  onChange={handleChange}
-                  className={`${inputBase} ${ring("cohort")}`}
-                  aria-invalid={!!errors.cohort}
-                  aria-describedby={describe("cohort")}
+                  options={COHORTS}
                   disabled={isSubmitting}
-                >
-                  {COHORTS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => handleChange({ target: { name: 'cohort', value: val } })}
+                  triggerStyle={{ height: '42px', fontSize: '14px' }}
+                />
               </Field>
 
               <Field id="password" label="Mật khẩu" error={errors.password} hint="Tối thiểu 8 ký tự.">

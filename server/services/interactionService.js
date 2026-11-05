@@ -167,10 +167,10 @@ async function preview(rawId, user) {
   if (!document) throw new ApiError(404, 'DOCUMENT_NOT_FOUND', 'Không tìm thấy tài liệu yêu cầu.');
   let url;
   try { url = new URL(document.file_url); } catch { throw new ApiError(404, 'FILE_NOT_FOUND', 'Không tìm thấy tệp lưu trữ.'); }
-  if (url.protocol !== 'https:' || url.hostname !== 'res.cloudinary.com' || url.username || url.password || (url.port && url.port !== '443')) {
+  if (url.protocol !== 'https:' || !/^res(-[1-5])?\.cloudinary\.com$/.test(url.hostname) || url.username || url.password || (url.port && url.port !== '443')) {
     throw new ApiError(502, 'FILE_STORAGE_UNAVAILABLE', 'Nguồn lưu trữ tài liệu không được hỗ trợ.');
   }
-  const upstream = await fetch(url, { signal: AbortSignal.timeout(20000), redirect: 'error' }).catch(() => null);
+  const upstream = await fetch(url, { signal: AbortSignal.timeout(20000), redirect: 'follow' }).catch(() => null);
   if (!upstream?.ok || !upstream.body) throw new ApiError(502, 'FILE_STORAGE_UNAVAILABLE', 'Không thể tải tệp từ kho lưu trữ.');
   const fileName = String(document.file_name || `document-${documentId}.pdf`);
   const format = detectDocumentFormat(fileName);
@@ -183,10 +183,10 @@ async function download(rawId, user, ipAddress) {
   if (!document) throw new ApiError(404, 'DOCUMENT_NOT_FOUND', 'Không tìm thấy tài liệu yêu cầu.');
   let url;
   try { url = new URL(document.file_url); } catch { throw new ApiError(404, 'FILE_NOT_FOUND', 'Không tìm thấy tệp lưu trữ.'); }
-  if (url.protocol !== 'https:' || url.hostname !== 'res.cloudinary.com' || url.username || url.password || (url.port && url.port !== '443')) {
+  if (url.protocol !== 'https:' || !/^res(-[1-5])?\.cloudinary\.com$/.test(url.hostname) || url.username || url.password || (url.port && url.port !== '443')) {
     throw new ApiError(502, 'FILE_STORAGE_UNAVAILABLE', 'Nguồn lưu trữ tài liệu không được hỗ trợ.');
   }
-  const upstream = await fetch(url, { signal: AbortSignal.timeout(20000), redirect: 'error' }).catch(() => null);
+  const upstream = await fetch(url, { signal: AbortSignal.timeout(20000), redirect: 'follow' }).catch(() => null);
   if (!upstream?.ok || !upstream.body) throw new ApiError(502, 'FILE_STORAGE_UNAVAILABLE', 'Không thể tải tệp từ kho lưu trữ.');
   await repo.recordDownload(documentId, user.id, ipAddress);
   const fileName = String(document.file_name || `document-${documentId}.pdf`);

@@ -6,84 +6,9 @@ import {
   DOCUMENT_TYPES
 } from '../../data/curriculum'
 
-/**
- * Dropdown tùy biến đồng bộ chuẩn UI/UX 5share (thay thế thẻ select mặc định của trình duyệt)
- */
-export function CustomSelect({
-  id,
-  label,
-  value,
-  options = [],
-  onChange,
-  className = ''
-}) {
-  const [open, setOpen] = useState(false)
-  const wrapRef = useRef(null)
+import CustomSelect from '../common/CustomSelect'
 
-  const normalizedOptions = options.map((opt) =>
-    typeof opt === 'string' ? { value: opt, label: opt } : opt
-  )
-
-  const currentOption = normalizedOptions.find((opt) => opt.value === value) || normalizedOptions[0]
-
-  useEffect(() => {
-    if (!open) return undefined
-    const closeOutside = (event) => {
-      if (!wrapRef.current?.contains(event.target)) setOpen(false)
-    }
-    const closeEscape = (event) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', closeOutside)
-    document.addEventListener('keydown', closeEscape)
-    return () => {
-      document.removeEventListener('mousedown', closeOutside)
-      document.removeEventListener('keydown', closeEscape)
-    }
-  }, [open])
-
-  const select = (val) => {
-    onChange(val)
-    setOpen(false)
-  }
-
-  return (
-    <div className={`custom-filter-dropdown ${className}`} ref={wrapRef}>
-      <button
-        id={id}
-        type="button"
-        className={`filter-select custom-filter-trigger ${open ? 'is-open' : ''}`}
-        aria-label={label}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((prev) => !prev)}
-      >
-        <span title={currentOption?.label}>{currentOption?.label}</span>
-        <ChevronDown size={15} aria-hidden="true" className={`dropdown-chevron ${open ? 'rotated' : ''}`} />
-      </button>
-
-      {open && (
-        <div className="custom-filter-popover" role="listbox" aria-label={label}>
-          {normalizedOptions.map((opt) => {
-            const isSelected = opt.value === value
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                className={`custom-filter-option ${isSelected ? 'is-selected' : ''}`}
-                onClick={() => select(opt.value)}
-              >
-                <span>{opt.label}</span>
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
+export { CustomSelect }
 
 /**
  * Dropdown Môn học: có ô tìm kiếm nhanh, phân tách mã môn và tên môn rõ ràng
