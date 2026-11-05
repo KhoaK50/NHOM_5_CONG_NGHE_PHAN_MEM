@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import * as pdfjsLib from 'pdfjs-dist'
 import {
   FileText,
+  Presentation,
   ChevronLeft,
   ChevronRight,
   ZoomIn,
@@ -140,6 +141,154 @@ function SinglePdfPage({ pageNumber, pdfDoc, scale, rotation, onPageLoaded }) {
 /**
  * Trình đọc PDF Enterprise (Chrome PDF Viewer Style - Cụm UC06)
  */
+/**
+ * Trình xem trước nội bộ dành cho tệp tin văn phòng (.docx và .pptx),
+ * không phụ thuộc vào Google Docs Viewer tránh lỗi tự tải file "viewer" trên Chrome.
+ */
+function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload }) {
+  const docxContainerRef = useRef(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [pptxThumbnail, setPptxThumbnail] = useState(null)
+
+  useEffect(() => {
+    let isCancelled = false
+
+    async function loadOfficeContent() {
+      setLoading(true)
+      setError(null)
+      setPptxThumbnail(null)
+      try {
+        const token = getAuthToken()
+        const headers = {}
+        if (token) headers['Authorization'] = `Bearer ${token}`
+
+        const fetchUrl = streamUrl || documentItem?.fileUrl
+        if (!fetchUrl) throw new Error('Không tìm thấy đường dẫn tệp.')
+
+        const resp = await fetch(fetchUrl, { headers })
+        if (!resp.ok) throw new Error(`Máy chủ phản hồi HTTP ${resp.status}`)
+        const arrayBuffer = await resp.arrayBuffer()
+        if (isCancelled) return
+
+        if (fileExt === 'docx') {
+          const { renderAsync } = await import('docx-preview')
+          if (docxContainerRef.current) {
+            docxContainerRef.current.innerHTML = ''
+            await renderAsync(arrayBuffer, docxContainerRef.current, undefined, {
+              className: 'docx-preview-body',
+              inWrapper: true,
+              ignoreWidth: false,
+              ignoreHeight: false
+            })
+          }
+        } else if (fileExt === 'pptx') {
+          const { default: JSZip } = await import('jszip')
+          const zip = await JSZip.loadAsync(arrayBuffer)
+          const entry =
+            zip.file('docProps/thumbnail.jpeg') ||
+            zip.file('docProps/thumbnail.jpg') ||
+            zip.file('docProps/thumbnail.png')
+          if (entry) {
+            const blob = await entry.async('blob')
+            if (!isCancelled) setPptxThumbnail(URL.createObjectURL(blob))
+          }
+        }
+        if (!isCancelled) setLoading(false)
+      } catch (err) {
+        if (!isCancelled) {
+          setError(err.message || 'Không thể tạo bản xem trước trực tiếp.')
+          setLoading(false)
+        }
+      }
+    }
+
+    loadOfficeContent()
+    return () => {
+      isCancelled = true
+    }
+  }, [documentItem?.id, documentItem?.fileUrl, streamUrl, fileExt])
+
+  return (
+    <div className="pdf-sandbox-card" style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--line-default)', backgroundColor: 'var(--bg-surface)' }}>
+      {/* Thanh tiêu đề & Tải tệp */}
+      <div style={{ padding: '12px 18px', backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--line-default)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+          {fileExt === 'pptx' ? <Presentation size={18} style={{ color: 'var(--primary-base)', flexShrink: 0 }} /> : <FileText size={18} style={{ color: 'var(--primary-base)', flexShrink: 0 }} />}
+          <span style={{ fontWeight: 600, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{documentItem?.fileName || documentItem?.title}</span>
+        </div>
+        <button
+          type="button"
+          onClick={handleDownload}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--primary-base)', color: 'var(--text-on-brand)', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, flexShrink: 0 }}
+        >
+          <Download size={14} />
+          <span>Tải tệp gốc</span>
+        </button>
+      </div>
+
+      {/* Trạng thái tải */}
+      {loading && (
+        <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <Loader2 size={28} className="animate-spin" style={{ margin: '0 auto 12px auto', color: 'var(--primary-base)' }} />
+          <p style={{ fontSize: '13px', fontWeight: 500 }}>Đang phân tích và hiển thị nội dung tài liệu...</p>
+        </div>
+      )}
+
+      {/* Trạng thái lỗi */}
+      {error && !loading && (
+        <div style={{ padding: '48px 24px', textAlign: 'center', backgroundColor: 'var(--bg-surface)' }}>
+          <AlertCircle size={32} style={{ color: 'var(--text-tertiary)', margin: '0 auto 10px' }} />
+          <p style={{ fontSize: '13.5px', color: 'var(--text-primary)', fontWeight: 600, marginBottom: '6px' }}>Bản xem trước trực tiếp chưa khả dụng cho tệp này</p>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '16px' }}>Vui lòng bấm nút <strong>Tải tệp gốc</strong> ở góc trên để mở và xem đầy đủ bằng Microsoft {fileExt === 'pptx' ? 'PowerPoint' : 'Word'}.</p>
+          <button
+            type="button"
+            onClick={handleDownload}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--primary-base)', color: 'var(--text-on-brand)', border: 'none', padding: '8px 18px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
+          >
+            <Download size={15} />
+            <span>Tải tệp gốc ngay</span>
+          </button>
+        </div>
+      )}
+
+      {/* Hiển thị Word (.docx) */}
+      {!loading && !error && fileExt === 'docx' && (
+        <div className="docx-viewer-host" style={{ width: '100%', maxHeight: '720px', overflowY: 'auto', backgroundColor: 'var(--bg-paper, #525659)', padding: '24px 16px' }}>
+          <div ref={docxContainerRef} style={{ width: '100%', maxWidth: '850px', margin: '0 auto' }} />
+        </div>
+      )}
+
+      {/* Hiển thị PowerPoint (.pptx) */}
+      {!loading && !error && fileExt === 'pptx' && (
+        <div style={{ padding: '32px 20px', textAlign: 'center', backgroundColor: 'var(--bg-canvas)' }}>
+          {pptxThumbnail ? (
+            <div style={{ maxWidth: '640px', margin: '0 auto 20px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', border: '1px solid var(--line-default)' }}>
+              <img src={pptxThumbnail} alt="Slide trang bìa" style={{ width: '100%', display: 'block' }} />
+            </div>
+          ) : (
+            <div style={{ maxWidth: '400px', margin: '0 auto 20px', padding: '32px 20px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--line-default)' }}>
+              <Presentation size={48} style={{ color: 'var(--primary-base)', margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>Tài liệu trình chiếu PowerPoint</p>
+            </div>
+          )}
+          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
+            Học liệu PowerPoint dạng slide bài giảng. Bấm bên dưới để tải và trình chiếu với hiệu ứng nguyên bản:
+          </p>
+          <button
+            type="button"
+            onClick={handleDownload}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--primary-base)', color: 'var(--text-on-brand)', border: 'none', padding: '9px 20px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
+          >
+            <Download size={16} />
+            <span>Tải tệp slide (.pptx) về máy</span>
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function PdfPreviewViewer({
   documentItem,
   isAuthenticated = false,
@@ -359,30 +508,15 @@ export default function PdfPreviewViewer({
     }
   }
 
-  // Fallback dành cho tệp Office (DOCX / PPTX)
+  // Hiển thị tệp Office (DOCX / PPTX) bằng trình xem nội bộ
   if (isOfficeDoc) {
     return (
-      <div className="pdf-sandbox-card" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-        <div style={{ padding: '14px 18px', backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileText size={18} style={{ color: 'var(--primary-base)' }} />
-            <span style={{ fontWeight: 600, fontSize: '13px' }}>{documentItem.fileName}</span>
-          </div>
-          <button
-            onClick={handleDownload}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--primary-base)', color: 'var(--text-on-brand)', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
-          >
-            <Download size={14} />
-            <span>Tải tệp gốc</span>
-          </button>
-        </div>
-        <iframe
-          src={`https://docs.google.com/viewer?url=${encodeURIComponent(documentItem.fileUrl || documentItem.previewUrl || streamUrl)}&embedded=true`}
-          title={documentItem.title}
-          style={{ width: '100%', height: '680px', border: 'none', backgroundColor: 'var(--bg-paper)' }}
-        />
-        <p className="office-viewer-hint">Không thấy nội dung? Tải tệp gốc để xem bằng Word hoặc PowerPoint.</p>
-      </div>
+      <OfficePreviewViewer
+        documentItem={documentItem}
+        fileExt={fileExt}
+        streamUrl={streamUrl}
+        handleDownload={handleDownload}
+      />
     )
   }
 
