@@ -5,7 +5,7 @@
  * ============================================================================
  */
 
-export const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB (26,214,400 bytes)
+export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // 10 MB (giới hạn Cloudinary Free)
 
 export const FILE_SIGNATURES = {
   PDF: {
@@ -173,7 +173,7 @@ export async function verifyFileAndHash(fileObj, existingDocuments = []) {
       isDuplicate: false,
       duplicateDoc: null,
       stageFailed: 'SIZE_LIMIT',
-      errorMessage: `Dung lượng tệp (${sizeMb} MB) vượt quá giới hạn tối đa 25MB.`
+      errorMessage: `Dung lượng tệp (${sizeMb} MB) vượt quá giới hạn tối đa 10 MB của dịch vụ lưu trữ đám mây Cloudinary Free. Vui lòng chọn tệp nhỏ hơn 10 MB hoặc nén lại trước khi gửi.`
     }
   }
 

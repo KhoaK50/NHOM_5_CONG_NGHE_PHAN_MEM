@@ -2,10 +2,22 @@
  * ============================================================================
  * RBAC MIDDLEWARE: XÁC THỰC BEARER JWT & PHÂN QUYỀN CHO CỤM UC08–UC10
  * Quyền lấy từ USERS trong CSDL, không tin role do client gửi.
+ * Hỗ trợ nhận diện Bearer JWT từ Authorization Header và Query Param (?token=)
  * ============================================================================
  */
 
 const authService = require('../services/authService');
+
+function extractAuthHeader(req) {
+  if (req.headers && req.headers.authorization) {
+    return req.headers.authorization;
+  }
+  const queryToken = req.query?.token || req.query?.accessToken;
+  if (queryToken && typeof queryToken === 'string') {
+    return `Bearer ${queryToken.trim()}`;
+  }
+  return null;
+}
 
 function resolveAuthCode(auth) {
   if (auth.statusCode === 403) return 'ACCOUNT_INACTIVE';
@@ -14,7 +26,8 @@ function resolveAuthCode(auth) {
 
 function requireRoles(...roles) {
   return async (req, res, next) => {
-    const auth = await authService.authenticateRequest(req.headers.authorization);
+    const authHeader = extractAuthHeader(req);
+    const auth = await authService.authenticateRequest(authHeader);
     if (!auth.ok) {
       return res.status(auth.statusCode).json({
         success: false,
@@ -38,8 +51,9 @@ function requireRoles(...roles) {
  * Cho phép Khách đi tiếp; token sai hoặc hết hạn cũng được xem như Khách.
  */
 async function attachOptionalUser(req, res, next) {
-  if (req.headers.authorization) {
-    const auth = await authService.authenticateRequest(req.headers.authorization);
+  const authHeader = extractAuthHeader(req);
+  if (authHeader) {
+    const auth = await authService.authenticateRequest(authHeader);
     if (auth.ok) req.user = auth.user;
   }
   return next();
