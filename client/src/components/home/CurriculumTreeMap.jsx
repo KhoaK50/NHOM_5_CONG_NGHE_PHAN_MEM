@@ -17,11 +17,17 @@ import {
   Move
 } from 'lucide-react'
 import {
+  CURRICULUM_COURSES,
   CURRICULUM_SEMESTERS_META,
   CURRICULUM_OFFICIAL_CONNECTIONS,
   KNOWLEDGE_BLOCKS,
   SEMESTERS
-} from '../../data/curriculum' 
+} from '../../data/curriculum'
+import { routeCurriculumWires } from '../../utils/curriculumRouting'
+
+// Thứ tự ô trong mỗi cột học kỳ theo đúng sơ đồ CTĐT. Danh sách môn lấy từ API được
+// sắp theo mã môn, nếu vẽ theo thứ tự đó thì các ô bị đảo chỗ so với sơ đồ gốc.
+const CURRICULUM_ORDER = new Map(CURRICULUM_COURSES.map((c, idx) => [c.code, idx]))
 
 /**
  * Dựng đường dẫn SVG vuông góc (Orthogonal Manhattan / PCB Bus Routing)
@@ -92,13 +98,16 @@ export default function CurriculumTreeMap({
   const [isDragging, setIsDragging] = useState(false)
   const [hoveredCode, setHoveredCode] = useState(null)
   const [staticWires, setStaticWires] = useState([])
+  const [boardHeight, setBoardHeight] = useState(0)
 
+  // Chiều cao lớp SVG phải phủ hết bảng (kể cả rãnh bus dưới đáy), nếu không các
+  // đường đi xuống thấp hơn khung mặc định sẽ bị cắt cụt giữa chừng.
   const canvasSize = useMemo(
     () => ({
       width: 2020,
-      height: isTallViewport ? 980 : 660
+      height: Math.max(isTallViewport ? 980 : 660, Math.ceil(boardHeight))
     }),
-    [isTallViewport]
+    [isTallViewport, boardHeight]
   )
 
   const viewportRef = useRef(null)
@@ -114,10 +123,13 @@ export default function CurriculumTreeMap({
     moved: false
   })
 
-  const activeCourses = useMemo(
-    () => courses.filter((c) => c.isActive),
-    [courses]
-  )
+  const activeCourses = useMemo(() => {
+    const rank = (c) => CURRICULUM_ORDER.get(c.code) ?? Number.MAX_SAFE_INTEGER
+    // Môn mới (không có trong sơ đồ) xếp cuối cột, theo mã môn
+    return courses
+      .filter((c) => c.isActive)
+      .sort((a, b) => rank(a) - rank(b) || String(a.code).localeCompare(String(b.code)))
+  }, [courses])
 
   const approvedDocs = useMemo(
     () => documents.filter((d) => d.status === 'APPROVED'),
@@ -212,6 +224,12 @@ export default function CurriculumTreeMap({
 
     const boardRect = boardEl.getBoundingClientRect()
     const scale = zoom || 1
+    const toBoardBox = (r) => ({
+      left: (r.left - boardRect.left) / scale,
+      right: (r.right - boardRect.left) / scale,
+      top: (r.top - boardRect.top) / scale,
+      bottom: (r.bottom - boardRect.top) / scale
+    })
 
     const semOrder = CURRICULUM_SEMESTERS_META.map((s) => s.id)
     const colIndexBySem = {}
@@ -221,11 +239,8 @@ export default function CurriculumTreeMap({
       colIndexBySem[semId] = idx
       const colEl = colRefs.current[semId]
       if (colEl) {
-        const r = colEl.getBoundingClientRect()
-        colBounds[idx] = {
-          left: (r.left - boardRect.left) / scale,
-          right: (r.right - boardRect.left) / scale
-        }
+        const r = toBoardBox(colEl.getBoundingClientRect())
+        colBounds[idx] = { left: r.left, right: r.right }
       }
     })
 
@@ -243,13 +258,9 @@ export default function CurriculumTreeMap({
         if (!isStackedSkill) {
           regularIdx += 1
         }
-        if (!el) return
+        if (!el || !el.isConnected) return
 
-        const r = el.getBoundingClientRect()
-        const left = (r.left - boardRect.left) / scale
-        const right = (r.right - boardRect.left) / scale
-        const top = (r.top - boardRect.top) / scale
-        const bottom = (r.bottom - boardRect.top) / scale
+        const { left, right, top, bottom } = toBoardBox(el.getBoundingClientRect())
 
         nodeBoxByCode[crs.code] = {
           left,
@@ -270,246 +281,59 @@ export default function CurriculumTreeMap({
       })
     })
 
-    // Tâm rãnh bus ngang rộng 28px giữa các hàng học phần
-    const hCorridorY = []
-    const maxRow = Math.max(0, ...Object.keys(rowBottoms).map(Number))
-    for (let r = 0; r <= maxRow; r++) {
-      if (rowBottoms[r] !== undefined && rowTops[r + 1] !== undefined) {
-        hCorridorY[r] = (rowBottoms[r] + rowTops[r + 1]) / 2
-      } else if (rowBottoms[r] !== undefined) {
-        hCorridorY[r] = rowBottoms[r] + 14
-      }
+    const allBoxes = Object.values(nodeBoxByCode)
+    if (!allBoxes.length) {
+      setStaticWires([])
+      return
     }
 
-    // Gom danh sách tất cả các liên kết theo 40 đường nối chuẩn pháp lệnh Sơ đồ Khoa CNTT
-    const rawConnections = []
-    const outgoingByCourse = {}
-    const incomingByCourse = {}
+    // Khối tự chọn HK2 là vật cản: rãnh ngang không được cắt ngang qua khối này
+    const obstacles = []
+    const stackEl = boardEl.querySelector('.vec-tree-elective-stack')
+    if (stackEl) obstacles.push(toBoardBox(stackEl.getBoundingClientRect()))
 
-    for (const rel of CURRICULUM_OFFICIAL_CONNECTIONS) {
-      const fromBox = nodeBoxByCode[rel.from]
-      const toBox = nodeBoxByCode[rel.to]
-      if (!fromBox || !toBox) continue
+    // Rãnh bus trên đỉnh nằm giữa tiêu đề học kỳ và hàng học phần đầu tiên
+    const minTop = Math.min(...allBoxes.map((b) => b.top))
+    const headerEls = boardEl.querySelectorAll('.vec-tree-sem-header')
+    const headerBottom = headerEls.length
+      ? Math.max(...Array.from(headerEls, (el) => toBoardBox(el.getBoundingClientRect()).bottom))
+      : minTop - 24
+    const topBusY = headerBottom < minTop ? (headerBottom + minTop) / 2 : Math.max(6, minTop - 10)
 
-      const conn = {
-        id: `${rel.from}->${rel.to}`,
-        from: rel.from,
-        to: rel.to,
-        connType: rel.type || 'precursor',
-        busLane: rel.busLane || null,
-        fromBox,
-        toBox
+    // Rãnh bus dưới đáy nằm dưới mọi học phần và phía trên các thanh điều kiện tốt nghiệp
+    const maxBottom = Math.max(...allBoxes.map((b) => b.bottom), ...obstacles.map((b) => b.bottom))
+    const gradEl = boardEl.querySelector('.vec-tree-graduation-bars')
+    const gradTop = gradEl ? toBoardBox(gradEl.getBoundingClientRect()).top : Infinity
+    const bottomBusY = gradTop - maxBottom > 12 ? (maxBottom + gradTop) / 2 : maxBottom + 18
+
+    const routed = routeCurriculumWires({
+      boxes: nodeBoxByCode,
+      colBounds,
+      rowTops,
+      rowBottoms,
+      connections: CURRICULUM_OFFICIAL_CONNECTIONS,
+      topBusY,
+      bottomBusY,
+      obstacles
+    })
+
+    const computedWires = routed.map((wire) => {
+      const first = wire.points[0]
+      const last = wire.points[wire.points.length - 1]
+      return {
+        id: wire.id,
+        from: wire.from,
+        to: wire.to,
+        connType: wire.connType,
+        x1: first.x,
+        y1: first.y,
+        x2: last.x,
+        y2: last.y,
+        d: buildOrthogonalPath(wire.points, 6)
       }
-      rawConnections.push(conn)
-      if (!outgoingByCourse[rel.from]) outgoingByCourse[rel.from] = []
-      outgoingByCourse[rel.from].push(conn)
+    })
 
-      if (!incomingByCourse[rel.to]) incomingByCourse[rel.to] = []
-      incomingByCourse[rel.to].push(conn)
-    }
-
-    // Tách chân cực ra / vào theo tọa độ Y
-    const outPortYByConnId = {}
-    for (const code of Object.keys(outgoingByCourse)) {
-      const list = outgoingByCourse[code]
-      list.sort((a, b) => a.toBox.midY - b.toBox.midY)
-      const n = list.length
-      list.forEach((conn, idx) => {
-        const offset = (idx - (n - 1) / 2) * 12
-        outPortYByConnId[conn.id] = conn.fromBox.midY + offset
-      })
-    }
-
-    const inPortYByConnId = {}
-    for (const code of Object.keys(incomingByCourse)) {
-      const list = incomingByCourse[code]
-      list.sort((a, b) => a.fromBox.midY - b.fromBox.midY)
-      const n = list.length
-      list.forEach((conn, idx) => {
-        const offset = (idx - (n - 1) / 2) * 12
-        inPortYByConnId[conn.id] = conn.toBox.midY + offset
-      })
-    }
-
-    const vChannelUsage = {}
-    const hCorridorUsage = {}
-
-    const allocateLane = (usageMap, key, step = 8) => {
-      const count = usageMap[key] || 0
-      usageMap[key] = count + 1
-      if (count === 0) return 0
-      const dir = count % 2 === 1 ? -1 : 1
-      const mag = Math.ceil(count / 2)
-      return dir * mag * step
-    }
-
-    const computedWires = []
-    for (const conn of rawConnections) {
-      const { id, from: preCode, to: targetCode, fromBox, toBox } = conn
-      const c1 = fromBox.colIdx
-      const c2 = toBox.colIdx
-
-      let waypoints
-
-      // Ưu tiên 1: Song hành nội bộ (Corequisite) - COMP1828 <-> COMP1705
-      if (conn.connType === 'corequisite') {
-        const mx = (fromBox.left + fromBox.right) / 2
-        waypoints = [
-          { x: mx, y: fromBox.bottom },
-          { x: mx, y: toBox.top }
-        ]
-      }
-      // Ưu tiên 2: Rãnh bus dưới đáy - COMP1805 -> COMP1712 (Cơ sở toán CNTT -> Học máy)
-      else if (conn.busLane === 'bottom' || (preCode === 'COMP1805' && targetCode === 'COMP1712')) {
-        const allBoxes = Object.values(nodeBoxByCode)
-        const maxBottom = allBoxes.length ? Math.max(...allBoxes.map((b) => b.bottom)) : fromBox.bottom
-        const busY = maxBottom + 26
-        const fromX = (fromBox.left + fromBox.right) / 2
-        const toX = (toBox.left + toBox.right) / 2
-        waypoints = [
-          { x: fromX, y: fromBox.bottom },
-          { x: fromX, y: busY },
-          { x: toX, y: busY },
-          { x: toX, y: toBox.bottom }
-        ]
-      }
-      // Ưu tiên 3: Rãnh bus trên đỉnh - EDUC2802 -> EDUC2803 (Giáo dục học -> Khởi nghiệp & GD KH)
-      else if (conn.busLane === 'top' || (preCode === 'EDUC2802' && targetCode === 'EDUC2803')) {
-        const allBoxes = Object.values(nodeBoxByCode)
-        const minTop = allBoxes.length ? Math.min(...allBoxes.map((b) => b.top)) : fromBox.top
-        const busY = Math.max(12, minTop - 22)
-        const fromX = (fromBox.left + fromBox.right) / 2
-        const toX = (toBox.left + toBox.right) / 2
-        waypoints = [
-          { x: fromX, y: fromBox.top },
-          { x: fromX, y: busY },
-          { x: toX, y: busY },
-          { x: toX, y: toBox.top }
-        ]
-      }
-      // TH1: Cùng học kỳ / cùng cột (dự phòng)
-      // Chuẩn hóa: đi thẳng đứng từ đáy môn trên xuống đỉnh môn dưới (TUYỆT ĐỐI KHÔNG DÙNG ĐƯỜNG CHIM BAY)
-      else if (c1 === c2) {
-        if (fromBox.bottom <= toBox.top) {
-          const mx = (fromBox.left + fromBox.right) / 2
-          waypoints = [
-            { x: mx, y: fromBox.bottom },
-            { x: mx, y: toBox.top }
-          ]
-        } else {
-          // Ngược chiều: vòng qua rãnh phải
-          const minChX = (colBounds[c1]?.right ?? fromBox.right) + 12
-          const maxChX = (colBounds[c1 + 1]?.left ?? (fromBox.right + 68)) - 12
-          const vx = Math.max(minChX, Math.min(maxChX, (minChX + maxChX) / 2))
-          waypoints = [
-            { x: fromBox.right, y: fromBox.midY },
-            { x: vx, y: fromBox.midY },
-            { x: vx, y: toBox.midY },
-            { x: toBox.right, y: toBox.midY }
-          ]
-        }
-      }
-      // TH2: Hai học kỳ liên tiếp (c2 === c1 + 1)
-      // Chuẩn hóa: vx BẮT BUỘC nằm trong khoảng an toàn giữa 2 cột, không chạm vào viền thẻ của cột đích
-      else if (c2 === c1 + 1) {
-        const x1 = fromBox.right
-        const y1 = outPortYByConnId[id] ?? fromBox.midY
-        const x2 = toBox.left
-        const y2 = inPortYByConnId[id] ?? toBox.midY
-
-        const minChX = (colBounds[c1]?.right ?? x1) + 12
-        const maxChX = (colBounds[c2]?.left ?? x2) - 12
-        const baseChX = (minChX + maxChX) / 2
-        const laneShift = allocateLane(vChannelUsage, `v_${c1}`, 8)
-        const vx = Math.max(minChX, Math.min(maxChX, baseChX + laneShift))
-
-        if (Math.abs(y1 - y2) <= 3) {
-          waypoints = [
-            { x: x1, y: y1 },
-            { x: x2, y: y1 }
-          ]
-        } else {
-          waypoints = [
-            { x: x1, y: y1 },
-            { x: vx, y: y1 },
-            { x: vx, y: y2 },
-            { x: x2, y: y2 }
-          ]
-        }
-      }
-      // TH3: Cách nhau nhiều học kỳ (c2 > c1 + 1)
-      // Chuẩn hóa: đi qua rãnh ngang bus giữa các hàng học phần, không đâm xuyên qua chữ của học phần trung gian
-      else if (c2 > c1 + 1) {
-        const x1 = fromBox.right
-        const y1 = outPortYByConnId[id] ?? fromBox.midY
-        const x2 = toBox.left
-        const y2 = inPortYByConnId[id] ?? toBox.midY
-
-        const minChX1 = (colBounds[c1]?.right ?? x1) + 12
-        const maxChX1 = (colBounds[c1 + 1]?.left ?? (x1 + 68)) - 12
-        const vx1 = Math.max(
-          minChX1,
-          Math.min(maxChX1, (minChX1 + maxChX1) / 2 + allocateLane(vChannelUsage, `v_${c1}`, 8))
-        )
-
-        const minChX2 = (colBounds[c2 - 1]?.right ?? (x2 - 68)) + 12
-        const maxChX2 = (colBounds[c2]?.left ?? x2) - 12
-        const vx2 = Math.max(
-          minChX2,
-          Math.min(maxChX2, (minChX2 + maxChX2) / 2 + allocateLane(vChannelUsage, `v_${c2 - 1}`, 8))
-        )
-
-        const rawCorridorIdx = Math.min(
-          hCorridorY.length - 1,
-          Math.max(0, Math.min(fromBox.rowIdx, toBox.rowIdx))
-        )
-        const baseBusY = hCorridorY[rawCorridorIdx] ?? (fromBox.bottom + 14)
-        const busY = baseBusY + allocateLane(hCorridorUsage, `h_${rawCorridorIdx}`, 5)
-
-        waypoints = [
-          { x: x1, y: y1 },
-          { x: vx1, y: y1 },
-          { x: vx1, y: busY },
-          { x: vx2, y: busY },
-          { x: vx2, y: y2 },
-          { x: x2, y: y2 }
-        ]
-      }
-      // TH4: Dự phòng fallback vuông góc
-      else {
-        const x1 = fromBox.right
-        const y1 = fromBox.midY
-        const x2 = toBox.left
-        const y2 = toBox.midY
-        const midX = (x1 + x2) / 2
-        waypoints = [
-          { x: x1, y: y1 },
-          { x: midX, y: y1 },
-          { x: midX, y: y2 },
-          { x: x2, y: y2 }
-        ]
-      }
-
-      if (!waypoints || waypoints.length < 2) {
-        waypoints = [
-          { x: fromBox.right, y: fromBox.midY },
-          { x: toBox.left, y: toBox.midY }
-        ]
-      }
-
-      computedWires.push({
-        id,
-        from: preCode,
-        to: targetCode,
-        connType: conn.connType || 'precursor',
-        x1: waypoints[0].x,
-        y1: waypoints[0].y,
-        x2: waypoints[waypoints.length - 1].x,
-        y2: waypoints[waypoints.length - 1].y,
-        d: buildOrthogonalPath(waypoints, 6)
-      })
-    }
-
+    setBoardHeight(boardEl.offsetHeight)
     setStaticWires(computedWires)
   }, [activeCourses, isExpanded, zoom])
 

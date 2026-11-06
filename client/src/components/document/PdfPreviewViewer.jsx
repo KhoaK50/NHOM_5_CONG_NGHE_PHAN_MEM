@@ -148,9 +148,39 @@ function SinglePdfPage({ pageNumber, pdfDoc, scale, rotation, onPageLoaded }) {
  */
 function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload }) {
   const docxContainerRef = useRef(null)
+  const docxHostRef = useRef(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [pptxThumbnail, setPptxThumbnail] = useState(null)
+  const [docxRenderCount, setDocxRenderCount] = useState(0)
+
+  // Trang Word có bề rộng cố định (A4 ≈ 794px) nên rộng hơn khung xem ở trang Kiểm duyệt.
+  // Thu nhỏ cả trang cho vừa khung thay vì để trang tràn và bị cắt mất lề trái.
+  useEffect(() => {
+    const host = docxHostRef.current
+    const container = docxContainerRef.current
+    if (fileExt !== 'docx' || !host || !container || docxRenderCount === 0) return undefined
+
+    const fitPagesToWidth = () => {
+      const wrapper = container.querySelector('.docx-preview-body-wrapper')
+      if (!wrapper) return
+      wrapper.style.zoom = ''
+      const sections = Array.from(wrapper.querySelectorAll('section.docx-preview-body'))
+      const pageWidth = Math.max(0, ...sections.map((section) => section.offsetWidth))
+      const hostStyle = window.getComputedStyle(host)
+      const available =
+        host.clientWidth - parseFloat(hostStyle.paddingLeft || 0) - parseFloat(hostStyle.paddingRight || 0)
+      if (pageWidth > 0 && available > 0 && pageWidth > available) {
+        wrapper.style.zoom = String(Math.max(0.3, available / pageWidth))
+      }
+    }
+
+    fitPagesToWidth()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(() => fitPagesToWidth())
+    observer.observe(host)
+    return () => observer.disconnect()
+  }, [docxRenderCount, fileExt])
 
   const onDownloadClick = async () => {
     if (documentItem?.fileUrl && documentItem.status !== 'APPROVED') {
@@ -222,6 +252,7 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
               ignoreWidth: false,
               ignoreHeight: false
             })
+            if (!isCancelled) setDocxRenderCount((count) => count + 1)
           }
         } else if (fileExt === 'pptx') {
           const { default: JSZip } = await import('jszip')
@@ -297,17 +328,18 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
       {/* Hiển thị Word (.docx) */}
       {!error && fileExt === 'docx' && (
         <div
+          ref={docxHostRef}
           className="docx-viewer-host"
           style={{
             width: '100%',
             maxHeight: '720px',
-            overflowY: 'auto',
-            backgroundColor: 'var(--bg-paper, #525659)',
+            overflow: 'auto',
+            backgroundColor: 'var(--bg-muted)',
             padding: '24px 16px',
             display: loading ? 'none' : 'block'
           }}
         >
-          <div ref={docxContainerRef} style={{ width: '100%', maxWidth: '850px', margin: '0 auto' }} />
+          <div ref={docxContainerRef} style={{ width: '100%' }} />
         </div>
       )}
 
