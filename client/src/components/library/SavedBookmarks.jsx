@@ -79,7 +79,7 @@ export default function SavedBookmarks({ onSelectDoc, onToggleBookmark, onNaviga
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 14 }}>
           {filtered.map((doc) => (
-            <article key={doc.id} style={{ display: 'flex', flexDirection: 'column', padding: 16, border: '1px solid var(--border-subtle)', borderRadius: 12, background: 'var(--bg-surface)', boxShadow: 'var(--shadow-sm)' }}>
+            <article className="season-inline-panel" key={doc.id} style={{ display: 'flex', flexDirection: 'column', padding: 16, border: '1px solid var(--border-subtle)', borderRadius: 12, background: 'var(--bg-surface)', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                 <span className="status-badge red">PDF</span>
                 <button type="button" className="btn-ghost" onClick={() => handleRemove(doc)} title="Bỏ lưu" aria-label={`Bỏ lưu ${doc.title}`}><Trash2 size={14} /> Bỏ lưu</button>

@@ -1,0 +1,589 @@
+/* Noel v2 theo mẫu đã sửa: khung băng tuyết 9-slice, nhãn đỏ và thẻ nổi.
+   Toàn bộ selector giới hạn bởi data-season; không thay logic nghiệp vụ.
+   Gradient, alpha và bóng là ngoại lệ theo thiết kế seasonal như bản 20/11. */
+:root[data-season='christmas'] {
+  color-scheme: light;
+  --bg-page: #dceaff;
+  --bg-surface: #ffffff;
+  --bg-muted: #edf2fb;
+  --bg-hover: #e0ebfc;
+  --text-primary: #131d50;
+  --text-secondary: #334474;
+  --text-tertiary: #53658a;
+  --text-on-brand: #ffffff;
+  --line-default: #c2d6f8;
+  --line-strong: #91b6ee;
+  --primary-base: #1264ac;
+  --primary-hover: #0d528f;
+  --primary-active: #0a4579;
+  --brand-soft: #dceaff;
+  --focus-ring: #7badf4;
+  --select-highlight-bg: #1264ac;
+  --select-highlight-text: #ffffff;
+  --blue-1: #f7faff;
+  --blue-2: #eef4ff;
+  --blue-3: #dceaff;
+  --blue-4: #cbdfff;
+  --blue-5: #bad4fa;
+  --blue-6: #9ebce6;
+  --blue-7: #7badf4;
+  --blue-8: #478ae6;
+  --blue-9: #1264ac;
+  --blue-10: #0d528f;
+  --blue-11: #0d528f;
+  --blue-12: #19345d;
+}
+
+/* Thanh điều hướng giữ nguyên vai trò và thao tác. */
+:root[data-season='christmas'] .vec-topbar {
+  background: linear-gradient(#ffffff, #f4f5ff);
+  border-bottom-color: #d9e5f7;
+  box-shadow: 0 2px 12px #244c8720;
+}
+:root[data-season='christmas'] .vec-nav-link {
+  font-weight: 650;
+  color: #151d4e;
+}
+:root[data-season='christmas'] .vec-nav-link.active {
+  border: 1px solid #286982;
+  border-radius: 999px;
+  background: linear-gradient(#185d85, #388cac);
+  color: #ffffff !important; /* platform.css đặt màu active bằng !important. */
+  box-shadow: inset 0 1px 2px #ffffff66;
+}
+
+/* Banner đêm xanh: chữ, form và nút vẫn là HTML thật. */
+:root[data-season='christmas'] .landing-page-shell {
+  max-width: none;
+  padding: 0;
+}
+:root[data-season='christmas'] .home-page {
+  gap: 0;
+  overflow: clip;
+  padding-bottom: 0;
+  background: linear-gradient(#b5d4fb, #dceaff 65%, #b8d4f6);
+}
+:root[data-season='christmas'] .home-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  justify-content: center;
+  min-height: clamp(365px, 30vw, 460px);
+  padding: 44px 24px 84px;
+  gap: 18px;
+}
+:root[data-season='christmas'] .christmas-scene {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #123a7b url('../../assets/seasons/christmas/hero-winter-v2.webp') center / 100% 100% no-repeat;
+}
+:root[data-season='christmas'] .home-title {
+  position: relative;
+  max-width: 760px;
+  font-size: clamp(30px, 3.1vw, 44px);
+  font-weight: 750;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  text-shadow: 0 2px 6px #10295d80;
+  text-wrap: balance;
+}
+:root[data-season='christmas'] .home-title-major {
+  display: block;
+}
+:root[data-season='christmas'] .home-title::before {
+  content: '';
+  position: absolute;
+  top: -17px;
+  left: -20px;
+  width: 48px;
+  height: 43px;
+  transform: rotate(-14deg);
+  background: url('../../assets/seasons/christmas/santa-hat.svg') center / contain no-repeat;
+  pointer-events: none;
+}
+:root[data-season='christmas'] .home-title-accent {
+  position: relative;
+  display: inline-block;
+}
+:root[data-season='christmas'] .home-title-accent::after {
+  content: '';
+  position: absolute;
+  right: -49px;
+  bottom: -12px;
+  width: 150px;
+  height: 37px;
+  background: url('../../assets/seasons/christmas/star-trail.svg') center / contain no-repeat;
+  pointer-events: none;
+}
+:root[data-season='christmas'] .home-subtitle {
+  max-width: 800px;
+  margin-top: 4px;
+  font-size: 15px;
+  color: #ffffff;
+  text-shadow: 0 1px 4px #10295d;
+}
+:root[data-season='christmas'] .home-search {
+  align-items: center;
+  gap: 0;
+  max-width: 700px;
+  margin-top: 6px;
+  padding: 3px;
+  border: 2px solid #c4dafa;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 3px 9px #153a7966, inset 0 0 0 1px #ffffff;
+}
+:root[data-season='christmas'] .home-search .saas-search-box {
+  min-height: 42px;
+  padding-left: 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+}
+:root[data-season='christmas'] .home-search .saas-search-input {
+  background: transparent;
+  color: #20325d;
+}
+:root[data-season='christmas'] .home-search .saas-search-icon {
+  color: #253f7a;
+}
+:root[data-season='christmas'] .home-search:focus-within {
+  outline: 3px solid #b9d5ff;
+  outline-offset: 3px;
+}
+:root[data-season='christmas'] .home-search .btn-solid-primary {
+  position: relative;
+  isolation: isolate;
+  min-height: 42px;
+  gap: 8px;
+  padding-inline: 23px;
+  border: 1px solid #a92732;
+  border-radius: 999px;
+  background: linear-gradient(#fa5960, #db2a35 58%, #b51e30);
+  color: #ffffff;
+  box-shadow: 0 0 0 2px #ffffff, inset 0 2px 3px #ffffff90, 0 3px 6px #65132255;
+}
+:root[data-season='christmas'] .home-search .btn-solid-primary::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 6px;
+  right: 6px;
+  height: 13px;
+  background: url('../../assets/seasons/christmas/snow-edge.svg') center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+:root[data-season='christmas'] .home-search .btn-solid-primary:hover {
+  background: linear-gradient(#e94853, #a91c2c);
+}
+:root[data-season='christmas'] .home-secondary-actions {
+  gap: 18px;
+}
+:root[data-season='christmas'] .home-secondary-actions .btn-ghost {
+  min-height: 42px;
+  padding: 8px 22px;
+  border: 1.5px solid #da4c55;
+  border-radius: 999px;
+  background: linear-gradient(#ffffff, #edf3ff);
+  color: #121d4e;
+  font-weight: 650;
+  box-shadow: 0 0 0 2px #ffffff, inset 0 -2px 2px #d0ddf4, 0 3px 7px #244c8755;
+}
+:root[data-season='christmas'] .home-secondary-actions .btn-ghost > svg {
+  color: #c42a3c;
+}
+:root[data-season='christmas'] .home-secondary-actions .nav-auth-link {
+  border-color: #99b4ec;
+}
+:root[data-season='christmas'] .home-secondary-actions .nav-auth-link > svg {
+  color: #17285f;
+}
+:root[data-season='christmas'] .home-secondary-actions .btn-ghost:hover {
+  background: #e6efff;
+}
+:root[data-season='christmas'] .home-hero :focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 4px;
+}
+
+/* Panel: viền băng có độ dày cố định khi co giãn, tuyết và nhũ băng rõ nét. */
+:root[data-season='christmas'] .home-page > section:not(.home-hero) {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  width: calc(100% - 52px);
+  max-width: 1380px;
+  margin: -8px auto 0;
+  padding: 0 30px 35px;
+  border: 2px solid #aac9f5;
+  border-radius: 32px;
+  background: linear-gradient(#e2edff, #edf4ff 70%, #dfebff);
+  box-shadow: 0 7px 18px #3469b830, inset 0 0 0 6px #ffffff;
+}
+:root[data-season='christmas'] .home-page > section:not(.home-hero)::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -14px -12px -10px;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 64px 28px 38px;
+  border-image: url('../../assets/seasons/christmas/panel-frame-v2.webp') 120 60 73 / 64px 28px 38px stretch;
+  pointer-events: none;
+}
+:root[data-season='christmas'] .home-section-head {
+  position: relative;
+  z-index: 3;
+  gap: 16px;
+  margin: 8px 0 28px;
+}
+:root[data-season='christmas'] .home-section-head .section-title {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 50px;
+  margin: 0 0 0 8px;
+  padding: 10px 28px;
+  border: 1.5px solid #b83439;
+  border-radius: 16px;
+  background: linear-gradient(#f75b61, #d6323c 55%, #b72432);
+  color: #ffffff;
+  font-size: 21px;
+  font-weight: 750;
+  text-shadow: 0 1px 2px #8d182e;
+  box-shadow: inset 0 1px 2px #ffffff88, 0 3px 6px #6a304455;
+}
+:root[data-season='christmas'] .home-section-head .section-title::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -3px;
+  right: -3px;
+  height: 21px;
+  background: url('../../assets/seasons/christmas/snow-edge.svg') center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+:root[data-season='christmas'] .home-section-head .section-title > svg {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  color: #fff3ce;
+}
+:root[data-season='christmas'] .home-section-head .nav-auth-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0;
+  margin-right: 12px;
+  color: #131d50;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+/* Thẻ: khung 9-slice, dấu trang đỏ và từng vật trang trí độc lập. */
+:root[data-season='christmas'] .saas-cards-grid {
+  gap: 26px;
+}
+:root[data-season='christmas'] .doc-card {
+  position: relative;
+  isolation: isolate;
+  gap: 8px;
+  padding: 0 4px 4px;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 50px 28px 30px;
+  border-image: url('../../assets/seasons/christmas/card-frame-v2.webp') 143 87 92 / 50px 28px 30px stretch;
+  border-radius: 24px;
+  background: #f8fbff;
+  box-shadow: 3px 5px 9px #467dce38, inset 0 0 0 4px #ffffff;
+  transform: none;
+  transition: box-shadow 160ms ease;
+}
+:root[data-season='christmas'] .doc-card::after {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  background-image: url('/src/assets/seasons/christmas/card-books-v2.webp');
+  background-position: right 9px bottom 8px;
+  background-size: 73px 68px;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+:root[data-season='christmas'] .doc-card:nth-child(3n + 2)::after {
+  background-image: url('/src/assets/seasons/christmas/card-laptop-v2.webp');
+}
+:root[data-season='christmas'] .doc-card:nth-child(3n + 3)::after {
+  background-image: url('/src/assets/seasons/christmas/card-gift-v2.webp');
+}
+:root[data-season='christmas'] .doc-card:hover,
+:root[data-season='christmas'] .doc-card:focus-visible {
+  border-color: transparent;
+  background: #f8fbff;
+  transform: none;
+  box-shadow: 3px 7px 16px #3469b850, inset 0 0 0 4px #ffffff;
+}
+:root[data-season='christmas'] .doc-card-preview {
+  overflow: visible; /* Tờ giấy tự cắt nội dung; dải dấu trang được vượt mép trên. */
+  height: clamp(154px, 15vw, 210px);
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f4f3ff, #e9f0fd);
+}
+:root[data-season='christmas'] .doc-card-preview::after {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  right: 4px;
+  top: -49px;
+  width: 25px;
+  height: 40px;
+  background: url('../../assets/seasons/christmas/bookmark-red.svg') center / contain no-repeat;
+  pointer-events: none;
+}
+:root[data-season='christmas'] .doc-card-format,
+:root[data-season='christmas'] .doc-card-page-count {
+  border: 1px solid #d9bce9;
+  border-radius: 999px;
+  background: #fffaff;
+  color: #271347;
+  box-shadow: 0 2px 3px #8f61aa25;
+}
+:root[data-season='christmas'] .doc-card-format {
+  top: 7px;
+  left: 5px;
+  font-size: 13px;
+  padding: 5px 12px;
+}
+:root[data-season='christmas'] .doc-card-page-count {
+  right: 3px;
+  bottom: 5px;
+}
+:root[data-season='christmas'] .doc-card-stats {
+  min-height: 49px;
+  padding-top: 12px;
+  padding-right: 70px;
+  border-top: 1px solid #e1eaf8;
+}
+:root[data-season='christmas'] .doc-card-rating,
+:root[data-season='christmas'] .doc-card-downloads {
+  border-radius: 999px;
+}
+:root[data-season='christmas'] .doc-card-file-meta {
+  font-size: 11px;
+}
+
+/* Tuyết tự chạy; không có tùy chọn bật/tắt. Chỉ dừng khi tab ẩn hoặc giảm chuyển động. */
+:root[data-season='christmas'] .christmas-snow {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+:root[data-season='christmas'] .christmas-snowflake {
+  position: absolute;
+  top: -12px;
+  left: var(--snow-x);
+  width: var(--snow-size);
+  height: var(--snow-size);
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 0;
+  animation: christmas-snowfall var(--snow-duration) linear var(--snow-delay) infinite;
+}
+:root[data-season='christmas'] .christmas-snow[data-paused='true'] .christmas-snowflake {
+  animation-play-state: paused;
+}
+:root[data-season='christmas'] .christmas-snowbank {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 52px;
+}
+:root[data-season='christmas'] .christmas-footer {
+  position: relative;
+  z-index: 2;
+  height: clamp(100px, 10vw, 155px);
+  margin-top: -18px;
+  background: url('../../assets/seasons/christmas/footer-snow.svg') center bottom / 100% 100% no-repeat;
+  pointer-events: none;
+}
+@keyframes christmas-snowfall {
+  0% { transform: translate3d(0, -10px, 0); opacity: 0; }
+  8% { opacity: 0.9; }
+  90% { opacity: 0.9; }
+  100% { transform: translate3d(var(--snow-drift), 500px, 0); opacity: 0; }
+}
+
+@media (max-width: 1000px) {
+  :root[data-season='christmas'] .home-hero {
+    min-height: 370px;
+    padding: 40px 22px 78px;
+  }
+  :root[data-season='christmas'] .home-title {
+    font-size: 34px;
+  }
+  :root[data-season='christmas'] .home-subtitle {
+    max-width: 620px;
+    font-size: 14px;
+  }
+  :root[data-season='christmas'] .home-search {
+    max-width: 570px;
+  }
+  :root[data-season='christmas'] .home-page > section:not(.home-hero) {
+    width: calc(100% - 40px);
+    padding: 0 24px 30px;
+  }
+  :root[data-season='christmas'] .home-section-head .section-title {
+    font-size: 18px;
+    padding-inline: 18px;
+  }
+  :root[data-season='christmas'] .saas-cards-grid {
+    gap: 22px;
+  }
+  :root[data-season='christmas'] .doc-card-stats {
+    padding-right: 50px;
+  }
+  :root[data-season='christmas'] .doc-card::after {
+    background-size: 58px 56px;
+  }
+}
+
+@media (max-width: 600px) {
+  :root[data-season='christmas'] .home-hero {
+    min-height: 485px;
+    padding: 45px 23px 115px;
+    gap: 18px;
+  }
+  :root[data-season='christmas'] .christmas-scene {
+    background: #173e7c url('../../assets/seasons/christmas/hero-winter-mobile-v2.webp') center / cover no-repeat;
+  }
+  :root[data-season='christmas'] .home-title {
+    font-size: 27px;
+  }
+  :root[data-season='christmas'] .home-title::before {
+    left: -12px;
+    top: -13px;
+    width: 35px;
+    height: 33px;
+  }
+  :root[data-season='christmas'] .home-title-accent::after {
+    right: -29px;
+    bottom: -10px;
+    width: 110px;
+    height: 27px;
+  }
+  :root[data-season='christmas'] .home-subtitle {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  :root[data-season='christmas'] .home-search {
+    padding: 3px;
+    flex-direction: row;
+  }
+  :root[data-season='christmas'] .home-search .saas-search-box {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    min-height: 42px;
+    padding-left: 8px;
+  }
+  :root[data-season='christmas'] .home-search .saas-search-input {
+    min-width: 0;
+    font-size: 12px;
+  }
+  :root[data-season='christmas'] .home-search .btn-solid-primary {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding-inline: 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  :root[data-season='christmas'] .home-search .btn-solid-primary svg {
+    width: 14px;
+  }
+  :root[data-season='christmas'] .home-secondary-actions {
+    gap: 10px;
+  }
+  :root[data-season='christmas'] .home-secondary-actions .btn-ghost {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  :root[data-season='christmas'] .home-page > section:not(.home-hero) {
+    width: calc(100% - 28px);
+    padding: 0 17px 26px;
+    border-radius: 24px;
+  }
+  :root[data-season='christmas'] .home-page > section:not(.home-hero)::before {
+    inset: -10px -6px -8px;
+    border-image-width: 48px 19px 28px;
+  }
+  :root[data-season='christmas'] .home-section-head {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 8px 0 22px;
+  }
+  :root[data-season='christmas'] .home-section-head .section-title {
+    min-height: 43px;
+    margin-left: 0;
+    padding: 8px 16px;
+    gap: 8px;
+    font-size: 15px;
+  }
+  :root[data-season='christmas'] .home-section-head .section-title > svg {
+    width: 23px;
+    height: 23px;
+  }
+  :root[data-season='christmas'] .home-section-head .nav-auth-link {
+    margin: 0;
+    font-size: 12px;
+  }
+  :root[data-season='christmas'] .saas-cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 25px;
+  }
+  :root[data-season='christmas'] .doc-card-preview {
+    height: 170px;
+  }
+  :root[data-season='christmas'] .doc-card::after {
+    background-size: 65px 60px;
+  }
+  :root[data-season='christmas'] .doc-card-stats {
+    padding-right: 62px;
+  }
+  :root[data-season='christmas'] .christmas-snowflake:nth-child(2n) {
+    display: none;
+  }
+  :root[data-season='christmas'] .christmas-footer {
+    height: 95px;
+    background-size: auto 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-season='christmas'] .christmas-snow {
+    display: none;
+  }
+  :root[data-season='christmas'] .christmas-snowflake {
+    animation: none;
+  }
+  :root[data-season='christmas'] .doc-card {
+    transition: none;
+  }
+}
+@media print {
+  :root[data-season='christmas'] :is(.christmas-scene, .christmas-footer) {
+    display: none;
+  }
+  :root[data-season='christmas'] :is(.home-title, .home-subtitle) {
+    color: #101c35;
+    text-shadow: none;
+  }
+}

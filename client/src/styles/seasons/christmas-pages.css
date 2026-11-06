@@ -1,0 +1,129 @@
+/* Khung Noel cho các trang nghiệp vụ, cùng phạm vi với theme 20/11.
+   Khung dùng border thật: luôn chiếm chỗ trong layout, không phủ lên nội dung.
+   Không dùng filter/transform để giữ gốc định vị của modal và menu position: fixed. */
+:root[data-season='christmas'] {
+  background:
+    radial-gradient(ellipse at top left, #edf5ff, transparent 65%),
+    radial-gradient(ellipse at bottom right, #bfd9fb, transparent 65%),
+    #dceaff;
+  background-attachment: fixed;
+}
+:root[data-season='christmas'] body,
+:root[data-season='christmas'] #root {
+  background: transparent;
+}
+:root[data-season='christmas'] #root > div {
+  background-color: transparent !important; /* App dùng nền nội tuyến. */
+}
+
+/* Lòng khung giữ nền riêng. Ảnh chỉ vẽ trong vùng border đã dành sẵn. */
+:root[data-season='christmas'] :is(
+  .detail-info-card, .review-panel, .auth-card-centered, .upload-form,
+  .empty-state-box, .season-inline-panel, .modal-panel, .confirm-dialog,
+  .data-table-wrap, .pdf-sandbox-card, .kpi-card, .vec-curriculum-map
+) {
+  min-width: 0;
+  border-style: solid !important;
+  border-color: transparent !important;
+  border-width: var(--christmas-frame-top, 30px) var(--christmas-frame-side, 14px) var(--christmas-frame-bottom, 20px) !important;
+  border-image: url('/src/assets/seasons/christmas/panel-frame-v2.webp') 120 60 73 / var(--christmas-frame-top, 30px) var(--christmas-frame-side, 14px) var(--christmas-frame-bottom, 20px) stretch !important;
+  border-radius: 22px !important;
+  background-clip: padding-box;
+  box-shadow: 0 5px 14px #3469b82b !important;
+}
+:root[data-season='christmas'] .kpi-card {
+  --christmas-frame-top: 20px;
+  --christmas-frame-side: 10px;
+  --christmas-frame-bottom: 14px;
+}
+:root[data-season='christmas'] :is(.data-table-wrap, .pdf-sandbox-card) {
+  --christmas-frame-top: 24px;
+  --christmas-frame-side: 12px;
+  --christmas-frame-bottom: 18px;
+}
+:root[data-season='christmas'] :is(.modal-panel, .confirm-dialog) {
+  --christmas-frame-top: 24px;
+  --christmas-frame-side: 12px;
+  --christmas-frame-bottom: 18px;
+}
+:root[data-season='christmas'] .upload-form {
+  padding: 18px 20px 20px;
+  background-color: var(--bg-surface);
+}
+
+/* Tiêu đề, nút và ô nhập dùng cùng bảng màu trên mọi màn hình. */
+:root[data-season='christmas'] .page-title {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 8px;
+  color: #172c61;
+}
+:root[data-season='christmas'] .page-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: min(155px, 80%);
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #e34c58, #a4c7f5);
+  pointer-events: none;
+}
+:root[data-season='christmas'] :is(.btn-solid-primary, .btn-primary-action, .saas-upload-action) {
+  border-radius: 999px;
+  font-weight: 650;
+}
+:root[data-season='christmas'] :is(.btn-solid-primary, .btn-primary-action, .saas-upload-action):not(:disabled) {
+  border-color: #b93643;
+  background: linear-gradient(#f75b61, #cb2838);
+  color: #ffffff;
+  box-shadow: inset 0 1px 2px #ffffff88, 0 2px 5px #9b29452b;
+}
+:root[data-season='christmas'] :is(.btn-solid-primary, .btn-primary-action, .saas-upload-action):hover:not(:disabled) {
+  background: linear-gradient(#e34a55, #ac1f30);
+}
+:root[data-season='christmas'] .intro-film-controls .btn-ghost {
+  border-color: #b93643;
+  background: #cb2838;
+  color: #ffffff;
+}
+:root[data-season='christmas'] :is(.btn-ghost:not(.nav-auth-link), .saas-page-btn) {
+  border-radius: 999px;
+}
+:root[data-season='christmas'] .saas-page-btn.active {
+  border-color: #1c638b;
+  background: #1c638b;
+  color: #ffffff;
+}
+:root[data-season='christmas'] .saas-search-box:not(.home-search .saas-search-box) {
+  border: 1.5px solid #9cbceb;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px #f7fbff;
+}
+:root[data-season='christmas'] :is(.filter-select, .vec-form-input, .vec-form-select, .vec-form-textarea, .input-box) {
+  border-color: #a7c5ee;
+  border-radius: 12px;
+}
+:root[data-season='christmas'] .vec-dropzone {
+  border: 2px dashed #91b7ec;
+  border-radius: 16px;
+  background: linear-gradient(#f7fbff, #e9f2ff);
+}
+:root[data-season='christmas'] :is(.detail-highlight, .detail-facts) {
+  border-radius: 12px;
+}
+:root[data-season='christmas'] :is(.underline-tabs, .admin-tabs) button[aria-selected='true'] {
+  color: #1c638b;
+}
+
+@media (max-width: 600px) {
+  :root[data-season='christmas'] :is(.detail-info-card, .review-panel, .auth-card-centered, .upload-form, .empty-state-box, .season-inline-panel, .vec-curriculum-map) {
+    --christmas-frame-top: 24px;
+    --christmas-frame-side: 10px;
+    --christmas-frame-bottom: 16px;
+  }
+  :root[data-season='christmas'] .upload-form {
+    padding: 14px 12px 16px;
+  }
+}

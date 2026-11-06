@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { ArrowRight, BookOpen, Search, Play, Upload } from 'lucide-react'
+import { ArrowRight, BookOpen, Gift, Search, Play, Upload } from 'lucide-react'
 import { getActiveSeason } from '../../seasons/seasons'
 import DocumentCard from './DocumentCard'
 import SeasonDecor from './SeasonDecor'
@@ -37,7 +37,8 @@ export default function LandingPage({
   const [query, setQuery] = useState('')
   const [isIntroOpen, setIsIntroOpen] = useState(shouldAutoplayIntro)
   // Icon trang trí chỉ có trong dịp, ngoài dịp các nút giữ nguyên như cũ
-  const isSeason = Boolean(getActiveSeason())
+  const season = getActiveSeason()
+  const isSeason = Boolean(season)
 
   useEffect(() => {
     if (isIntroOpen) markIntroSeen()
@@ -112,7 +113,9 @@ export default function LandingPage({
         <section aria-label="Tài liệu được tải nhiều">
           <div className="home-section-head">
             <h2 className="section-title">
-              {isSeason && <BookOpen size={18} aria-hidden="true" />}
+              {isSeason && (season === 'christmas'
+                ? <Gift size={24} aria-hidden="true" />
+                : <BookOpen size={18} aria-hidden="true" />)}
               Tài liệu được tải nhiều
             </h2>
             <button type="button" className="btn-ghost nav-auth-link" onClick={onExploreDiscovery}>
