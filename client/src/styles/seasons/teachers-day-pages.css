@@ -106,6 +106,31 @@
   background: var(--bg-muted);
 }
 
+/* Nút "Bỏ qua" của phim giới thiệu nằm trên nền phim sáng. Quy tắc nút viền ở trên đổi nền
+   sang màu sáng nhưng chữ vẫn sáng, nên dùng kiểu nút chính của dịp để chữ đủ tương phản. */
+:root[data-season='teachers-day'] .intro-film-controls .btn-ghost {
+  border-color: transparent;
+  background: var(--primary-base);
+  color: var(--text-on-brand);
+  box-shadow: 0 0 0 2px var(--season-ring), 0 0 0 3px var(--season-frame), 0 3px 8px rgba(109, 49, 145, 0.3);
+}
+
+:root[data-season='teachers-day'] .intro-film-controls .btn-ghost:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--primary-hover);
+  color: var(--text-on-brand);
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .intro-film-controls .btn-ghost {
+  background: linear-gradient(180deg, #9757bb 0%, #6d3191 100%);
+  color: #ffffff;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .intro-film-controls .btn-ghost:hover:not(:disabled) {
+  background: linear-gradient(180deg, #84469f 0%, #5f2880 100%);
+  color: #ffffff;
+}
+
 :root[data-season='teachers-day'] .saas-page-btn.active {
   border-color: var(--primary-base);
   background: var(--primary-base);

@@ -23,6 +23,7 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { getApiBaseUrl, getAuthToken } from '../../utils/authGuard'
+import PptxSlides from './PptxSlides'
 import { downloadDocument } from '../../utils/interactionApi'
 
 // Cấu hình worker chuẩn của Mozilla PDF.js
@@ -146,12 +147,16 @@ function SinglePdfPage({ pageNumber, pdfDoc, scale, rotation, onPageLoaded }) {
  * Trình xem trước nội bộ dành cho tệp tin văn phòng (.docx và .pptx),
  * không phụ thuộc vào Google Docs Viewer tránh lỗi tự tải file "viewer" trên Chrome.
  */
-function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload }) {
+// Khách vãng lai chỉ xem thử 3 slide đầu, giống giới hạn 3 trang PDF của UC06
+const GUEST_PREVIEW_SLIDES = 3
+
+function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload, isAuthenticated = false, onRequireLogin }) {
   const docxContainerRef = useRef(null)
   const docxHostRef = useRef(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [pptxThumbnail, setPptxThumbnail] = useState(null)
+  const [pptxDeck, setPptxDeck] = useState(null)
   const [docxRenderCount, setDocxRenderCount] = useState(0)
 
   // Trang Word có bề rộng cố định (A4 ≈ 794px) nên rộng hơn khung xem ở trang Kiểm duyệt.
@@ -203,11 +208,13 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
 
   useEffect(() => {
     let isCancelled = false
+    let deckToDispose = null
 
     async function loadOfficeContent() {
       setLoading(true)
       setError(null)
       setPptxThumbnail(null)
+      setPptxDeck(null)
       try {
         const token = getAuthToken()
         const headers = {}
@@ -255,6 +262,26 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
             if (!isCancelled) setDocxRenderCount((count) => count + 1)
           }
         } else if (fileExt === 'pptx') {
+          // Dựng từng slide ngay trên trình duyệt; tệp lỗi thì quay về ảnh bìa như trước
+          try {
+            const { parsePptx } = await import('../../utils/pptxParser')
+            const deck = await parsePptx(arrayBuffer, {
+              maxSlides: isAuthenticated ? undefined : GUEST_PREVIEW_SLIDES
+            })
+            if (isCancelled) {
+              deck.dispose()
+              return
+            }
+            if (deck.slides.length) {
+              deckToDispose = deck
+              setPptxDeck(deck)
+              setLoading(false)
+              return
+            }
+            deck.dispose()
+          } catch (parseError) {
+            console.warn('[OfficePreviewViewer] Không dựng được slide, dùng ảnh bìa:', parseError)
+          }
           const { default: JSZip } = await import('jszip')
           const zip = await JSZip.loadAsync(arrayBuffer)
           const entry =
@@ -279,8 +306,10 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
     loadOfficeContent()
     return () => {
       isCancelled = true
+      // Giải phóng ảnh slide đã tạo trong bộ nhớ trình duyệt
+      if (deckToDispose) deckToDispose.dispose()
     }
-  }, [documentItem?.id, documentItem?.fileUrl, streamUrl, fileExt])
+  }, [documentItem?.id, documentItem?.fileUrl, streamUrl, fileExt, isAuthenticated])
 
   return (
     <div className="pdf-sandbox-card" style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--line-default)', backgroundColor: 'var(--bg-surface)' }}>
@@ -343,8 +372,44 @@ function OfficePreviewViewer({ documentItem, fileExt, streamUrl, handleDownload 
         </div>
       )}
 
-      {/* Hiển thị PowerPoint (.pptx) */}
-      {!loading && !error && fileExt === 'pptx' && (
+      {/* Hiển thị PowerPoint (.pptx): dựng từng slide */}
+      {!loading && !error && fileExt === 'pptx' && pptxDeck && (
+        <div
+          className="pptx-viewer-host"
+          style={{ width: '100%', maxHeight: '720px', overflow: 'auto', backgroundColor: 'var(--bg-muted)', padding: '20px 16px' }}
+        >
+          <PptxSlides deck={pptxDeck} />
+          {pptxDeck.totalSlides > pptxDeck.slides.length && (
+            <div
+              style={{ maxWidth: '560px', margin: '20px auto 0', padding: '18px 20px', textAlign: 'center', background: 'var(--bg-surface)', border: '1px solid var(--line-default)', borderRadius: '10px' }}
+            >
+              <Lock size={20} style={{ color: 'var(--status-warning)', margin: '0 auto 8px' }} />
+              <p style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                Xem trước {pptxDeck.slides.length}/{pptxDeck.totalSlides} slide
+              </p>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: onRequireLogin ? '12px' : 0 }}>
+                Đăng nhập để xem toàn bộ {pptxDeck.totalSlides} slide và tải tệp gốc.
+              </p>
+              {onRequireLogin && (
+                <button
+                  type="button"
+                  onClick={onRequireLogin}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--primary-base)', color: 'var(--text-on-brand)', border: 'none', padding: '8px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  <LogIn size={15} />
+                  <span>Đăng nhập</span>
+                </button>
+              )}
+            </div>
+          )}
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center', margin: '16px 0 0' }}>
+            Bản xem nhanh có thể khác bản gốc về phông chữ và hiệu ứng. Bấm <strong>Tải tệp gốc</strong> để trình chiếu đầy đủ.
+          </p>
+        </div>
+      )}
+
+      {/* Dự phòng khi không dựng được slide: ảnh bìa và nút tải */}
+      {!loading && !error && fileExt === 'pptx' && !pptxDeck && (
         <div style={{ padding: '32px 20px', textAlign: 'center', backgroundColor: 'var(--bg-canvas)' }}>
           {pptxThumbnail ? (
             <div style={{ maxWidth: '640px', margin: '0 auto 20px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', border: '1px solid var(--line-default)' }}>
@@ -617,6 +682,8 @@ export default function PdfPreviewViewer({
         fileExt={fileExt}
         streamUrl={streamUrl}
         handleDownload={handleDownload}
+        isAuthenticated={isAuthenticated}
+        onRequireLogin={onRequireLogin}
       />
     )
   }
