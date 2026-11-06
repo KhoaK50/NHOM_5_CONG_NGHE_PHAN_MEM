@@ -1661,18 +1661,23 @@ select option {
   justify-content: center;
 }
 
-.docx-viewer-host .docx-wrapper {
+/* docx-preview sinh lớp theo tùy chọn className: 'docx-preview-body'
+   → khung bọc .docx-preview-body-wrapper, mỗi trang là section.docx-preview-body */
+.docx-viewer-host .docx-preview-body-wrapper {
   background: transparent !important;
   padding: 0 !important;
+  /* Trang rộng hơn khung thì tràn sang phải (cuộn được), không bị cắt mất lề trái */
+  align-items: safe center !important;
 }
 
-.docx-viewer-host section.docx {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+.docx-viewer-host section.docx-preview-body {
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18) !important;
   margin-bottom: 24px !important;
   background: #ffffff !important;
   color: #111827 !important;
 }
 
-[data-theme='dark'] .docx-viewer-host {
-  background-color: #0f172a;
+.docx-viewer-host section.docx-preview-body:last-child {
+  margin-bottom: 0 !important;
 }
