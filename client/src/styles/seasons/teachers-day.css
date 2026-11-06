@@ -1,0 +1,766 @@
+/* ==========================================================================
+   GIAO DIỆN DỊP 20/11
+   Chỉ có hiệu lực khi <html data-season="teachers-day">, lịch ở seasons/seasons.js.
+   Xóa tệp này, thư mục ảnh và dòng lịch là trả về giao diện thường.
+
+   Ngoại lệ của quy tắc màu đặc trong theme.css: gradient và độ mờ được dùng ở
+   đây vì đúng thiết kế dịp. Theme tối chưa có thiết kế nên chỉ đổi màu nhấn và
+   hình dáng, không tải ảnh lớn. Ảnh chỉ được tải khi quy tắc theme sáng khớp.
+   ========================================================================== */
+
+/* ---------- Màu theme sáng ---------- */
+:root[data-season='teachers-day'][data-theme='light'] {
+  --bg-page: #fdf2f7;
+  --bg-surface: #fffbfd;
+  --bg-muted: #f7ecf8;
+  --bg-hover: #efe0f4;
+  --bg-scrim: #3d2a4f;
+
+  --text-primary: #33174f;
+  --text-secondary: #57496a;
+  --text-tertiary: #6d5d80;
+
+  --line-default: #ecdaf0;
+  --line-strong: #d3bbe0;
+
+  --primary-base: #7a3a9e;
+  --primary-hover: #69308a;
+  --primary-active: #582776;
+  --brand-soft: #efe2f8;
+  --focus-ring: #c9a6e3;
+
+  --select-highlight-bg: #7a3a9e;
+
+  --blue-1: #fcf7fe;
+  --blue-2: #f8f0fc;
+  --blue-3: #efe2f8;
+  --blue-4: #e6d3f3;
+  --blue-5: #dcc3ee;
+  --blue-6: #cfaee6;
+  --blue-7: #bb90d9;
+  --blue-8: #a06fc6;
+  --blue-9: #7a3a9e;
+  --blue-10: #69308a;
+  --blue-11: #69308a;
+  --blue-12: #3d1c5c;
+
+  --season-frame: #d9c3ea;
+  --season-frame-soft: #f4e9fa;
+  --season-ring: #fffbfd;
+  --season-panel-frame: url('../../assets/seasons/teachers-day/panel-frame.webp');
+}
+
+/* ---------- Màu theme tối: chỉ đổi màu nhấn ---------- */
+:root[data-season='teachers-day'][data-theme='dark'] {
+  --bg-page: #15101c;
+  --bg-surface: #201828;
+  --bg-muted: #2a2033;
+  --bg-hover: #352a41;
+  --line-default: #392d47;
+  --line-strong: #564666;
+
+  --primary-base: #c79bf0;
+  --primary-hover: #d6b4f5;
+  --primary-active: #e2c9f8;
+  --brand-soft: #33224a;
+  --focus-ring: #5d3f86;
+  --text-on-brand: #1a0e27;
+
+  --select-highlight-bg: #c79bf0;
+  --select-highlight-text: #1a0e27;
+
+  --blue-1: #1d1526;
+  --blue-2: #241a30;
+  --blue-3: #33224a;
+  --blue-4: #3b2856;
+  --blue-5: #452f65;
+  --blue-6: #553b7c;
+  --blue-7: #6c4e9b;
+  --blue-8: #916fc4;
+  --blue-9: #c79bf0;
+  --blue-10: #d6b4f5;
+  --blue-11: #d6b4f5;
+  --blue-12: #ecdcfb;
+
+  --season-frame: #4a3a5b;
+  --season-frame-soft: #1c1524;
+  --season-ring: #201828;
+}
+
+/* ---------- Thanh điều hướng: mục đang chọn dạng viên thuốc ---------- */
+@media (min-width: 769px) {
+  :root[data-season='teachers-day'] .vec-nav-link {
+    border-radius: 999px;
+  }
+
+  :root[data-season='teachers-day'] .vec-nav-link.active {
+    background: var(--brand-soft);
+    color: var(--primary-base);
+  }
+}
+
+/* ---------- Khung trang chủ: hero tràn hết chiều ngang ---------- */
+:root[data-season='teachers-day'] .landing-page-shell {
+  max-width: none;
+  padding: 0;
+}
+
+:root[data-season='teachers-day'] .home-page {
+  gap: 34px;
+}
+
+:root[data-season='teachers-day'] .home-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 448px;
+  padding: 48px 24px 96px;
+}
+
+:root[data-season='teachers-day'] .home-title {
+  max-width: none;
+  font-size: clamp(28px, 3.3vw, 44px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .home-title {
+  color: #47207a;
+}
+
+:root[data-season='teachers-day'] .home-title-major {
+  display: block;
+}
+
+:root[data-season='teachers-day'] .home-title-accent {
+  position: relative;
+  display: inline-block;
+}
+
+:root[data-season='teachers-day'] .home-title-accent::after {
+  content: '';
+  position: absolute;
+  left: -2%;
+  right: -8%;
+  bottom: -0.2em;
+  height: 0.34em;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 18' preserveAspectRatio='none'%3E%3Cpath d='M2 12c22-9 42-8 56-2s24 4 34-1 40-9 66-3' fill='none' stroke='%23e8799f' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+
+:root[data-season='teachers-day'] .home-subtitle {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* ---------- Ô tìm kiếm: nút nằm trong ô, viền đôi ---------- */
+:root[data-season='teachers-day'] .home-search {
+  gap: 0;
+  align-items: center;
+  max-width: 600px;
+  margin-top: 16px;
+  padding: 5px;
+  border: 1.5px solid var(--season-frame);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  box-shadow:
+    0 0 0 3px var(--season-ring),
+    0 0 0 4px var(--season-frame),
+    0 10px 24px rgba(122, 58, 158, 0.18);
+}
+
+:root[data-season='teachers-day'] .home-search:focus-within {
+  border-color: var(--primary-base);
+}
+
+:root[data-season='teachers-day'] .home-search .saas-search-box {
+  height: 42px;
+  border: 0;
+  background: transparent;
+}
+
+:root[data-season='teachers-day'] .home-search .saas-search-input:focus {
+  box-shadow: none;
+}
+
+:root[data-season='teachers-day'] .home-search .btn-solid-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 42px;
+  padding: 8px 22px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .home-search .btn-solid-primary {
+  border-color: transparent;
+  background: linear-gradient(180deg, #9757bb 0%, #6d3191 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 3px 8px rgba(109, 49, 145, 0.35);
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .home-search .btn-solid-primary:hover:not(:disabled) {
+  border-color: transparent;
+  background: linear-gradient(180deg, #84469f 0%, #5f2880 100%);
+}
+
+/* ---------- Hai nút phụ: viền đôi như thiệp ---------- */
+:root[data-season='teachers-day'] .home-secondary-actions {
+  gap: 16px;
+  margin-top: 14px;
+}
+
+:root[data-season='teachers-day'] .home-secondary-actions .btn-ghost,
+:root[data-season='teachers-day'] .home-secondary-actions .btn-ghost.nav-auth-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 20px;
+  border: 1.5px solid var(--season-frame);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow:
+    0 0 0 2px var(--season-ring),
+    0 0 0 3px var(--season-frame),
+    0 6px 14px rgba(122, 58, 158, 0.14);
+}
+
+:root[data-season='teachers-day'] .home-secondary-actions .btn-ghost:hover:not(:disabled) {
+  border-color: var(--primary-base);
+  background: var(--bg-muted);
+}
+
+/* ---------- Khu tài liệu: khung panel cắt 9 phần, tab ruy băng ---------- */
+:root[data-season='teachers-day'] .home-page > section:not(.home-hero) {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - 56px);
+  max-width: 1224px;
+  margin: 0 auto;
+  padding: 0 34px 38px;
+  border: 2px solid var(--season-frame);
+  border-radius: 28px;
+  background: var(--season-frame-soft);
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .home-page > section:not(.home-hero) {
+  isolation: isolate;
+  border-color: transparent;
+  background: transparent;
+  filter: drop-shadow(0 12px 22px rgba(122, 58, 158, 0.12));
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .home-page > section:not(.home-hero)::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -6px;
+  border: 70px solid transparent;
+  border-image: url('../../assets/seasons/teachers-day/panel-frame.webp') 142 fill / 70px stretch;
+  pointer-events: none;
+}
+
+:root[data-season='teachers-day'] .home-section-head {
+  position: relative;
+  z-index: 1;
+  margin: -22px 0 20px;
+}
+
+:root[data-season='teachers-day'] .home-section-head .btn-ghost.nav-auth-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  margin-right: 28px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+:root[data-season='teachers-day'] .home-section-head .section-title {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  margin: 0 0 0 14px;
+  padding: 6px 30px 6px 24px;
+  border-radius: 14px 6px 6px 14px;
+  background: var(--primary-base);
+  color: var(--text-on-brand);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Theme sáng: nhãn là ảnh ruy băng chia 3 phần, nơ bên trái và đuôi cắt bên phải giữ nguyên tỉ lệ */
+:root[data-season='teachers-day'][data-theme='light'] .home-section-head .section-title {
+  isolation: isolate;
+  margin-left: 6px;
+  padding: 6px 44px 6px 72px;
+  border-radius: 0;
+  background: transparent;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(70, 20, 100, 0.35);
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .home-section-head .section-title::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -23px;
+  right: 0;
+  bottom: -30px;
+  left: -26px;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 0 28px 0 86px;
+  border-image: url('../../assets/seasons/teachers-day/title-banner.webp') 0 56 0 172 fill / 0 28px 0 86px stretch;
+  pointer-events: none;
+}
+
+/* ---------- Thẻ tài liệu ở mọi trang: tờ thiệp gấp góc ----------
+   Khung là ảnh cắt 9 phần (card-frame.webp) vẽ ở lớp ::before phía sau nội dung,
+   nên kích thước thẻ nào cũng giữ đúng góc bo, mép gợn và góc gấp. */
+:root[data-season='teachers-day'] .saas-cards-grid {
+  gap: 22px;
+}
+
+:root[data-season='teachers-day'] .doc-card {
+  position: relative;
+  isolation: isolate;
+  padding: 14px 15px 15px;
+  border: 1.5px solid var(--season-frame);
+  border-radius: 22px;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .doc-card,
+:root[data-season='teachers-day'][data-theme='light'] .doc-card:hover,
+:root[data-season='teachers-day'][data-theme='light'] .doc-card:focus-visible {
+  border-color: transparent;
+  background: transparent;
+  filter: drop-shadow(0 8px 14px rgba(122, 58, 158, 0.13));
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .doc-card::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -3px;
+  border: 30px solid transparent;
+  border-image: url('../../assets/seasons/teachers-day/card-frame.webp') 60 fill / 30px stretch;
+  pointer-events: none;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .doc-card:hover::before,
+:root[data-season='teachers-day'][data-theme='light'] .doc-card:focus-visible::before {
+  filter: saturate(1.25) brightness(0.98);
+}
+
+:root[data-season='teachers-day'] .doc-card:hover,
+:root[data-season='teachers-day'] .doc-card:focus-visible {
+  border-color: var(--primary-base);
+  transform: translateY(-3px);
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .doc-card:focus-visible {
+  outline: 2px solid var(--primary-base);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-season='teachers-day'] .doc-card {
+    transition: transform 0.2s ease, filter 0.2s ease;
+  }
+}
+
+:root[data-season='teachers-day'] .doc-card-preview {
+  overflow: visible;
+  border: 0;
+  border-radius: 16px;
+  background: var(--bg-muted);
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .doc-card-preview {
+  background: linear-gradient(140deg, #fcf2f8 0%, #efe3f8 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9), inset 0 -12px 20px rgba(255, 255, 255, 0.55);
+}
+
+/* Góc giấy cong dưới bên trái của ô xem trước */
+:root[data-season='teachers-day'][data-theme='light'] .doc-card-preview::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 38px;
+  height: 38px;
+  border-bottom-left-radius: 16px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 38'%3E%3Cdefs%3E%3ClinearGradient id='c' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23ffffff'/%3E%3Cstop offset='1' stop-color='%23dcc8ec'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 6C4 22 16 33 36 38H14C6 38 0 32 0 24Z' fill='url(%23c)'/%3E%3C/svg%3E") left bottom / 38px 38px no-repeat;
+  pointer-events: none;
+}
+
+:root[data-season='teachers-day'] .doc-card-paper {
+  z-index: 1;
+  box-shadow: 0 4px 12px rgba(92, 54, 130, 0.18);
+}
+
+:root[data-season='teachers-day'] .doc-card-format,
+:root[data-season='teachers-day'] .doc-card-page-count {
+  z-index: 2;
+  border: 1px solid var(--season-frame);
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: var(--bg-surface);
+  box-shadow: 0 2px 6px rgba(122, 58, 158, 0.14);
+}
+
+:root[data-season='teachers-day'] .doc-card-save {
+  border-radius: 999px;
+}
+
+/* Dấu trang trang trí chỉ ở trang chủ, nơi thẻ không có nút Lưu thật */
+:root[data-season='teachers-day'] .home-page .doc-card-preview::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: -17px;
+  right: 18px;
+  width: 22px;
+  height: 44px;
+  background: linear-gradient(180deg, var(--season-mark-top, #f8b3c6) 0%, var(--season-mark, #ec7f9f) 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+  pointer-events: none;
+}
+
+:root[data-season='teachers-day'] .doc-card:nth-child(3n + 2) {
+  --season-mark-top: #cdb7ee;
+  --season-mark: #9a7ad2;
+  --season-card-icon: url('../../assets/seasons/teachers-day/card-laptop.webp');
+}
+
+:root[data-season='teachers-day'] .doc-card:nth-child(3n + 3) {
+  --season-mark-top: #fbd9a0;
+  --season-mark: #eeb054;
+  --season-card-icon: url('../../assets/seasons/teachers-day/card-cap.webp');
+}
+
+:root[data-season='teachers-day'] .doc-card-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+:root[data-season='teachers-day'] .doc-card-stats {
+  position: relative;
+  z-index: 1;
+  padding-top: 10px;
+  border-top-color: var(--season-frame);
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .doc-card-stats {
+  padding-right: 66px;
+}
+
+:root[data-season='teachers-day'] .doc-card-rating,
+:root[data-season='teachers-day'] .doc-card-downloads {
+  border-radius: 999px;
+  padding: 0 11px;
+}
+
+/* Định dạng và số trang đã có trên ảnh xem trước, trang chủ không lặp lại */
+:root[data-season='teachers-day'] .home-page .doc-card-file-meta {
+  display: none;
+}
+
+/* Icon góc thẻ: thẻ thứ nhất dùng sách, các thẻ sau đặt biến ở trên */
+:root[data-season='teachers-day'][data-theme='light'] .doc-card::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  right: 14px;
+  bottom: 12px;
+  width: 60px;
+  height: 52px;
+  background: var(--season-card-icon, url('../../assets/seasons/teachers-day/card-books.webp')) right bottom / contain no-repeat;
+  pointer-events: none;
+}
+
+/* ---------- Lớp trang trí ---------- */
+.season-decor {
+  pointer-events: none;
+}
+
+.season-decor-hero {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.season-art,
+.season-petal {
+  position: absolute;
+  display: block;
+  background-repeat: no-repeat;
+}
+
+.season-wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 56px;
+  fill: var(--bg-page);
+}
+
+/* Ảnh chỉ khai báo trong theme sáng để theme tối không phải tải.
+   Nền đầu trang là màu hồng tím nhạt; ảnh căn phòng chỉ hiện 28% làm gợi ý,
+   phần giữa sau chữ để sáng sạch, tranh minh họa chỉ nằm ở hai mép. */
+:root[data-season='teachers-day'][data-theme='light'] .season-decor-hero {
+  background: linear-gradient(180deg, #fdf3f8 0%, #f7eefb 100%);
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .season-decor-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('../../assets/seasons/teachers-day/hero-room.webp') center / cover no-repeat;
+  opacity: 0.28;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .season-art-left {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(34%, 460px);
+  background-image: url('../../assets/seasons/teachers-day/hero-left.webp');
+  background-position: left bottom;
+  background-size: auto 100%;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .season-art-right {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: min(34%, 460px);
+  background-image: url('../../assets/seasons/teachers-day/hero-right.webp');
+  background-position: right bottom;
+  background-size: auto 100%;
+}
+
+/* ---------- Cánh hoa rơi: nằm sau khung tài liệu, chỉ dùng transform và opacity ---------- */
+.season-petals {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.season-petal {
+  position: absolute;
+  top: 0;
+  left: var(--x);
+  width: var(--s);
+  height: calc(var(--s) * 0.72);
+  background: var(--petal) center / contain no-repeat;
+  opacity: 0;
+  animation: season-petal-fall var(--t) linear var(--delay) infinite;
+  will-change: transform, opacity;
+  --petal: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 29'%3E%3Cdefs%3E%3ClinearGradient id='p' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ffdbe5'/%3E%3Cstop offset='1' stop-color='%23f08cab'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M1 15C7 4 20-1 30 3c5 2 8 7 9 12-3 2-5 2-7 1 1 3 0 5-2 7C20 30 7 26 1 15Z' fill='url(%23p)'/%3E%3Cpath d='M5 15c9-3 18-3 28 0' fill='none' stroke='%23e87a9c' stroke-opacity='.5'/%3E%3C/svg%3E");
+}
+
+.season-petal:nth-child(3n) {
+  --petal: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 29'%3E%3Cdefs%3E%3ClinearGradient id='p' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f2e4fb'/%3E%3Cstop offset='1' stop-color='%23c3a0e4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M1 15C7 4 20-1 30 3c5 2 8 7 9 12-3 2-5 2-7 1 1 3 0 5-2 7C20 30 7 26 1 15Z' fill='url(%23p)'/%3E%3C/svg%3E");
+}
+
+.season-petal:nth-child(1) { --x: 4%; --s: 22px; --t: 19s; --delay: -3s; --drift: 90px; --spin: 340deg; }
+.season-petal:nth-child(2) { --x: 13%; --s: 16px; --t: 24s; --delay: -14s; --drift: 130px; --spin: -300deg; }
+.season-petal:nth-child(3) { --x: 22%; --s: 20px; --t: 21s; --delay: -8s; --drift: 70px; --spin: 420deg; }
+.season-petal:nth-child(4) { --x: 30%; --s: 14px; --t: 27s; --delay: -19s; --drift: 110px; --spin: 280deg; }
+.season-petal:nth-child(5) { --x: 38%; --s: 24px; --t: 18s; --delay: -1s; --drift: 60px; --spin: -380deg; }
+.season-petal:nth-child(6) { --x: 46%; --s: 15px; --t: 25s; --delay: -11s; --drift: 120px; --spin: 310deg; }
+.season-petal:nth-child(7) { --x: 54%; --s: 19px; --t: 22s; --delay: -16s; --drift: 85px; --spin: -340deg; }
+.season-petal:nth-child(8) { --x: 62%; --s: 23px; --t: 20s; --delay: -6s; --drift: 100px; --spin: 400deg; }
+.season-petal:nth-child(9) { --x: 70%; --s: 14px; --t: 28s; --delay: -22s; --drift: 75px; --spin: -290deg; }
+.season-petal:nth-child(10) { --x: 77%; --s: 21px; --t: 19s; --delay: -10s; --drift: 115px; --spin: 360deg; }
+.season-petal:nth-child(11) { --x: 84%; --s: 17px; --t: 26s; --delay: -4s; --drift: 65px; --spin: -320deg; }
+.season-petal:nth-child(12) { --x: 91%; --s: 20px; --t: 23s; --delay: -18s; --drift: 95px; --spin: 300deg; }
+.season-petal:nth-child(13) { --x: 9%; --s: 13px; --t: 30s; --delay: -25s; --drift: 140px; --spin: 260deg; }
+.season-petal:nth-child(14) { --x: 58%; --s: 13px; --t: 29s; --delay: -13s; --drift: 150px; --spin: -270deg; }
+
+@keyframes season-petal-fall {
+  0% { transform: translate3d(0, -6vh, 0) rotate(0deg); opacity: 0; }
+  6% { opacity: 0.9; }
+  35% { transform: translate3d(var(--drift), 32vh, 0) rotate(calc(var(--spin) * 0.35)); }
+  65% { transform: translate3d(calc(var(--drift) * 0.35), 66vh, 0) rotate(calc(var(--spin) * 0.65)); }
+  94% { opacity: 0.9; }
+  100% { transform: translate3d(calc(var(--drift) * 1.1), 106vh, 0) rotate(var(--spin)); opacity: 0; }
+}
+
+:root[data-season='teachers-day'][data-theme='dark'] .season-petals {
+  display: none;
+}
+
+/* Người dùng bật giảm chuyển động thì không có hoa rơi */
+@media (prefers-reduced-motion: reduce) {
+  .season-petals {
+    display: none;
+  }
+}
+
+.season-decor-footer {
+  position: relative;
+  height: 132px;
+  margin-top: -40px;
+  overflow: hidden;
+}
+
+.season-hills {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.season-hill-back { fill: #ecdcf4; }
+.season-hill-front { fill: #dcc4ec; }
+
+:root[data-season='teachers-day'][data-theme='light'] .season-art-flowers {
+  left: -46px;
+  bottom: -14px;
+  width: 340px;
+  height: 118px;
+  background-image: url('../../assets/seasons/teachers-day/footer-flowers.webp');
+  background-size: contain;
+  background-position: left bottom;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .season-art-book {
+  right: 18px;
+  bottom: 2px;
+  width: 196px;
+  height: 95px;
+  background-image: url('../../assets/seasons/teachers-day/footer-book.webp');
+  background-size: contain;
+  background-position: right bottom;
+}
+
+/* Theme tối chưa có thiết kế: ẩn ảnh lớn, giữ dạng nút và khung */
+:root[data-season='teachers-day'][data-theme='dark'] .season-art,
+:root[data-season='teachers-day'][data-theme='dark'] .season-decor-footer {
+  display: none;
+}
+
+/* ---------- Màn hình vừa: thu nhỏ ảnh để không chạm ô tìm kiếm ---------- */
+@media (max-width: 1180px) {
+  :root[data-season='teachers-day'][data-theme='light'] .season-art-left,
+  :root[data-season='teachers-day'][data-theme='light'] .season-art-right {
+    background-size: auto 70%;
+    /* Ảnh chỉ cao 70% khung nên mép trên phải tan dần, không tạo đường cắt */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 30%, #000 44%);
+    mask-image: linear-gradient(to bottom, transparent 30%, #000 44%);
+  }
+}
+
+/* ---------- Màn hình nhỏ: bỏ ảnh hai bên để chữ dễ đọc ---------- */
+@media (max-width: 860px) {
+  :root[data-season='teachers-day'] .season-art-left,
+  :root[data-season='teachers-day'] .season-art-right {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  :root[data-season='teachers-day'] .home-hero {
+    min-height: 0;
+    padding: 32px 16px 72px;
+  }
+
+  /* Ô hẹp: tách nút xuống dòng riêng để đọc được trọn gợi ý tìm kiếm */
+  :root[data-season='teachers-day'] .home-search {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    max-width: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* Điện thoại chỉ giữ một nửa số cánh hoa cho nhẹ */
+  .season-petal:nth-child(2n) {
+    display: none;
+  }
+
+  :root[data-season='teachers-day'] .home-search .saas-search-box {
+    flex: none;
+    height: 46px;
+    border: 2px solid var(--season-frame);
+    border-radius: 999px;
+    background: var(--bg-surface);
+  }
+
+  :root[data-season='teachers-day'] .home-search .saas-search-box:focus-within {
+    border-color: var(--primary-base);
+  }
+
+  :root[data-season='teachers-day'] .home-search .btn-solid-primary {
+    justify-content: center;
+  }
+
+  :root[data-season='teachers-day'] .home-page > section:not(.home-hero) {
+    width: calc(100% - 24px);
+    padding: 0 12px 16px;
+    border-radius: 20px;
+  }
+
+  :root[data-season='teachers-day'] .home-section-head {
+    flex-wrap: wrap;
+  }
+
+  :root[data-season='teachers-day'] .home-section-head .section-title {
+    margin-left: 4px;
+    min-height: 40px;
+    font-size: 15px;
+    padding: 6px 24px 6px 14px;
+  }
+
+  :root[data-season='teachers-day'][data-theme='light'] .home-section-head .section-title {
+    padding: 4px 36px 4px 64px;
+  }
+
+  :root[data-season='teachers-day'] .home-section-head .btn-ghost.nav-auth-link {
+    margin-top: 0;
+    margin-right: 0;
+  }
+
+  .season-decor-footer {
+    height: 84px;
+    margin-top: -60px;
+  }
+
+  :root[data-season='teachers-day'][data-theme='light'] .season-art-flowers {
+    left: -30px;
+    bottom: -8px;
+    width: 190px;
+    height: 66px;
+  }
+
+  :root[data-season='teachers-day'][data-theme='light'] .season-art-book {
+    right: 6px;
+    bottom: 0;
+    width: 112px;
+    height: 54px;
+  }
+
+  :root[data-season='teachers-day'][data-theme='light'] .home-page > section:not(.home-hero)::before {
+    border-width: 46px;
+    border-image-width: 46px;
+  }
+}

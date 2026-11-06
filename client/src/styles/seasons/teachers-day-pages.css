@@ -1,0 +1,239 @@
+/* ==========================================================================
+   GIAO DIỆN DỊP 20/11 CHO CÁC TRANG CÒN LẠI
+   Kho học liệu, chi tiết tài liệu, đóng góp, đăng nhập, thư viện, hồ sơ, quản trị.
+   Chỉ đổi phần nhìn: khung, nút, ô nhập, tiêu đề, nền. Không ẩn hay di chuyển
+   thành phần nào. Khung panel là ảnh cắt 9 phần vẽ ở lớp ::before phía sau.
+   ========================================================================== */
+
+/* ---------- Nền trang: hồng tím nhạt ---------- */
+/* Nền đặt ở html; body, #root và khung ngoài của App để trong suốt cho nền hiện ra. */
+:root[data-season='teachers-day'][data-theme='light'] {
+  background:
+    radial-gradient(1100px 620px at 0% 0%, #fde6f0 0%, rgba(253, 230, 240, 0) 62%),
+    radial-gradient(1000px 700px at 100% 100%, #eee0fa 0%, rgba(238, 224, 250, 0) 60%),
+    var(--bg-page);
+  background-attachment: fixed;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] body,
+:root[data-season='teachers-day'][data-theme='light'] #root {
+  background: transparent;
+}
+
+/* Khung ngoài của App đặt màu nền bằng style nội tuyến nên cần !important */
+:root[data-season='teachers-day'][data-theme='light'] #root > div {
+  background-color: transparent !important;
+}
+
+/* ---------- Thanh trên cùng: nền sáng mờ, viền tím ---------- */
+:root[data-season='teachers-day'][data-theme='light'] .vec-topbar {
+  border-bottom: 1px solid var(--season-frame);
+  background: rgba(255, 251, 253, 0.9);
+  box-shadow: 0 4px 16px rgba(122, 58, 158, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+/* ---------- Tiêu đề trang: chữ tím, nét gạch hồng như trang chủ ---------- */
+:root[data-season='teachers-day'] .page-title {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 6px;
+  font-weight: 800;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .page-title {
+  color: #47207a;
+}
+
+:root[data-season='teachers-day'] .page-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: min(140px, 70%);
+  height: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 18' preserveAspectRatio='none'%3E%3Cpath d='M2 12c22-9 42-8 56-2s24 4 34-1 40-9 66-3' fill='none' stroke='%23e8799f' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") left center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+
+/* Cành ly nhỏ sau tiêu đề, chỉ để trang trí */
+:root[data-season='teachers-day'][data-theme='light'] .page-title::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  right: -64px;
+  width: 58px;
+  height: 32px;
+  background: url('../../assets/seasons/teachers-day/lily-sprig.webp') center / contain no-repeat;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+
+/* ---------- Nút dùng chung ---------- */
+:root[data-season='teachers-day'] .btn-solid-primary,
+:root[data-season='teachers-day'] .btn-primary-action,
+:root[data-season='teachers-day'] .saas-upload-action {
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .btn-solid-primary:not(:disabled),
+:root[data-season='teachers-day'][data-theme='light'] .btn-primary-action:not(:disabled),
+:root[data-season='teachers-day'][data-theme='light'] .saas-upload-action:not(:disabled) {
+  border-color: transparent;
+  background: linear-gradient(180deg, #9757bb 0%, #6d3191 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 3px 8px rgba(109, 49, 145, 0.3);
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .btn-solid-primary:hover:not(:disabled),
+:root[data-season='teachers-day'][data-theme='light'] .btn-primary-action:hover:not(:disabled),
+:root[data-season='teachers-day'][data-theme='light'] .saas-upload-action:hover:not(:disabled) {
+  border-color: transparent;
+  background: linear-gradient(180deg, #84469f 0%, #5f2880 100%);
+}
+
+:root[data-season='teachers-day'] .btn-ghost:not(.nav-auth-link),
+:root[data-season='teachers-day'] .saas-page-btn {
+  border: 1.5px solid var(--season-frame);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 2px var(--season-ring), 0 0 0 3px var(--season-frame);
+}
+
+:root[data-season='teachers-day'] .btn-ghost:not(.nav-auth-link):hover:not(:disabled),
+:root[data-season='teachers-day'] .saas-page-btn:hover:not(:disabled) {
+  border-color: var(--primary-base);
+  background: var(--bg-muted);
+}
+
+:root[data-season='teachers-day'] .saas-page-btn.active {
+  border-color: var(--primary-base);
+  background: var(--primary-base);
+  color: var(--text-on-brand);
+}
+
+/* ---------- Ô nhập, ô tìm, ô chọn ---------- */
+:root[data-season='teachers-day'] .saas-search-box:not(.home-search .saas-search-box) {
+  border: 1.5px solid var(--season-frame);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 3px var(--season-ring), 0 0 0 4px var(--season-frame);
+}
+
+:root[data-season='teachers-day'] .saas-search-box:not(.home-search .saas-search-box):focus-within {
+  border-color: var(--primary-base);
+}
+
+:root[data-season='teachers-day'] .saas-search-box .saas-search-input {
+  border-radius: 999px;
+}
+
+:root[data-season='teachers-day'] .filter-select,
+:root[data-season='teachers-day'] .vec-form-input,
+:root[data-season='teachers-day'] .vec-form-select,
+:root[data-season='teachers-day'] .vec-form-textarea,
+:root[data-season='teachers-day'] .input-box {
+  border-color: var(--season-frame);
+  border-radius: 14px;
+}
+
+/* ---------- Khung panel: kính mờ, viền đôi, hoa văn góc ----------
+   Các khối này đã có nền và viền riêng, chỉ đổi sang khung dịp. */
+:root[data-season='teachers-day'] .detail-info-card,
+:root[data-season='teachers-day'] .review-panel,
+:root[data-season='teachers-day'] .pdf-sandbox-card,
+:root[data-season='teachers-day'] .kpi-card,
+:root[data-season='teachers-day'] .auth-card-centered,
+:root[data-season='teachers-day'] .modal-panel,
+:root[data-season='teachers-day'] .data-table-wrap,
+:root[data-season='teachers-day'] .vec-dropzone,
+:root[data-season='teachers-day'] .empty-state-box {
+  border-color: var(--season-frame);
+  border-radius: 22px;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .detail-info-card,
+:root[data-season='teachers-day'][data-theme='light'] .review-panel,
+:root[data-season='teachers-day'][data-theme='light'] .kpi-card,
+:root[data-season='teachers-day'][data-theme='light'] .auth-card-centered,
+:root[data-season='teachers-day'][data-theme='light'] .empty-state-box,
+:root[data-season='teachers-day'][data-theme='light'] .upload-form,
+:root[data-season='teachers-day'][data-theme='light'] .season-inline-panel {
+  position: relative;
+  isolation: isolate;
+  border-color: transparent;
+  background: transparent;
+  /* Không dùng filter: filter biến khối thành gốc định vị của hộp thoại position: fixed bên trong */
+  box-shadow: 0 10px 22px rgba(122, 58, 158, 0.1);
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .detail-info-card::before,
+:root[data-season='teachers-day'][data-theme='light'] .review-panel::before,
+:root[data-season='teachers-day'][data-theme='light'] .kpi-card::before,
+:root[data-season='teachers-day'][data-theme='light'] .auth-card-centered::before,
+:root[data-season='teachers-day'][data-theme='light'] .empty-state-box::before,
+:root[data-season='teachers-day'][data-theme='light'] .upload-form::before,
+:root[data-season='teachers-day'][data-theme='light'] .season-inline-panel::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -4px;
+  border: var(--season-panel-slice-size, 52px) solid transparent;
+  border-image: var(--season-panel-frame) 142 fill / var(--season-panel-slice-size, 52px) stretch;
+  pointer-events: none;
+}
+
+/* Khung nhỏ (thẻ số liệu quản trị) dùng góc nhỏ hơn để không lấn chữ */
+:root[data-season='teachers-day'][data-theme='light'] .kpi-card {
+  --season-panel-slice-size: 30px;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .pdf-sandbox-card,
+:root[data-season='teachers-day'][data-theme='light'] .data-table-wrap,
+:root[data-season='teachers-day'][data-theme='light'] .modal-panel {
+  border-width: 1.5px;
+  box-shadow: 0 0 0 4px var(--season-ring), 0 0 0 5px var(--season-frame), 0 10px 24px rgba(122, 58, 158, 0.14);
+}
+
+:root[data-season='teachers-day'][data-theme='light'] .vec-dropzone {
+  border-style: dashed;
+  border-width: 2px;
+  background: linear-gradient(140deg, #fff8fc 0%, #f3e8fb 100%);
+}
+
+/* ---------- Thẻ nổi bật trên trang chi tiết ---------- */
+:root[data-season='teachers-day'] .detail-highlight {
+  border-radius: 16px;
+}
+
+/* ---------- Tab ---------- */
+:root[data-season='teachers-day'] .underline-tabs button[aria-selected='true'],
+:root[data-season='teachers-day'] .admin-tabs button[aria-selected='true'] {
+  color: var(--primary-base);
+}
+
+/* ---------- Form đóng góp: có khoảng đệm để khung không sát chữ ---------- */
+:root[data-season='teachers-day'][data-theme='light'] .upload-form {
+  padding: 26px 28px 24px;
+}
+
+/* ---------- Khối viết bằng style nội tuyến (trang quản trị, hồ sơ, bounty) ----------
+   Các khối này không có class riêng, nhận diện qua style nền và viền.
+   Bỏ qua khối có position (menu, popover) để không đổi cách định vị. */
+:root[data-season='teachers-day'][data-theme='light'] main [style*="background-color: var(--bg-surface)"][style*="border: 1px solid"]:not([style*="position"]) {
+  position: relative;
+  isolation: isolate;
+  border-color: transparent !important;
+  background-color: transparent !important;
+  box-shadow: 0 10px 22px rgba(122, 58, 158, 0.08) !important;
+}
+
+:root[data-season='teachers-day'][data-theme='light'] main [style*="background-color: var(--bg-surface)"][style*="border: 1px solid"]:not([style*="position"])::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -4px;
+  border: 52px solid transparent;
+  border-image: var(--season-panel-frame) 142 fill / 52px stretch;
+  pointer-events: none;
+}
