@@ -167,7 +167,7 @@ export default function AdminDashboard({
       {/* 2 KHUNG BIỂU ĐỒ SVG CHUẨN RADIX LIGHT MODE */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(460px, 100%), 1fr))', gap: '20px' }}>
         {/* BIỂU ĐỒ 1: TOP 5 HỌC PHẦN (PURE SVG HORIZONTAL BAR CHART) */}
-        <div
+        <div className="season-inline-panel"
           style={{
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
@@ -285,7 +285,7 @@ export default function AdminDashboard({
         </div>
 
         {/* BIỂU ĐỒ 2: XU HƯỚNG TẢI VỀ 7 NGÀY (PURE SVG BEZIER LINE CHART) */}
-        <div
+        <div className="season-inline-panel"
           style={{
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
@@ -455,7 +455,7 @@ export default function AdminDashboard({
       </div>
 
       {/* DANH SÁCH BỔ TRỢ: TOP HỌC LIỆU ĐƯỢC TẢI NHIỀU NHẤT */}
-      <div
+      <div className="season-inline-panel"
         style={{
           backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-subtle)',
@@ -530,7 +530,7 @@ export default function AdminDashboard({
       {/* KHU VỰC HÀNG CHỜ DUYỆT NHANH & HOẠT ĐỘNG GẦN ĐÂY (UC11) */}
       <div className="dashboard-charts-grid">
         {/* Hàng chờ kiểm duyệt nhanh */}
-        <div
+        <div className="season-inline-panel"
           style={{
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
@@ -611,7 +611,7 @@ export default function AdminDashboard({
         </div>
 
         {/* Nhật ký hoạt động gần đây */}
-        <div
+        <div className="season-inline-panel"
           style={{
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',

@@ -3,6 +3,7 @@
 // Bật, tắt bằng biến môi trường VITE_SEASON lúc build, không cần sửa code:
 //   (không đặt) hoặc off  giao diện mặc định, đây là trạng thái khi mới deploy
 //   teachers-day          luôn bật giao diện 20/11
+//   christmas             luôn bật giao diện Noel
 //   auto                  tự bật theo lịch SEASONS bên dưới
 // Trên Vercel: Settings, Environment Variables, đặt VITE_SEASON rồi Redeploy.
 //
@@ -11,6 +12,7 @@
 // from, to theo dạng MM-DD và tính cả hai ngày, giờ Việt Nam. Chỉ dùng khi VITE_SEASON=auto.
 export const SEASONS = [
   { id: 'teachers-day', from: '11-13', to: '11-21' },
+  { id: 'christmas', from: '12-01', to: '12-31' },
 ]
 
 const PREVIEW_PARAM = 'season'

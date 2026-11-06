@@ -174,7 +174,7 @@ export default function BountyBoard({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
       {/* 1. Bounty Hero Header */}
-      <section
+      <section className="season-inline-panel"
         style={{
           backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-subtle)',
@@ -252,7 +252,7 @@ export default function BountyBoard({
         {/* Left Column (Feed) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: '2 1 540px' }}>
           {/* Toolbar & Filters */}
-          <div
+          <div className="season-inline-panel"
             style={{
               backgroundColor: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
@@ -343,7 +343,7 @@ export default function BountyBoard({
                 const fulfilledDoc = bounty.fulfilledDocId ? documents.find((d) => d.id === bounty.fulfilledDocId) : null
 
                 return (
-                  <article
+                  <article className="season-inline-panel"
                     key={bounty.id}
                     style={{
                       backgroundColor: 'var(--bg-surface)',
@@ -524,7 +524,7 @@ export default function BountyBoard({
         {/* Right Column: Top 10 Contributor Leaderboard & Rules */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', flex: '1 1 300px' }}>
           {/* Top 10 Leaderboard Card */}
-          <section
+          <section className="season-inline-panel"
             style={{
               backgroundColor: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',
@@ -635,7 +635,7 @@ export default function BountyBoard({
           </section>
 
           {/* Gamification Rules Card */}
-          <section
+          <section className="season-inline-panel"
             style={{
               backgroundColor: 'var(--bg-surface)',
               border: '1px solid var(--border-subtle)',

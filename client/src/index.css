@@ -5,6 +5,8 @@
 @import './styles/theme.css';
 @import './styles/seasons/teachers-day.css';
 @import './styles/seasons/teachers-day-pages.css';
+@import './styles/seasons/christmas.css';
+@import './styles/seasons/christmas-pages.css';
 
 /* App Container Full-width */
 #root {

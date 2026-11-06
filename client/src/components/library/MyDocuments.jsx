@@ -89,7 +89,7 @@ export default function MyDocuments({ currentUser, onSelectDoc, onOpenUpload, re
             const badge = doc.status === 'APPROVED' ? 'green' : doc.status === 'REJECTED' || doc.status === 'HIDDEN' ? 'red' : 'amber'
             const fileSize = doc.fileSizeBytes ? `${(doc.fileSizeBytes / 1048576).toFixed(2)} MB` : '—'
             return (
-              <article key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', padding: 16, border: '1px solid var(--border-subtle)', borderRadius: 8, background: 'var(--bg-surface)' }}>
+              <article className="season-inline-panel" key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', padding: 16, border: '1px solid var(--border-subtle)', borderRadius: 8, background: 'var(--bg-surface)' }}>
                 <div style={{ display: 'flex', gap: 12, flex: 1, minWidth: 240 }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, alignItems: 'center' }}>

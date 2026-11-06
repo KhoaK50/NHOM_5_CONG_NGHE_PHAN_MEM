@@ -256,7 +256,7 @@ export default function UserProfile({
       {/* 3. Tab Panels */}
       {/* Tab 1: Personal Info */}
       {activeTab === 'info' && (
-        <section
+        <section className="season-inline-panel"
           style={{
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
@@ -545,7 +545,7 @@ export default function UserProfile({
 
       {/* Tab 2: Password & Security */}
       {activeTab === 'password' && (
-        <section
+        <section className="season-inline-panel"
           style={{
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
@@ -793,7 +793,7 @@ export default function UserProfile({
 
       {/* Tab 5: Download History */}
       {activeTab === 'history' && (
-        <section
+        <section className="season-inline-panel"
           style={{
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',

@@ -1,11 +1,18 @@
 import { getActiveSeason } from '../../seasons/seasons'
+import ChristmasDecor from './ChristmasDecor'
 
 const PETAL_COUNT = 14
 
 // Lớp trang trí theo dịp: chỉ để nhìn, không nhận thao tác, trình đọc màn hình bỏ qua.
 // Hình và vị trí nằm trong styles/seasons. Ngoài dịp thì không vẽ gì.
 export default function SeasonDecor({ slot }) {
-  if (!getActiveSeason()) return null
+  const season = getActiveSeason()
+  if (!season) return null
+  if (season === 'christmas') {
+    if (slot === 'hero') return <ChristmasDecor />
+    if (slot === 'footer') return <div className="christmas-footer" aria-hidden="true" />
+    return null
+  }
 
   if (slot === 'hero') {
     return (
