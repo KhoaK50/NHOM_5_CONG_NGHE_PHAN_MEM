@@ -5,6 +5,23 @@ import {
   Award,
 } from 'lucide-react'
 import { getDashboardStats } from '../../utils/interactionApi'
+import { formatRelativeTime } from '../../utils/documentCourseApi'
+
+// Ngày trong biểu đồ: API mới trả 'YYYY-MM-DD'; API cũ trả chuỗi ISO đầy đủ (lệch múi giờ).
+// Dạng YYYY-MM-DD dựng theo giờ máy để không bị lùi một ngày; dạng khác để Date tự đọc.
+function parseChartDay(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value ?? ''))
+  if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+// Thời điểm gửi trong hàng đợi: hiện dạng "15 giờ trước", rê chuột xem ngày giờ đầy đủ
+function submittedAt(value) {
+  const date = value ? new Date(value) : null
+  if (!date || Number.isNaN(date.getTime())) return { label: '', full: '' }
+  return { label: formatRelativeTime(value), full: date.toLocaleString('vi-VN') }
+}
 
 export default function AdminDashboard({
   onSelectDoc,
@@ -40,11 +57,11 @@ export default function AdminDashboard({
   const maxCourseDownloads = Math.max(...top5Courses.map((c) => c.downloads), 1)
 
   const BASE_DAILY_DOWNLOADS = (dashboardData?.downloadsByDay || []).map((item) => {
-    const date = new Date(`${item.date}T00:00:00`)
+    const date = parseChartDay(item.date)
     return {
-      day: date.toLocaleDateString('vi-VN', { weekday: 'short' }),
-      fullDay: date.toLocaleDateString('vi-VN', { weekday: 'long' }),
-      date: date.toLocaleDateString('vi-VN'),
+      day: date ? date.toLocaleDateString('vi-VN', { weekday: 'short' }) : '—',
+      fullDay: date ? date.toLocaleDateString('vi-VN', { weekday: 'long' }) : '—',
+      date: date ? date.toLocaleDateString('vi-VN') : '—',
       downloads: Number(item.downloads),
       views: Number(item.views)
     }
@@ -572,8 +589,11 @@ export default function AdminDashboard({
                     >
                       {item.title}
                     </div>
-                    <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      {item.uploaderName} • {item.courseCode} • {item.createdAt}
+                    <div
+                      style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}
+                      title={submittedAt(item.createdAt).full || undefined}
+                    >
+                      {[item.uploaderName, item.courseCode, submittedAt(item.createdAt).label].filter(Boolean).join(' • ')}
                     </div>
                   </div>
                   <button

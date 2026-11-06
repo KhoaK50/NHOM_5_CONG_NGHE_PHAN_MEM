@@ -20,7 +20,8 @@ async function getDashboard(user) {
     query(`SELECT COUNT(*)::int AS total FROM public.document_access_logs
       WHERE action_type = 'DOWNLOAD_FILE' AND accessed_at >= date_trunc('week', CURRENT_TIMESTAMP)
       ${isAdmin ? '' : 'AND document_id IN (SELECT id FROM public.documents WHERE uploader_id = $1)'}`, params),
-    query(`SELECT d::date AS day,
+    // Trả ngày dạng YYYY-MM-DD: kiểu DATE bị thư viện pg đổi thành Date và lệch múi giờ khi gửi JSON
+    query(`SELECT to_char(d::date, 'YYYY-MM-DD') AS day,
       COUNT(l.id) FILTER (WHERE l.action_type = 'DOWNLOAD_FILE')::int AS downloads,
       COUNT(l.id) FILTER (WHERE l.action_type IN ('PREVIEW_3_PAGES', 'VIEW_FULL_PDF'))::int AS views
       FROM generate_series(CURRENT_DATE - 6, CURRENT_DATE, interval '1 day') AS d
