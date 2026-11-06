@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { Search, Play } from 'lucide-react'
+import { ArrowRight, BookOpen, Search, Play, Upload } from 'lucide-react'
+import { getActiveSeason } from '../../seasons/seasons'
 import DocumentCard from './DocumentCard'
+import SeasonDecor from './SeasonDecor'
 
 // Phần 3D nặng nên chỉ tải khi thật sự phát
 const IntroFilm = lazy(() => import('./IntroFilm'))
@@ -34,6 +36,8 @@ export default function LandingPage({
 }) {
   const [query, setQuery] = useState('')
   const [isIntroOpen, setIsIntroOpen] = useState(shouldAutoplayIntro)
+  // Icon trang trí chỉ có trong dịp, ngoài dịp các nút giữ nguyên như cũ
+  const isSeason = Boolean(getActiveSeason())
 
   useEffect(() => {
     if (isIntroOpen) markIntroSeen()
@@ -62,7 +66,10 @@ export default function LandingPage({
       )}
 
       <section className="home-hero" aria-label="Giới thiệu 5share">
-        <h1 className="home-title">Tài liệu học tập ngành Sư phạm Tin học</h1>
+        <SeasonDecor slot="hero" />
+        <h1 className="home-title">
+          Tài liệu học tập ngành <span className="home-title-major">Sư phạm <span className="home-title-accent">Tin học</span></span>
+        </h1>
         <p className="home-subtitle">
           Tra cứu theo môn học, đọc thử trực tuyến và tải về tài liệu đã được kiểm duyệt.
         </p>
@@ -80,6 +87,7 @@ export default function LandingPage({
             />
           </div>
           <button type="submit" className="btn-solid-primary">
+            {isSeason && <Search size={16} aria-hidden="true" />}
             Tìm tài liệu
           </button>
         </form>
@@ -87,6 +95,7 @@ export default function LandingPage({
         <div className="home-secondary-actions">
           {onOpenUpload && (
             <button type="button" className="btn-ghost" onClick={onOpenUpload}>
+              {isSeason && <Upload size={16} aria-hidden="true" />}
               Đóng góp tài liệu
             </button>
           )}
@@ -97,12 +106,18 @@ export default function LandingPage({
         </div>
       </section>
 
+      <SeasonDecor slot="petals" />
+
       {popularDocs.length > 0 && (
         <section aria-label="Tài liệu được tải nhiều">
           <div className="home-section-head">
-            <h2 className="section-title">Tài liệu được tải nhiều</h2>
+            <h2 className="section-title">
+              {isSeason && <BookOpen size={18} aria-hidden="true" />}
+              Tài liệu được tải nhiều
+            </h2>
             <button type="button" className="btn-ghost nav-auth-link" onClick={onExploreDiscovery}>
               Xem toàn bộ kho
+              {isSeason && <ArrowRight size={16} aria-hidden="true" />}
             </button>
           </div>
           <div className="saas-cards-grid">
@@ -112,6 +127,8 @@ export default function LandingPage({
           </div>
         </section>
       )}
+
+      <SeasonDecor slot="footer" />
     </div>
   )
 }

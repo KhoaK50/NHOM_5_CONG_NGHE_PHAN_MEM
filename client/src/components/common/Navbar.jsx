@@ -91,7 +91,8 @@ export default function Navbar({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [savedAccounts, setSavedAccounts] = useState(() => AuthGuard.getSavedAccounts())
 
-  const { theme, setTheme } = useTheme()
+  // Trong giao diện theo dịp chỉ có nền sáng nên ẩn nút chuyển sáng/tối
+  const { theme, setTheme, locked: themeLocked } = useTheme()
 
   const avatarRef = useRef(null)
   const notifRef = useRef(null)
@@ -273,6 +274,7 @@ export default function Navbar({
           })}
 
           <div className="vec-nav-menu-footer">
+            {!themeLocked && (
             <div className="vec-nav-menu-theme">
               <span>Giao diện</span>
               <div className="theme-switch" role="group" aria-label="Chọn giao diện">
@@ -286,6 +288,7 @@ export default function Navbar({
                 </button>
               </div>
             </div>
+            )}
             {isGuest && (
               <button type="button" className="btn-solid-primary" onClick={() => handleOpenAuth('register')}>
                 Đăng ký tài khoản
@@ -296,15 +299,17 @@ export default function Navbar({
       </div>
 
       <div className="vec-topbar-right">
-        <button
-          type="button"
-          className="vec-icon-btn nav-theme-btn"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          title={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
-          aria-label={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
-        >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
+        {!themeLocked && (
+          <button
+            type="button"
+            className="vec-icon-btn nav-theme-btn"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            title={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+            aria-label={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        )}
 
         {isGuest ? (
           <>

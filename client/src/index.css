@@ -3,6 +3,8 @@
 @import './styles/platform.css';
 @import './styles/minimal.css';
 @import './styles/theme.css';
+@import './styles/seasons/teachers-day.css';
+@import './styles/seasons/teachers-day-pages.css';
 
 /* App Container Full-width */
 #root {
