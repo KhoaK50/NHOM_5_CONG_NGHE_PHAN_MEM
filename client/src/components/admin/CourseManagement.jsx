@@ -225,6 +225,7 @@ export default function CourseManagement({ onNotice }) {
         }}
       >
         <div
+          className="season-field-box"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -234,7 +235,7 @@ export default function CourseManagement({ onNotice }) {
             borderRadius: '8px',
             padding: '8px 12px',
             flex: '1 1 280px',
-            minWidth: '220px'
+            minWidth: 'min(220px, 100%)'
           }}
         >
           <Search size={15} style={{ color: 'var(--text-tertiary)' }} />

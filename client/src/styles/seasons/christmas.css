@@ -159,8 +159,9 @@
 :root[data-season='christmas'] .home-search .btn-solid-primary {
   position: relative;
   isolation: isolate;
-  min-height: 42px;
+  min-height: 46px;
   gap: 8px;
+  padding-block: 15px 8px;
   padding-inline: 23px;
   border: 1px solid #a92732;
   border-radius: 999px;
@@ -171,11 +172,9 @@
 :root[data-season='christmas'] .home-search .btn-solid-primary::before {
   content: '';
   position: absolute;
-  top: -5px;
-  left: 6px;
-  right: 6px;
-  height: 13px;
-  background: url('../../assets/seasons/christmas/snow-edge.svg') center / 100% 100% no-repeat;
+  inset: -1px;
+  border-radius: inherit;
+  background: url('../../assets/seasons/christmas/snow-edge.svg') center top -3px / 100% 24px no-repeat;
   pointer-events: none;
 }
 :root[data-season='christmas'] .home-search .btn-solid-primary:hover {
@@ -193,6 +192,8 @@
   color: #121d4e;
   font-weight: 650;
   box-shadow: 0 0 0 2px #ffffff, inset 0 -2px 2px #d0ddf4, 0 3px 7px #244c8755;
+  transform: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 :root[data-season='christmas'] .home-secondary-actions .btn-ghost > svg {
   color: #c42a3c;
@@ -203,8 +204,10 @@
 :root[data-season='christmas'] .home-secondary-actions .nav-auth-link > svg {
   color: #17285f;
 }
-:root[data-season='christmas'] .home-secondary-actions .btn-ghost:hover {
-  background: #e6efff;
+:root[data-season='christmas'] .home-secondary-actions .btn-ghost:hover:not(:disabled) {
+  background: linear-gradient(#f4f8ff, #dce9ff);
+  box-shadow: 0 0 0 2px #ffffff, inset 0 -2px 2px #c1d4f2, 0 4px 9px #244c8755;
+  transform: none;
 }
 :root[data-season='christmas'] .home-hero :focus-visible {
   outline: 3px solid #ffffff;
@@ -249,7 +252,7 @@
   gap: 12px;
   min-height: 50px;
   margin: 0 0 0 8px;
-  padding: 10px 28px;
+  padding: 19px 28px 10px;
   border: 1.5px solid #b83439;
   border-radius: 16px;
   background: linear-gradient(#f75b61, #d6323c 55%, #b72432);
@@ -262,11 +265,9 @@
 :root[data-season='christmas'] .home-section-head .section-title::before {
   content: '';
   position: absolute;
-  top: -8px;
-  left: -3px;
-  right: -3px;
-  height: 21px;
-  background: url('../../assets/seasons/christmas/snow-edge.svg') center / 100% 100% no-repeat;
+  inset: -1px;
+  border-radius: inherit;
+  background: url('../../assets/seasons/christmas/snow-edge.svg') center top -3px / 100% 28px no-repeat;
   pointer-events: none;
 }
 :root[data-season='christmas'] .home-section-head .section-title > svg {
@@ -301,51 +302,53 @@
   border-image: url('../../assets/seasons/christmas/card-frame-v2.webp') 143 87 92 / 50px 28px 30px stretch;
   border-radius: 24px;
   background: #f8fbff;
-  box-shadow: 3px 5px 9px #467dce38, inset 0 0 0 4px #ffffff;
+  background-clip: padding-box;
+  box-shadow: 3px 5px 9px #467dce38;
   transform: none;
   transition: box-shadow 160ms ease;
+}
+:root[data-season='christmas'] .doc-card::before {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  top: -44px;
+  right: 6px;
+  width: 26px;
+  height: 46px;
+  background: url('../../assets/seasons/christmas/bookmark-red.svg') center / contain no-repeat;
+  pointer-events: none;
 }
 :root[data-season='christmas'] .doc-card::after {
   content: '';
   position: absolute;
   z-index: 3;
   inset: 0;
-  background-image: url('/src/assets/seasons/christmas/card-books-v2.webp');
-  background-position: right 9px bottom 8px;
-  background-size: 73px 68px;
+  background-image: url('../../assets/seasons/christmas/card-books-v2.webp');
+  background-position: right 8px bottom 8px;
+  background-size: 60px 56px;
   background-repeat: no-repeat;
   pointer-events: none;
 }
 :root[data-season='christmas'] .doc-card:nth-child(3n + 2)::after {
-  background-image: url('/src/assets/seasons/christmas/card-laptop-v2.webp');
+  background-image: url('../../assets/seasons/christmas/card-laptop-v2.webp');
 }
 :root[data-season='christmas'] .doc-card:nth-child(3n + 3)::after {
-  background-image: url('/src/assets/seasons/christmas/card-gift-v2.webp');
+  background-image: url('../../assets/seasons/christmas/card-gift-v2.webp');
 }
 :root[data-season='christmas'] .doc-card:hover,
 :root[data-season='christmas'] .doc-card:focus-visible {
   border-color: transparent;
   background: #f8fbff;
   transform: none;
-  box-shadow: 3px 7px 16px #3469b850, inset 0 0 0 4px #ffffff;
+  background-clip: padding-box;
+  box-shadow: 3px 7px 16px #3469b850;
 }
 :root[data-season='christmas'] .doc-card-preview {
-  overflow: visible; /* Tờ giấy tự cắt nội dung; dải dấu trang được vượt mép trên. */
+  overflow: hidden;
   height: clamp(154px, 15vw, 210px);
   border: 0;
   border-radius: 14px;
   background: linear-gradient(135deg, #f4f3ff, #e9f0fd);
-}
-:root[data-season='christmas'] .doc-card-preview::after {
-  content: '';
-  position: absolute;
-  z-index: 3;
-  right: 4px;
-  top: -49px;
-  width: 25px;
-  height: 40px;
-  background: url('../../assets/seasons/christmas/bookmark-red.svg') center / contain no-repeat;
-  pointer-events: none;
 }
 :root[data-season='christmas'] .doc-card-format,
 :root[data-season='christmas'] .doc-card-page-count {
@@ -366,9 +369,9 @@
   bottom: 5px;
 }
 :root[data-season='christmas'] .doc-card-stats {
-  min-height: 49px;
-  padding-top: 12px;
-  padding-right: 70px;
+  min-height: 46px;
+  padding-top: 10px;
+  padding-right: 58px;
   border-top: 1px solid #e1eaf8;
 }
 :root[data-season='christmas'] .doc-card-rating,
@@ -377,6 +380,9 @@
 }
 :root[data-season='christmas'] .doc-card-file-meta {
   font-size: 11px;
+}
+:root[data-season='christmas'] .home-page .doc-card-file-meta {
+  display: none;
 }
 
 /* Tuyết tự chạy; không có tùy chọn bật/tắt. Chỉ dừng khi tab ẩn hoặc giảm chuyển động. */
@@ -409,9 +415,9 @@
 }
 :root[data-season='christmas'] .christmas-footer {
   position: relative;
-  z-index: 2;
-  height: clamp(100px, 10vw, 155px);
-  margin-top: -18px;
+  z-index: 0;
+  height: clamp(180px, 17vw, 260px);
+  margin-top: -4px;
   background: url('../../assets/seasons/christmas/footer-snow.svg') center bottom / 100% 100% no-repeat;
   pointer-events: none;
 }
@@ -501,7 +507,7 @@
   }
   :root[data-season='christmas'] .home-search .btn-solid-primary {
     flex: 0 0 auto;
-    min-height: 42px;
+    min-height: 46px;
     padding-inline: 12px;
     font-size: 12px;
     white-space: nowrap;
@@ -534,7 +540,7 @@
   :root[data-season='christmas'] .home-section-head .section-title {
     min-height: 43px;
     margin-left: 0;
-    padding: 8px 16px;
+    padding: 19px 16px 9px;
     gap: 8px;
     font-size: 15px;
   }
@@ -563,7 +569,7 @@
     display: none;
   }
   :root[data-season='christmas'] .christmas-footer {
-    height: 95px;
+    height: 165px;
     background-size: auto 100%;
   }
 }

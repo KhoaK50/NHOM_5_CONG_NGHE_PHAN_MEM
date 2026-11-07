@@ -153,6 +153,18 @@
   border-radius: 999px;
 }
 
+/* Ô tìm kiếm viết bằng style nội tuyến (Quản trị: Môn học, Người dùng): cùng kiểu ô tìm kiếm của dịp */
+:root[data-season='teachers-day'] .season-field-box {
+  border: 1.5px solid var(--season-frame) !important;
+  border-radius: 999px !important;
+  background-color: var(--bg-surface) !important;
+  box-shadow: 0 0 0 3px var(--season-ring), 0 0 0 4px var(--season-frame);
+}
+
+:root[data-season='teachers-day'] .season-field-box:focus-within {
+  border-color: var(--primary-base) !important;
+}
+
 :root[data-season='teachers-day'] .filter-select,
 :root[data-season='teachers-day'] .vec-form-input,
 :root[data-season='teachers-day'] .vec-form-select,
@@ -186,8 +198,8 @@
 :root[data-season='teachers-day'][data-theme='light'] .season-inline-panel {
   position: relative;
   isolation: isolate;
-  border-color: transparent;
-  background: transparent;
+  border-color: transparent !important;
+  background: transparent !important;
   /* Không dùng filter: filter biến khối thành gốc định vị của hộp thoại position: fixed bên trong */
   box-shadow: 0 10px 22px rgba(122, 58, 158, 0.1);
 }
@@ -242,23 +254,4 @@
   padding: 26px 28px 24px;
 }
 
-/* ---------- Khối viết bằng style nội tuyến (trang quản trị, hồ sơ, bounty) ----------
-   Các khối này không có class riêng, nhận diện qua style nền và viền.
-   Bỏ qua khối có position (menu, popover) để không đổi cách định vị. */
-:root[data-season='teachers-day'][data-theme='light'] main [style*="background-color: var(--bg-surface)"][style*="border: 1px solid"]:not([style*="position"]) {
-  position: relative;
-  isolation: isolate;
-  border-color: transparent !important;
-  background-color: transparent !important;
-  box-shadow: 0 10px 22px rgba(122, 58, 158, 0.08) !important;
-}
-
-:root[data-season='teachers-day'][data-theme='light'] main [style*="background-color: var(--bg-surface)"][style*="border: 1px solid"]:not([style*="position"])::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: -4px;
-  border: 52px solid transparent;
-  border-image: var(--season-panel-frame) 142 fill / 52px stretch;
-  pointer-events: none;
-}
+/* Panel nội tuyến dùng .season-inline-panel để khung hoa chỉ áp dụng cho panel được chỉ định. */

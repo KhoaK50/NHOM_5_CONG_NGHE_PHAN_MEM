@@ -26,7 +26,7 @@
   border-style: solid !important;
   border-color: transparent !important;
   border-width: var(--christmas-frame-top, 30px) var(--christmas-frame-side, 14px) var(--christmas-frame-bottom, 20px) !important;
-  border-image: url('/src/assets/seasons/christmas/panel-frame-v2.webp') 120 60 73 / var(--christmas-frame-top, 30px) var(--christmas-frame-side, 14px) var(--christmas-frame-bottom, 20px) stretch !important;
+  border-image: url('../../assets/seasons/christmas/panel-frame-v2.webp') 120 60 73 / var(--christmas-frame-top, 30px) var(--christmas-frame-side, 14px) var(--christmas-frame-bottom, 20px) stretch !important;
   border-radius: 22px !important;
   background-clip: padding-box;
   box-shadow: 0 5px 14px #3469b82b !important;
@@ -100,6 +100,16 @@
   border-radius: 999px;
   background: #ffffff;
   box-shadow: 0 0 0 2px #f7fbff;
+}
+/* Ô tìm kiếm viết bằng style nội tuyến (Quản trị: Môn học, Người dùng) */
+:root[data-season='christmas'] .season-field-box {
+  border: 1.5px solid #9cbceb !important;
+  border-radius: 999px !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 2px #f7fbff;
+}
+:root[data-season='christmas'] .season-field-box:focus-within {
+  border-color: #1c638b !important;
 }
 :root[data-season='christmas'] :is(.filter-select, .vec-form-input, .vec-form-select, .vec-form-textarea, .input-box) {
   border-color: #a7c5ee;

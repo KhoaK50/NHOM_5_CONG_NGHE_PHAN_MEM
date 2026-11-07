@@ -137,6 +137,7 @@ export default function UserManagement({
       >
         {/* Ô tìm kiếm theo Tên, Email hoặc MSSV */}
         <div
+          className="season-field-box"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -146,12 +147,13 @@ export default function UserManagement({
             borderRadius: '8px',
             padding: '8px 12px',
             flex: '1 1 300px',
-            minWidth: '240px'
+            minWidth: 'min(240px, 100%)'
           }}
         >
           <Search size={15} style={{ color: 'var(--text-tertiary)' }} />
           <input
             type="text"
+            aria-label="Tìm người dùng"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm theo họ tên, email hoặc MSSV"
@@ -167,6 +169,7 @@ export default function UserManagement({
           {searchQuery && (
             <button
               type="button"
+              aria-label="Xóa từ khóa tìm người dùng"
               onClick={() => setSearchQuery('')}
               style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 0 }}
             >
