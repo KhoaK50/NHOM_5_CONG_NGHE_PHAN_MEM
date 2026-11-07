@@ -980,6 +980,29 @@
   gap: 12px;
 }
 
+/* Hàng chờ duyệt nhanh và Hoạt động gần đây ở trang Tổng quan: xếp chồng, cách nhau
+   như các khối khác của trang (trước đây không có style nên hai khung dính liền) */
+.dashboard-charts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+
+/* Ô tìm quản trị co cùng thanh lọc, kể cả khi nhập chuỗi dài. */
+.season-field-box {
+  max-width: 100%;
+}
+
+.season-field-box > input {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.season-field-box > svg,
+.season-field-box > button {
+  flex-shrink: 0;
+}
+
 .kpi-card {
   padding: 14px 16px;
   border: 1px solid var(--border-subtle);

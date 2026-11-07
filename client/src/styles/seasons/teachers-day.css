@@ -113,8 +113,8 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  min-height: 448px;
-  padding: 48px 24px 96px;
+  min-height: 580px;
+  padding: 76px 24px 96px;
 }
 
 :root[data-season='teachers-day'] .home-title {
@@ -517,39 +517,9 @@
   fill: var(--bg-page);
 }
 
-/* Ảnh chỉ khai báo trong theme sáng để theme tối không phải tải.
-   Nền đầu trang là màu hồng tím nhạt; ảnh căn phòng chỉ hiện 28% làm gợi ý,
-   phần giữa sau chữ để sáng sạch, tranh minh họa chỉ nằm ở hai mép. */
+/* Nền liền cảnh, nét và đủ tương phản; không phủ opacity/mask tạo sương. */
 :root[data-season='teachers-day'][data-theme='light'] .season-decor-hero {
-  background: linear-gradient(180deg, #fdf3f8 0%, #f7eefb 100%);
-}
-
-:root[data-season='teachers-day'][data-theme='light'] .season-decor-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url('../../assets/seasons/teachers-day/hero-room.webp') center / cover no-repeat;
-  opacity: 0.28;
-}
-
-:root[data-season='teachers-day'][data-theme='light'] .season-art-left {
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: min(34%, 460px);
-  background-image: url('../../assets/seasons/teachers-day/hero-left.webp');
-  background-position: left bottom;
-  background-size: auto 100%;
-}
-
-:root[data-season='teachers-day'][data-theme='light'] .season-art-right {
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: min(34%, 460px);
-  background-image: url('../../assets/seasons/teachers-day/hero-right.webp');
-  background-position: right bottom;
-  background-size: auto 100%;
+  background: #e4cfee url('../../assets/seasons/teachers-day/hero-classroom-decorated-v3.webp') center / 100% 100% no-repeat;
 }
 
 /* ---------- Cánh hoa rơi: nằm sau khung tài liệu, chỉ dùng transform và opacity ---------- */
@@ -656,22 +626,23 @@
   display: none;
 }
 
-/* ---------- Màn hình vừa: thu nhỏ ảnh để không chạm ô tìm kiếm ---------- */
-@media (max-width: 1180px) {
-  :root[data-season='teachers-day'][data-theme='light'] .season-art-left,
-  :root[data-season='teachers-day'][data-theme='light'] .season-art-right {
-    background-size: auto 70%;
-    /* Ảnh chỉ cao 70% khung nên mép trên phải tan dần, không tạo đường cắt */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 30%, #000 44%);
-    mask-image: linear-gradient(to bottom, transparent 30%, #000 44%);
+/* Khung vừa giữ đúng tỉ lệ ảnh, đưa hai cụm hoa ra xa ô tìm kiếm. */
+@media (min-width: 861px) and (max-width: 1000px) {
+  :root[data-season='teachers-day'][data-theme='light'] .season-decor-hero {
+    background-size: auto 100%;
   }
 }
 
-/* ---------- Màn hình nhỏ: bỏ ảnh hai bên để chữ dễ đọc ---------- */
+/* Màn hình nhỏ ưu tiên vùng tường giữa để chữ và ô nhập luôn rõ. */
 @media (max-width: 860px) {
-  :root[data-season='teachers-day'] .season-art-left,
-  :root[data-season='teachers-day'] .season-art-right {
-    display: none;
+  :root[data-season='teachers-day'] .home-hero {
+    min-height: 448px;
+    padding-top: 48px;
+  }
+
+  :root[data-season='teachers-day'][data-theme='light'] .season-decor-hero {
+    background-image: url('../../assets/seasons/teachers-day/hero-classroom-clear-v2.webp');
+    background-size: auto 100%;
   }
 }
 

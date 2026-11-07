@@ -17,8 +17,6 @@ export default function SeasonDecor({ slot }) {
   if (slot === 'hero') {
     return (
       <div className="season-decor season-decor-hero" aria-hidden="true">
-        <span className="season-art season-art-left" />
-        <span className="season-art season-art-right" />
         <svg className="season-wave" viewBox="0 0 1440 70" preserveAspectRatio="none">
           <path d="M0 34C160 10 300 8 470 30s300 40 480 16 330-30 490-6v30H0Z" />
         </svg>
