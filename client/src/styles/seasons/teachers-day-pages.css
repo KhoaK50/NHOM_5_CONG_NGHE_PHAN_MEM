@@ -33,6 +33,15 @@
   backdrop-filter: blur(8px);
 }
 
+/* Điện thoại: backdrop-filter biến thanh trên thành khối chứa của menu position: fixed,
+   làm menu điều hướng bị ép cao bằng 0. Bỏ hiệu ứng mờ, dùng nền đặc để menu phủ đủ màn hình. */
+@media (max-width: 768px) {
+  :root[data-season='teachers-day'][data-theme='light'] .vec-topbar {
+    background: var(--bg-surface);
+    backdrop-filter: none;
+  }
+}
+
 /* ---------- Tiêu đề trang: chữ tím, nét gạch hồng như trang chủ ---------- */
 :root[data-season='teachers-day'] .page-title {
   position: relative;
